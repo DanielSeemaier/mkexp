@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
         auto start = std::chrono::steady_clock::now();
         ParHIPPartitionKWay(vtxdist.data(), xadj.data(), adjncy.data(), nullptr,
-                            nullptr, &k, &imbalance, false, 0, mode, &cut,
+                            nullptr, &k, &imbalance, false, iter, mode, &cut,
                             partition.data(), &comm);
         auto end = std::chrono::steady_clock::now();
 

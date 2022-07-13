@@ -14,4 +14,4 @@ add_executable(InMemoryParhip parhip.cpp)
 target_link_libraries(InMemoryParhip PUBLIC ${LIBS} parhip kahip)
 
 add_executable(InMemoryParmetis parmetis.cpp)
-target_link_libraries(InMemoryParmetis PUBLIC ${LIBS} parmetis)
+target_link_libraries(InMemoryParmetis PUBLIC ${LIBS} parmetis metis GKlib)
