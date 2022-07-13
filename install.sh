@@ -30,7 +30,7 @@ if [[ ! -f "$DGP_PREFIX/lib/libkagen.a" ]]; then
 fi 
 
 echo "Installing in-memory driver ..."
-./install_inmemory_driver "$DGP_PREFIX" 1>"$DGP_LOGS/install_inmemory_driver.out" 2>"$DGP_LOGS/install_inmemory_driver.err"
+./install_inmemory_driver.sh "$DGP_PREFIX" 1>"$DGP_LOGS/install_inmemory_driver.out" 2>"$DGP_LOGS/install_inmemory_driver.err"
 if [[ ! -x "$DGP_PREFIX/bin/InMemoryParhip" || ! -x "$DGP_PREFIX/bin/InMemoryParmetis" ]]; then
     echo "Installation failed, see $DGP_LOGS/install_inmemory_driver.err for more details"
 fi
