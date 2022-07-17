@@ -5,7 +5,7 @@ cd KaGen
 cp library/kagen.h "$PREFIX/include"
 
 rm -rf build && mkdir build && cd build 
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release $ADDITIONAL_KAGEN_ARGS
 make kagen -j 
 
 cp library/libkagen.a "$PREFIX/lib"

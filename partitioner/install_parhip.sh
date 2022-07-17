@@ -6,4 +6,5 @@ cd KaHIP
 cp deploy/libparhip* "$PREFIX/lib/"
 cp deploy/parhip_interface.h "$PREFIX/include/"
 cp deploy/parhip "$PREFIX/bin/"
+cp deploy/parallel/libkahip.* "$PREFIX/lib/"
 
