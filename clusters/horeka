@@ -1,0 +1,17 @@
+#!/bin/bash 
+
+generate_slurm_job_header() {
+    nodes="$1"
+    cores="$2"
+    time="$3"
+
+    echo "#SBATCH --nodes=${nodes}"
+    echo "#SBATCH --ntasks=$((nodes*cores))"
+    echo "#SBATCH --cpus-per-task=${cores}"
+    echo "#SBATCH --ntasks-per-node=$((64/cores))"
+    echo "#SBATCH --time=${time}"
+    echo "#SBATCH --export=ALL"
+    echo "#SBATCH --mem=230gb"
+    echo "#SBATCH --partition=cpuonly"
+    echo "module load mpi/openmpi/4.0"
+}
