@@ -5,11 +5,11 @@ if [[ "$1" == "" ]]; then
 fi 
 
 # Source environment
-if [[ ! -f "env.sh" ]]; then 
+if [[ ! -f "config" ]]; then 
     echo "must be run from the directory containing this script"
     exit 1
 fi 
-source env.sh
+source config
 
 # Check CLI arguments
 generator_script="$1"
@@ -17,6 +17,8 @@ if [[ ! -f "$generator_script" ]]; then
     echo "cannot find generator scrpt at $generator_script"
     exit 1
 fi
+
+source clusters/init
 
 # Setup generator environment
 _num_nodes=1

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+invoke() {
+    if [[ "$cores" != "1" ]]; then 
+        echo "multiple cores per node are not supported"
+        return 1 
+    fi
+    
+    echo "$(mpi_cmd) $DGP_PREFIX/bin/parhip --k=$k --imbalance=$eps --preconfiguration=fastsocial"
+}

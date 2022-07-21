@@ -1,0 +1,12 @@
+#!/bin/bash 
+
+gbl_cores_per_node="$(getconf _NPROCESSORS_ONLN 2>/dev/null)"
+gbl_max_cores_per_node="$gbl_cores_per_node"
+
+gbl_generate_slurm_job_header() {
+    return 0
+}
+
+gbl_generate_mpi_cmd() {
+    echo "mpirun -n $((gbl_cores_per_node*nodes/param_cores)) --bind-to core --map-by socket:PE=${param_cores} "
+}

@@ -1,8 +1,5 @@
 #!/bin/bash
-source env.sh 
-if [[ -f system.sh ]]; then 
-    source system.sh 
-fi
+source config
 
 git submodule update --init --recursive
 

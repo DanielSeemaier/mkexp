@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ "$(hostname)" == "login"* ]]; then 
+    source clusters/supermuc
+elif [[ "$(hostname)" == "hkn"* ]]; then 
+    source clusters/horeka
+else
+    source clusters/unknown
+fi

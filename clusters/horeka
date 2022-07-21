@@ -1,17 +1,20 @@
 #!/bin/bash 
 
-generate_slurm_job_header() {
-    nodes="$1"
-    cores="$2"
-    time="$3"
+gbl_cores_per_node=64
+gbl_max_cores_per_node=78
 
-    echo "#SBATCH --nodes=${nodes}"
-    echo "#SBATCH --ntasks=$((nodes*cores))"
-    echo "#SBATCH --cpus-per-task=${cores}"
-    echo "#SBATCH --ntasks-per-node=$((64/cores))"
-    echo "#SBATCH --time=${time}"
+gbl_generate_slurm_job_header() {
+    echo "#SBATCH --nodes=${param_nodes}"
+    echo "#SBATCH --ntasks=$((param_nodes*param_cores))"
+    echo "#SBATCH --cpus-per-task=${param_cores}"
+    echo "#SBATCH --ntasks-per-node=$((gbl_cores_per_node/param_cores))"
+    echo "#SBATCH --time=${param_time}"
     echo "#SBATCH --export=ALL"
     echo "#SBATCH --mem=230gb"
     echo "#SBATCH --partition=cpuonly"
     echo "module load mpi/openmpi/4.0"
+}
+
+gbl_generate_mpi_cmd() {
+    echo "mpirun -n $((gbl_cores_per_node*param_nodes/param_cores)) --bind-to core --map-by socket:PE=${param_cores} "
 }
