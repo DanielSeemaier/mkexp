@@ -1,19 +1,17 @@
-#!/bin/bash 
 name "Test experiment"
 
 mpi openmpi
-num_nodes 1 2 4
-num_cores 1 4 16
+parallelism 1x1 1x4 1x16 1x64
 ks 8
 seeds 1 2 3 4 5
 
 time_limit 1:00:00
-per_instance_time_limit 5:00
+time_limit_per_instance 5:00
 
 algorithms parhip-fastsocial parmetis
 
-weakly_scaled_kagen rgg2d $((2<<10)) $((2<<15))
-weakly_scaled_kagen rhg $((2<<10)) $((2<<15) 3.0
+ws_kagen rgg2d $((2<<10)) $((2<<15))
+ws_kagen rhg $((2<<10)) $((2<<15)) 3.0
 
-strongly_scaled_instance /G/144
-strongly_scaled_instances /G/
+graph /G/144
+graphs /G

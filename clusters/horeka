@@ -1,13 +1,21 @@
 #!/bin/bash 
+system_cores_per_node=64
+system_max_cores_per_node=78
 
-gbl_cores_per_node=64
-gbl_max_cores_per_node=78
+system_validate() {
+    if [[ "$param_mpi" != "openmpi" ]]; then
+        echo "Error: unsupported mpi implementation"
+        return 1
+    fi
 
-gbl_generate_slurm_job_header() {
+    return 0
+}
+
+system_generate_slurm_job_header() {
     echo "#SBATCH --nodes=${param_nodes}"
     echo "#SBATCH --ntasks=$((param_nodes*param_cores))"
     echo "#SBATCH --cpus-per-task=${param_cores}"
-    echo "#SBATCH --ntasks-per-node=$((gbl_cores_per_node/param_cores))"
+    echo "#SBATCH --ntasks-per-node=$((system_cores_per_node/param_cores))"
     echo "#SBATCH --time=${param_time}"
     echo "#SBATCH --export=ALL"
     echo "#SBATCH --mem=230gb"
@@ -15,6 +23,6 @@ gbl_generate_slurm_job_header() {
     echo "module load mpi/openmpi/4.0"
 }
 
-gbl_generate_mpi_cmd() {
-    echo "mpirun -n $((gbl_cores_per_node*param_nodes/param_cores)) --bind-to core --map-by socket:PE=${param_cores} "
+system_generate_mpi_cmd() {
+    echo "mpirun -n $((system_cores_per_node*param_nodes/param_cores)) --bind-to core --map-by socket:PE=${param_cores} "
 }
