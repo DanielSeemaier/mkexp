@@ -1,0 +1,40 @@
+#!/bin/bash
+IsInstalled() {
+    if [[ -x "$DGP_PREFIX/bin/dKaMinPar" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+Binary() {
+    echo "$DGP_PREFIX/bin/dKaMinPar"
+}
+
+Install() {
+    if ! IsInstalled; then 
+        git clone git@github.com:DanielSeemaier/KaMinPar.git "$DGP_PREFIX/src/KaMinPar"
+        git -C "$DGP_PREFIX/src/KaMinPar" submodule update --init --recursive
+        cmake -S "$DGP_PREFIX/src/KaMinPar" -B "$DGP_PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
+        cmake --build "$DGP_PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
+        mkdir -p "$DGP_PREFIX/bin"
+        cp "$DGP_PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$DGP_PREFIX/bin/dKaMinPar"
+    fi
+}
+
+InvokeFromDisk() {
+    graph="$1"
+    k="$2"
+    epsilon="$3"
+    seed="$4"
+    arguments="$5"
+    
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) -G $graph -k $k -e $epsilon --seed=$seed $argument -G $graph -k $k -e $epsilon --seed=$seed $arguments"
+    else 
+        echo "Warning: $graph does not exist"
+        return 1
+    fi
+}

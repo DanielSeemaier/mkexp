@@ -27,7 +27,6 @@ fi
 # Setup generator environment
 _num_nodes=1
 _num_cores=1
-_name=""
 _mpi="openmpi"
 _ks=()
 _time_limit=""
@@ -44,10 +43,6 @@ num_nodes() {
 
 num_cores() {
     _num_cores="$@"
-}
-
-name() {
-    _name="$1"
 }
 
 mpi() {
@@ -72,6 +67,10 @@ time_limit_per_instance() {
 
 algorithms() {
     _algorithms+=("$1")
+}
+
+algorithm() {
+    _algorithms+=("$@")
 }
 
 ws_kagen() {
@@ -110,11 +109,6 @@ fi
 
 # Perform sanity checks
 has_errors=0
-
-if [[ "$_name" == "" ]]; then 
-    echo "Error: name must be set"
-    has_errors=1
-fi
 
 if [[ ${#_graphs[@]} > 0 ]]; then 
     for algorithm in ${_algorithms[@]}; do 

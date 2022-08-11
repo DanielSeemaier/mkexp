@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+###############################################################################
+# MakeExperiment                                                              #
+#-----------------------------------------------------------------------------# 
+# Reads the `Experiment` file in the current working directory and creates    #
+# jobfiles for the experiment.                                                #
+###############################################################################
+
+set -o pipefail
+set -o errtrace
+set -o nounset
+set -o errexit
+
+# Find absolute path to this script
+source=${BASH_SOURCE[0]}
+while [ -L "$source" ]; do
+  script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
+  source=$(readlink "$source")
+  [[ $source != /* ]] && source=$script_pwd/$source
+done
+script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
+
+# Functions to be called from the Experiment file
+declare -A _algorithm_definition_names
+declare -A _algorithm_definition_bases
+declare -A _algorithm_definition_arguments
+
+declare -a _algorithms
+declare -a _ks
+declare -a _seeds
+declare -a _graphs 
+
+_timelimit=""
+_timelimit_per_instance=""
+
+DefineAlgorithm() {
+    name="$1"
+    base_algorithm="$2"
+    custom_arguments="${*:3}"
+
+    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
+        echo "Warning: overwriting already defined algorithm $name"
+    }
+
+    _algorithm_definition_names[$name]=1
+    _algorithm_definition_bases[$name]="$base_algorithm"
+    _algorithm_definition_arguments[$name]="$custom_arguments"
+}
+
+System() {
+    return 0
+}
+
+MPI() {
+
+    return 0
+}
+
+Algorithms() {
+    _algorithms+=(${@})
+}
+
+PrintSummary() {
+    echo "Custom algorithm definitions:"
+    for algorithm in ${!_algorithm_definition_names[@]}; do 
+        echo "- $algorithm <- ${_algorithm_definition_bases[$algorithm]}"
+        echo "  ${_algorithm_definition_arguments[$algorithm]}"
+    done
+    echo ""
+
+    echo "Algorithms:"
+    for algorithm in ${_algorithms[@]}; do 
+        echo "- $algorithm"
+    done
+    echo ""
+
+    echo "Graphs:"
+    for graph in ${_graphs[@]}; do 
+        echo "- $graph"
+    done
+    echo ""
+
+    echo "Seeds: ${_seeds[*]}"
+    echo "Ks: ${_ks[*]}"
+    
+}
+
+Seeds() {
+    _seeds+=(${@})
+}
+
+Ks() {
+    _ks+=(${@})
+}
+
+Threads() {
+    return 0
+}
+
+Timelimit() {
+    _timelimit="$1"
+}
+
+TimelimitPerInstance() {
+    _timelimit_per_instance="$1"
+}
+
+Graphs() {
+    for filename in ${1%/}/*; do 
+        _graphs+=("${filename%.*}")
+    done
+}
+
+Graph() {
+    _graphs+=("${1%.*}")
+}
+
+KaGen() {
+
+    return 0
+}
+
+ScaledKaGen() {
+
+    return 0
+}
+
+# Check that there is an Experiment file
+[[ -f "Experiment" ]] || {
+    echo "Error: no Experiment file contained in the current working directory"
+    exit 1
+}
+
+# Read Experiment file
+. Experiment
+
+# Create job files
+
+
+###############################################################################
+LoadPartitioner() {
+    name="$1"
+    filename="$script_pwd/partitioner/$name"
+    [[ -f "$filename" ]] || {
+        echo "Error: invalid partitioner $name"
+        exit 1
+    }
+    . "$filename"
+}
+
+InstallPartitioner() {
+    LoadPartitioner "${@}"
+    Install
+}
+
