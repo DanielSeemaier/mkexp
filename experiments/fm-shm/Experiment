@@ -1,0 +1,13 @@
+#!/bin/bash
+DefineAlgorithm dKaMinPar-FM dKaMinPar --r-algorithm=prob-lp+fm
+Algorithms dKaMinPar dKaMinPar-FM
+
+System i10
+MPI OpenMPI
+TimelimitPerInstance 30:00
+
+Ks 16
+Threads 16
+Graphs /global_data/graphs/benchmark_sets/parhip_paper
+
+PrintSummary
