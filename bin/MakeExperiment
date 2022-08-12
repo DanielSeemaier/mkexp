@@ -20,6 +20,13 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
+# If arguments are present, filter active algorithms with it
+filter_algorithms=$((${#@} != 0))
+declare -A active_algorithms
+for algorithm in ${@}; do 
+    active_algorithms[$algorithm]=1
+done
+
 ###############################################################################
 LoadPartitioner() {
     name="$1"
@@ -222,6 +229,19 @@ PrintSummary() {
 
 # Read Experiment file
 . Experiment
+
+# Filter active algorithms
+if [[ $filter_algorithms != "0" ]]; then 
+    declare -a filtered_algorithms
+    for algorithm in ${_algorithms[@]}; do 
+        if [[ -v "active_algorithms[$algorithm]" ]]; then 
+            filtered_algorithms+=("$algorithm")
+        else 
+            echo "Disable target $algorithm"
+        fi
+    done
+    algorithms=$filtered_algorithms
+fi
 
 # Install required partitioners
 for algorithm in ${_algorithm_definition_bases[@]}; do 
