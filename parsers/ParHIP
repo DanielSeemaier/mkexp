@@ -1,0 +1,82 @@
+# -*-awk-*-
+BEGIN {
+    header()
+    reset()
+}
+
+/__BEGIN_FILE__/ {
+    sub(/__BEGIN_FILE__ /, "", $0)
+    split($0, parts, "__")
+    data["Graph"] = parts[1]
+    delete parts[1] 
+
+    for (i in parts) {
+        if (match(parts[i], /k([0-9]+)/, m)) {
+            data["K"] = m[1]
+        } else if (match(parts[i], /t([0-9]+)/, m)) {
+            data["NumProcessors"] = m[1] 
+        } else if (match(parts[i], /seed([0-9]+)/, m)) {
+            data["Seed"] = m[1]
+        }
+    }
+}
+
+/__END_FILE__/ {
+    yield()
+}
+
+match($0, /n:([0-9]+) m: ([0-9]+)/, m) {
+    data["N"] = m[1]
+    data["M"] = m[2]
+}
+
+match($0, /log>final edge cut ([0-9]+)/, m) {
+    data["Cut"] = m[1]
+}
+
+match($0, /log>final balance ([0-9\.e\-]+)/, m) {
+    data["Balance"] = m[1] - 1
+}
+
+match($0, /log>total partitioning time elapsed ([0-9\.e\-]+)/, m) {
+    data["Time"] = m[1]
+}
+
+END {
+    yield()
+}
+
+function header() {
+    printf "Graph,"
+    printf "N,"
+    printf "M,"
+    printf "K,"
+    printf "Seed,"
+    printf "Cut,"
+    printf "Balance,"
+    printf "Time,"
+    printf "NumProcessors,"
+    printf "Failed\n"
+}
+
+function yield() {
+    if (length(data) == 0) { return }
+
+    failed = length(data) != 9
+    printf "%s,", data["Graph"]
+    printf "%d,", data["N"]
+    printf "%d,", data["M"]
+    printf "%d,", data["K"]
+    printf "%d,", data["Seed"]
+    printf "%d,", data["Cut"]
+    printf "%f,", data["Balance"]
+    printf "%f,", data["Time"]
+    printf "%d,", data["NumProcessors"]
+    printf "%d\n", failed
+    
+    reset()
+}
+
+function reset() {
+    split("", data)
+}
