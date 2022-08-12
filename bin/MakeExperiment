@@ -240,7 +240,7 @@ if [[ $filter_algorithms != "0" ]]; then
             echo "Disable target $algorithm"
         fi
     done
-    _algorithms=$filtered_algorithms
+    _algorithms=("${filtered_algorithms[@]}")
 fi
 
 # Install required partitioners
