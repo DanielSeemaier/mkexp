@@ -3,9 +3,10 @@
 # [Optional]
 # Define new algorithms by providing additional CLI arguments to predefined 
 # algorithms.
-#               New name     Based upon  CLI arguments...
-DefineAlgorithm dKaMinPar-FM dKaMinPar   --r-algorithm=prob-lp+fm
-DefineAlgorithm dKaMinPar-LP dKaMinPar   --r-algorithm=prob-lp
+#               New name         Based upon  CLI arguments...
+DefineAlgorithm dKaMinPar-FM     dKaMinPar   --r-algorithm=prob-lp+fm
+DefineAlgorithm ParHIP-Fast      ParHIP      --preconfiguration=fastsocial
+DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
 
 # [Optional] 
 # System on which this experiment should be run on.
@@ -19,7 +20,7 @@ MPI OpenMPI
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
-Algorithms dKaMinPar dKaMinPar-FM
+Algorithms dKaMinPar ParHIP-Eco dKaMinPar-FM
 
 # [Mandatory]
 # Values of k.

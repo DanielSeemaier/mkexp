@@ -1,0 +1,66 @@
+#!/bin/bash
+IsInstalled() {
+    if [[ ! -x "$DGP_PREFIX/bin/parhip" ]]; then
+        return 1
+    fi
+    if [[ ! -d "$DGP_PREFIX/src/KaHIP" ]]; then 
+        return 1
+    fi
+
+    git -C "$DGP_PREFIX/src/KaHIP" fetch
+    local_hash=$(git -C "$DGP_PREFIX/src/KaHIP" rev-parse HEAD)
+    remote_hash=$(git -C "$DGP_PREFIX/src/KaHIP" rev-parse @{u})
+    if [[ "$local_hash" == "$remote_hash" ]]; then 
+        return 0
+    fi
+
+    return 1
+}
+
+Binary() {
+    echo "$DGP_PREFIX/bin/parhip"
+}
+
+Install() {
+    if IsInstalled; then 
+        return 0
+    fi
+
+    if [[ ! -d "$DGP_PREFIX/src/KaHIP" ]]; then 
+        git clone git@github.com:KaHIP/KaHIP.git "$DGP_PREFIX/src/KaHIP"
+    else 
+        git -C "$DGP_PREFIX/src/KaHIP" pull
+    fi
+    
+    current_pwd="$PWD"
+    cd "$DGP_PREFIX/src/KaHIP"
+    ./compile_withcmake.sh
+    cd "$current_pwd"
+
+    mkdir -p "$DGP_PREFIX/bin"
+    cp "$DGP_PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
+}
+
+InvokeFromDisk() {
+    graph="$1"
+    k="$2"
+    epsilon="$3"
+    seed="$4"
+    threads="$7"
+    arguments="${@:8}"
+  
+    # .bgf > .graph > .metis
+    [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    # ParHIP expects 3 for 3% etc
+    imbalance=$(echo "100*$epsilon/1" | bc)
+
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) --k=$k --imbalance=$imbalance --seed=$seed $graph $arguments"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
