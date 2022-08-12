@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# [Optional]
+# Define new algorithms by providing additional CLI arguments to predefined 
+# algorithms.
+#               New name     Based upon  CLI arguments...
+DefineAlgorithm dKaMinPar-FM dKaMinPar   --r-algorithm=prob-lp+fm
+DefineAlgorithm dKaMinPar-LP dKaMinPar   --r-algorithm=prob-lp
+
+# [Optional] 
+# System on which this experiment should be run on.
+System i10
+
+# [Optional] 
+# MPI implementation that should be used to run this experiment.
+MPI OpenMPI
+
+# [Mandatory]
+# List of algorithms to be included in this experiment.
+# This list can contain predefined algorithms or names defined with 
+# DefineAlgorithm
+Algorithms dKaMinPar dKaMinPar-FM
+
+# [Mandatory]
+# Values of k.
+Ks 4
+
+# [Optional]
+# <Number of nodes N>x<Number of MPI processes M>x<Number of threads T> to be 
+# used to run the partitioners.
+# The number of nodes can be omitted
+# (== run the experiment on just one node).
+# Additionally, the number of MPI processes can be omitted 
+# (== run the experiment with just a single MPI process).
+#       N M T M T T
+#       V V V V V V
+Threads 1x2x3 4x5 6
+
+# [Optional]
+# Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
+TimelimitPerInstance 1:00:00
+
+# [Optional]
+# Directory containing all graphs to be included in the experiment.
+Graphs /G/
+
+# [Optional]
+# Graph to be included in the experiment, without file extension. This way, the 
+# graph can be provided in multiple formats for different graph partitioners.
+Graph /G/144
+
+# [Optional]
+# Generate a graph in-memory using KaGen. Must be supported by the graph 
+# partitioner.
+KaGen rgg2d 10 15
+
+# [Optional]
+# Like KaGen, but the size of the graph is scaled with the number of compute
+# nodes.
+ScaledKaGen rgg2d 10 15
+
+# [Optional]
+# Print a summary after generating the experiment files.
+PrintSummary

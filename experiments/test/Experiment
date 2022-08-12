@@ -1,15 +1,14 @@
 #!/bin/bash
 DefineAlgorithm dKaMinPar-FM dKaMinPar --r-algorithm=prob-lp+fm
 
-System generic
+System i10
 MPI OpenMPI
 
 Algorithms dKaMinPar dKaMinPar-FM
 #Algorithms ParHIP-Ecosocial
 Ks 4
 Threads 1x1 1x4 1x16
-Timelimit 8:00:00
-TimelimitPerInstance 10:00
+TimelimitPerInstance 1:00:00
 
 Graphs /G/
 

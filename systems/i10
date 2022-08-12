@@ -1,0 +1,7 @@
+#!/bin/bash 
+. "$script_pwd/../systems/generic"
+
+GenerateJobfileSubmission() {
+    echo "cat ${@} | exclusive bash &"
+    echo "disown"
+}
