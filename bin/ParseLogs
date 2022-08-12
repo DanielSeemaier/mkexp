@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+###############################################################################
+# ParseLogs                                                                   #
+#-----------------------------------------------------------------------------# 
+# Parse log files in a directory and output CSV.                              #
+# Usage: ParseLogs <format> [<dir>]                                           #
+###############################################################################
+format="$1"
+log_dir="${2:-"."}"
+
+script_dir=$(dirname "$0")
+script_filename="${script_dir}/../parsers/${format}"
+
+[[ -f "$script_filename" ]] || {
+    echo "Error: unsupported format $format"
+    exit 1
+}
+
+gawk -f "$script_filename" <(
+    for file in "$log_dir"/*; do
+	echo "__BEGIN_FILE__" $(basename "$file")
+	cat "$file" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" 
+	echo "__END_FILE__"
+    done
+)
+
+exit 0
+

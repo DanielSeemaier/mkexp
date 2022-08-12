@@ -227,6 +227,20 @@ chmod +x "$submit_filename"
 job_files_dir="$PWD/jobs"
 mkdir -p "$job_files_dir"
 
+log_files_dir="$PWD/logs"
+mkdir -p "$log_files_dir"
+
+for algorithm in ${_algorithms[@]}; do 
+    mkdir -p "$log_files_dir/$algorithm"
+done
+
+parser_filename="$PWD/parse.sh"
+echo "#!/usr/bin/env bash" > "$parser_filename"
+chmod +x "$parser_filename"
+
+results_dir="$PWD/results"
+mkdir -p "$results_dir"
+
 # Generate jobs
 LoadSystem "$_system"
 
@@ -236,13 +250,16 @@ FromDiskInvocation() {
     algorithm="$3"
     k="$4"
     graph="$5"
+    nodes="$6"
+    mpis="$7"
+    threads="$8"
 
     if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
         base="${_algorithm_definition_bases[$algorithm]}"
         arguments="${_algorithm_definition_arguments[$algorithm]}"
-        InvokePartitionerFromDisk "$base" "$graph" "$k" "$epsilon" "$seed" "$arguments"
+        InvokePartitionerFromDisk "$base" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$arguments"
     else
-        InvokePartitionerFromDisk "$algorithm" "$graph" "$k" "$epsilon" "$seed" ""
+        InvokePartitionerFromDisk "$algorithm" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" ""
     fi
 }
 
@@ -259,11 +276,13 @@ for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
     for seed in ${_seeds[@]}; do 
         for epsilon in ${_epsilons[@]}; do 
             for algorithm in ${_algorithms[@]}; do
-                for k in ${_ks[@]}; do 
+                for k in ${_ks[@]}; do
                     # Graphs from disk
                     for graph in ${_graphs[@]}; do
-                        exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph")
-                        GenerateJobfileEntry "$_mpi" "$nodes" "$mpis" "$threads" "$exe" >> "$job_filename"
+                        log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                        exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" "$nodes" "$mpis" "$threads")
+                        exe_with_mpi=$(GenerateJobfileEntry "$_mpi" "$nodes" "$mpis" "$threads" "$exe")
+                        echo "$exe_with_mpi >> $log_filename" >> "$job_filename"
                     done
                 done
             done
@@ -272,3 +291,14 @@ for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
 done
 
 GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
+
+for algorithm in ${_algorithms[@]}; do 
+    base="$algorithm"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
+        base="${_algorithm_definition_bases[$algorithm]}"
+    fi
+    echo "ParseLogs \"$base\" \"$log_files_dir/$algorithm\" > \"$results_dir/$algorithm.csv" >> "$parser_filename"
+done
+
+exit 0
+
