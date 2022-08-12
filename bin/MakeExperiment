@@ -20,6 +20,29 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
+###############################################################################
+LoadPartitioner() {
+    name="$1"
+    filename="$script_pwd/../partitioner/$name"
+    [[ -f "$filename" ]] || {
+        echo "Error: invalid partitioner $name"
+        echo "       $filename"
+        exit 1
+    }
+    . "$filename"
+}
+
+InvokePartitionerFromDisk() {
+    LoadPartitioner "$1"
+    InvokeFromDisk ${@:2}
+}
+
+InstallPartitioner() {
+    LoadPartitioner "${@}"
+    Install
+}
+###############################################################################
+
 # Functions to be called from the Experiment file
 declare -A _algorithm_definition_names
 declare -A _algorithm_definition_bases
@@ -29,6 +52,8 @@ declare -a _algorithms
 declare -a _ks
 declare -a _seeds
 declare -a _graphs 
+declare -a _epsilons
+declare -a _nodes_x_threads
 
 _timelimit=""
 _timelimit_per_instance=""
@@ -52,7 +77,6 @@ System() {
 }
 
 MPI() {
-
     return 0
 }
 
@@ -60,31 +84,9 @@ Algorithms() {
     _algorithms+=(${@})
 }
 
-PrintSummary() {
-    echo "Custom algorithm definitions:"
-    for algorithm in ${!_algorithm_definition_names[@]}; do 
-        echo "- $algorithm <- ${_algorithm_definition_bases[$algorithm]}"
-        echo "  ${_algorithm_definition_arguments[$algorithm]}"
-    done
-    echo ""
-
-    echo "Algorithms:"
-    for algorithm in ${_algorithms[@]}; do 
-        echo "- $algorithm"
-    done
-    echo ""
-
-    echo "Graphs:"
-    for graph in ${_graphs[@]}; do 
-        echo "- $graph"
-    done
-    echo ""
-
-    echo "Seeds: ${_seeds[*]}"
-    echo "Ks: ${_ks[*]}"
-    
+Threads() {
+    _nodes_x_threads+=(${@})
 }
-
 Seeds() {
     _seeds+=(${@})
 }
@@ -115,6 +117,10 @@ Graph() {
     _graphs+=("${1%.*}")
 }
 
+Epsilons() {
+    _epsilons+=(${@})
+}
+
 KaGen() {
 
     return 0
@@ -123,6 +129,31 @@ KaGen() {
 ScaledKaGen() {
 
     return 0
+}
+
+PrintSummary() {
+    echo "Custom algorithm definitions:"
+    for algorithm in ${!_algorithm_definition_names[@]}; do 
+        echo "- $algorithm <- ${_algorithm_definition_bases[$algorithm]}"
+        echo "  ${_algorithm_definition_arguments[$algorithm]}"
+    done
+    echo ""
+
+    echo "Algorithms:"
+    for algorithm in ${_algorithms[@]}; do 
+        echo "- $algorithm"
+    done
+    echo ""
+
+    echo "Graphs:"
+    for graph in ${_graphs[@]}; do 
+        echo "- $graph"
+    done
+    echo ""
+
+    echo "Seeds: ${_seeds[*]}"
+    echo "Ks: ${_ks[*]}"
+    
 }
 
 # Check that there is an Experiment file
@@ -134,22 +165,72 @@ ScaledKaGen() {
 # Read Experiment file
 . Experiment
 
-# Create job files
+# Install required partitioners
+for algorithm in ${_algorithm_definition_bases[@]}; do 
+    InstallPartitioner "$algorithm"
+done
+for algorithm in ${_algorithms[@]}; do
+    [[ -v "_algorithm_definition_names[$algorithm]" ]] || InstallPartitioner "$algorithm"
+done
 
+# Default unset variables
+[[ -v "_nodes_x_threads" ]] || _nodes_x_threads+=("1x1")
+[[ -v "_epsilons" ]] || _epsilons+=("0.03")
+[[ -v "_seeds" ]] || _seeds+=("0")
 
-###############################################################################
-LoadPartitioner() {
-    name="$1"
-    filename="$script_pwd/partitioner/$name"
-    [[ -f "$filename" ]] || {
-        echo "Error: invalid partitioner $name"
-        exit 1
-    }
-    . "$filename"
+# Create submit file
+submit_filename="$PWD/submit.sh"
+echo "#!/usr/bin/env bash" >> "$submit_filename"
+chmod +x "$submit_filename"
+
+job_files_dir="$PWD/jobs"
+mkdir -p "$job_files_dir"
+
+# Find number of nodes and number of threads
+ParseNodes() {
+    if [[ "$1" == *x* ]]; then 
+        echo "${1%x*}"
+    else # Number of nodes can be omitted
+        echo "1"
+    fi
+}
+ParseThreads() {
+    echo "${1#*x}"
 }
 
-InstallPartitioner() {
-    LoadPartitioner "${@}"
-    Install
+# Generate jobs
+FromDiskInvocation() {
+    seed="$1"
+    epsilon="$2"
+    algorithm="$3"
+    k="$4"
+    graph="$5"
+
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
+        base="${_algorithm_definition_bases[$algorithm]}"
+        arguments="${_algorithm_definition_arguments[$algorithm]}"
+        InvokePartitionerFromDisk "$base" "$graph" "$k" "$epsilon" "$seed" "$arguments"
+    else
+        InvokePartitionerFromDisk "$algorithm" "$graph" "$k" "$epsilon" "$seed" ""
+    fi
 }
 
+for nodes_x_threads in ${_nodes_x_threads[@]}; do
+    nodes=$(ParseNodes "$nodes_x_threads")
+    threads=$(ParseThreads "$nodes_x_threads")
+    job_filename="$job_files_dir/jobs_${nodes}_x_${threads}.sh"
+    rm -rf "$job_filename"
+   
+    for seed in ${_seeds[@]}; do 
+        for epsilon in ${_epsilons[@]}; do 
+            for algorithm in ${_algorithms[@]}; do
+                for k in ${_ks[@]}; do 
+                    # Graphs from disk
+                    for graph in ${_graphs[@]}; do
+                        FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" >> "$job_filename"
+                    done
+                done
+            done
+        done
+    done
+done

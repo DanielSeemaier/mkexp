@@ -5,19 +5,15 @@ System i10
 MPI OpenMPI
 
 Algorithms dKaMinPar dKaMinPar-FM
-Algorithms ParHIP-Ecosocial
-Seeds 1 2 3 4 5
-Ks 2 4 8 16 32 64 128
+#Algorithms ParHIP-Ecosocial
+Ks 4
 Threads 1x1 1x4 1x16
 Timelimit 8:00:00
 TimelimitPerInstance 10:00
 
-
-Graphs /G/rgg/
-Graph /G/citation/citationCiteseer
+Graphs /G/
 
 KaGen rgg2d 10 15
 ScaledKaGen rgg2d 10 15
-
 
 PrintSummary
