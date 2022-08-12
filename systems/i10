@@ -2,6 +2,6 @@
 . "$script_pwd/../systems/generic"
 
 GenerateJobfileSubmission() {
-    echo "cat ${@} | exclusive bash &"
+    echo "nohup exclusive bash -- ${@} &"
     echo "disown"
 }
