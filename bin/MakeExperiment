@@ -41,6 +41,17 @@ InstallPartitioner() {
     LoadPartitioner "${@}"
     Install
 }
+
+LoadSystem() {
+    name="$1"
+    filename="$script_pwd/../systems/$name"
+    [[ -f "$filename" ]] || {
+        echo "Error: invalid system $name"
+        echo "       $filename"
+        exit 1
+    }
+    . "$filename"
+}
 ###############################################################################
 
 # Functions to be called from the Experiment file
@@ -57,6 +68,8 @@ declare -a _nodes_x_threads
 
 _timelimit=""
 _timelimit_per_instance=""
+_system="generic"
+_mpi="none"
 
 DefineAlgorithm() {
     name="$1"
@@ -73,11 +86,11 @@ DefineAlgorithm() {
 }
 
 System() {
-    return 0
+    _system="$1"
 }
 
 MPI() {
-    return 0
+    _mpi="$1"
 }
 
 Algorithms() {
@@ -179,8 +192,14 @@ done
 [[ -v "_seeds" ]] || _seeds+=("0")
 
 # Create submit file
+gitignore_filename="$PWD/.gitignore"
+cat <<EOT > "$gitignore_filename"
+submit.sh
+jobs/
+EOT
+
 submit_filename="$PWD/submit.sh"
-echo "#!/usr/bin/env bash" >> "$submit_filename"
+echo "#!/usr/bin/env bash" > "$submit_filename"
 chmod +x "$submit_filename"
 
 job_files_dir="$PWD/jobs"
@@ -199,6 +218,8 @@ ParseThreads() {
 }
 
 # Generate jobs
+LoadSystem "$_system"
+
 FromDiskInvocation() {
     seed="$1"
     epsilon="$2"
@@ -215,11 +236,13 @@ FromDiskInvocation() {
     fi
 }
 
+declare -a jobfiles
 for nodes_x_threads in ${_nodes_x_threads[@]}; do
     nodes=$(ParseNodes "$nodes_x_threads")
     threads=$(ParseThreads "$nodes_x_threads")
     job_filename="$job_files_dir/jobs_${nodes}_x_${threads}.sh"
-    rm -rf "$job_filename"
+    GenerateJobfileHeader "$_mpi" "$nodes" "$threads" "$_timelimit" > "$job_filename"
+    jobfiles+=("$job_filename")
    
     for seed in ${_seeds[@]}; do 
         for epsilon in ${_epsilons[@]}; do 
@@ -227,10 +250,13 @@ for nodes_x_threads in ${_nodes_x_threads[@]}; do
                 for k in ${_ks[@]}; do 
                     # Graphs from disk
                     for graph in ${_graphs[@]}; do
-                        FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" >> "$job_filename"
+                        exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph")
+                        GenerateJobfileEntry "$_mpi" "$nodes" "$threads" "$exe" >> "$job_filename"
                     done
                 done
             done
         done
     done
 done
+
+GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename

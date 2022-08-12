@@ -1,0 +1,32 @@
+#!/bin/bash 
+#system_cores_per_node="$(getconf _NPROCESSORS_ONLN 2>/dev/null)"
+#system_max_cores_per_node="$system_cores_per_node"
+
+GenerateJobfileHeader() {
+    return 0
+}
+
+GenerateJobfileEntry() {
+    mpi="$1"
+    nodes="$2"
+    threads="$3"
+    exe="$4"
+
+    case "$mpi" in 
+        none)
+            echo "$exe"
+            ;;
+        OpenMPI)
+            echo "mpirun -n $nodes --bind-to core --map-by socket:PE=${threads} $exe"
+            ;;
+        *)
+            >&2 echo "Error: unsupported MPI $mpi"
+            exit 1
+    esac
+}
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do
+        echo "bash $jobfile"
+    done
+}
