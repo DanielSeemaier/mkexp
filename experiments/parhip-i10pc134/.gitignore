@@ -1,0 +1,5 @@
+submit.sh
+parse.sh
+nohup.out
+logs/
+jobs/

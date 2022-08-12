@@ -1,0 +1,15 @@
+#!/bin/bash
+DefineAlgorithm ParHIP-Fast   ParHIP    --preconfiguration=fastsocial
+DefineAlgorithm ParHIP-Eco    ParHIP    --preconfiguration=ecosocial
+
+Algorithms ParHIP-Fast ParHIP-Eco
+
+System i10
+MPI OpenMPI
+TimelimitPerInstance 30:00
+
+Ks 16
+Threads 16x1
+Graphs /global_data/graphs/benchmark_sets/parhip_paper
+
+PrintSummary
