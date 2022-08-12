@@ -1,8 +1,19 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ -x "$DGP_PREFIX/bin/dKaMinPar" ]]; then
+    if [[ ! -x "$DGP_PREFIX/bin/dKaMinPar" ]]; then
+        return 1
+    fi
+    if [[ ! -d "$DGP_PREFIX/src/KaMinPar" ]]; then 
+        return 1
+    fi
+
+    git -C "$DGP_PREFIX/src/KaMinPar" fetch
+    local_hash=$(git -C "$DGP_PREFIX/src/KaMinPar" rev-parse HEAD)
+    remote_hash=$(git -C "$DGP_PREFIX/src/KaMinPar" rev-parse @{u})
+    if [[ "$local_hash" == "$remote_hash" ]]; then 
         return 0
     fi
+
     return 1
 }
 
@@ -11,14 +22,21 @@ Binary() {
 }
 
 Install() {
-    if ! IsInstalled; then 
+    if IsInstalled; then 
+        return 0
+    fi
+
+    if [[ ! -d "$DGP_PREFIX/src/KaMinPar" ]]; then 
         git clone git@github.com:DanielSeemaier/KaMinPar.git "$DGP_PREFIX/src/KaMinPar"
         git -C "$DGP_PREFIX/src/KaMinPar" submodule update --init --recursive
-        cmake -S "$DGP_PREFIX/src/KaMinPar" -B "$DGP_PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
-        cmake --build "$DGP_PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
-        mkdir -p "$DGP_PREFIX/bin"
-        cp "$DGP_PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$DGP_PREFIX/bin/dKaMinPar"
+    else 
+        git -C "$DGP_PREFIX/src/KaMinPar" pull
     fi
+
+    cmake -S "$DGP_PREFIX/src/KaMinPar" -B "$DGP_PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$DGP_PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
+    mkdir -p "$DGP_PREFIX/bin"
+    cp "$DGP_PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$(Binary)"
 }
 
 InvokeFromDisk() {

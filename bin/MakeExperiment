@@ -240,15 +240,16 @@ if [[ $filter_algorithms != "0" ]]; then
             echo "Disable target $algorithm"
         fi
     done
-    algorithms=$filtered_algorithms
+    _algorithms=$filtered_algorithms
 fi
 
 # Install required partitioners
-for algorithm in ${_algorithm_definition_bases[@]}; do 
-    InstallPartitioner "$algorithm"
-done
 for algorithm in ${_algorithms[@]}; do
-    [[ -v "_algorithm_definition_names[$algorithm]" ]] || InstallPartitioner "$algorithm"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        InstallPartitioner "${_algorithm_definition_bases[$algorithm]}"
+    else 
+        InstallPartitioner "$algorithm"
+    fi
 done
 
 # Default unset variables
