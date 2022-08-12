@@ -349,7 +349,7 @@ for algorithm in ${_algorithms[@]}; do
     if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
         base="${_algorithm_definition_bases[$algorithm]}"
     fi
-    echo "ParseLogs \"$base\" \"$log_files_dir/$algorithm\" > \"$results_dir/$algorithm.csv" >> "$parser_filename"
+    echo "ParseLogs \"$base\" \"$log_files_dir/$algorithm\" > \"$results_dir/$algorithm.csv\"" >> "$parser_filename"
 done
 
 exit 0
