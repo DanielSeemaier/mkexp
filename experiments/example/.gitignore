@@ -1,2 +1,4 @@
 submit.sh
+parse.sh
+logs/
 jobs/

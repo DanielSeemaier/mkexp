@@ -4,18 +4,17 @@ GenerateJobfileHeader() {
 }
 
 GenerateJobfileEntry() {
-    mpi="$1"
-    nodes="$2"
-    mpis="$3"
-    threads="$4"
-    exe="$5"
+    nodes="$1"
+    mpis="$2"
+    threads="$3"
+    exe="$4"
 
     if (( $nodes > 1 )); then
         >&2 echo "Error: generic systems do not support multi-node execution"
         exit 1
     fi
 
-    case "$mpi" in 
+    case "$_mpi" in 
         none)
             echo "$exe"
             ;;
@@ -23,7 +22,7 @@ GenerateJobfileEntry() {
             echo "mpirun -n $mpis --bind-to core --map-by socket:PE=${threads} $exe"
             ;;
         *)
-            >&2 echo "Error: unsupported MPI $mpi"
+            >&2 echo "Error: unsupported MPI $_mpi"
             exit 1
     esac
 }

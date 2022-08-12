@@ -61,6 +61,7 @@ ParseNodes() {
         echo "1"
     fi
 }
+
 ParseMPIs() {
     if [[ "$1" == *x* ]]; then 
         without_threads="${1%x*}"
@@ -69,10 +70,32 @@ ParseMPIs() {
         echo "1"
     fi
 }
+
 ParseThreads() {
     echo "${1##*x}"
 }
 
+ParseTimelimit() {
+    time="$1"
+    seconds="${time##*:}"
+    minutes=0
+    hours=0
+    days=0
+    if [[ "$time" == *:* ]]; then 
+        time="${time%:*}"
+        minutes="${time##*:}"
+    fi 
+    if [[ "$time" == *:* ]]; then
+        time="${time%:*}"
+        hours="${time##*:}"
+    fi
+    if [[ "$time" == *:* ]]; then
+        time="${time%:*}"
+        days="${time}"
+    fi
+    
+    echo $((seconds+60*minutes+60*60*hours+24*60*60*days))
+}
 ###############################################################################
 
 # Functions to be called from the Experiment file
@@ -283,9 +306,15 @@ for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
                     for graph in ${_graphs[@]}; do
                         log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
                         exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" "$nodes" "$mpis" "$threads")
-                        exe_with_mpi=$(GenerateJobfileEntry "$_mpi" "$nodes" "$mpis" "$threads" "$exe")
-                        echo "$exe_with_mpi >> $log_filename" >> "$job_filename"
+                        exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
+                        exe_with_timelimit="$exe_with_mpi"
+                        if [[ "$_timelimit_per_instance" != "" ]]; then 
+                            exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
+                        fi
+                        echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
                     done
+
+                    # Graphs from KaGen
                 done
             done
         done

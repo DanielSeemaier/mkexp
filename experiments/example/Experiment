@@ -38,7 +38,7 @@ Threads 1x2x3 4x5 6
 
 # [Optional]
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
-TimelimitPerInstance 1:00:00
+TimelimitPerInstance 30:00
 
 # [Optional]
 # Directory containing all graphs to be included in the experiment.
