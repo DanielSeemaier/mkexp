@@ -241,6 +241,7 @@ gitignore_filename="$PWD/.gitignore"
 cat <<EOT > "$gitignore_filename"
 submit.sh
 parse.sh
+nohup.out
 logs/
 jobs/
 EOT
