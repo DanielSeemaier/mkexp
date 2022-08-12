@@ -1,6 +1,8 @@
 #!/bin/bash
-DefineAlgorithm dKaMinPar-FM dKaMinPar --r-algorithm=prob-lp+fm
-Algorithms dKaMinPar dKaMinPar-FM
+DefineAlgorithm dKaMinPar-FM1 dKaMinPar --r-algorithm=prob-lp+fm --r-fm-iterations=1
+DefineAlgorithm dKaMinPar-FM5 dKaMinPar --r-algorithm=prob-lp+fm --r-fm-iterations=5
+
+Algorithms dKaMinPar dKaMinPar-FM1 dKaMinPar-FM5
 
 System i10
 MPI OpenMPI
