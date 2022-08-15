@@ -1,0 +1,70 @@
+#!/usr/bin/env Rscript
+options(error=traceback)
+
+library(this.path)
+root = paste0(dirname(this.path()), "/..")
+source(paste0(root, "/plots/functions.R"), chdir = TRUE)
+
+algorithms = commandArgs(trailingOnly = TRUE)
+num_algorithms = length(algorithms)
+
+data <- list()
+for (algorithm in algorithms) {
+    df <- read.csv(paste0("results/", algorithm, ".csv"))
+    df$algorithm <- algorithm
+    df$graph <- sub(".graph", "", df$Graph)
+    df$imbalance <- df$Balance
+    df$objective <- "km1"
+    df$km1 <- df$Cut
+    df$cut <- df$Cut 
+    df$totalPartitionTime <- df$Time
+    df$num_threads <- df$NumPEs
+    df$seed <- 0
+    df$k <- df$K
+    df <- df %>% mutate(failed = ifelse(Failed == 1, "yes", "no"))
+
+    df <- aggreg_data(df, timelimit = 3600, seeds = 9999, epsilon = 0.03)
+    df$algorithm <- algorithm
+
+    data <- append(data, list(df))
+}
+
+palette <- brewer.pal(n = num_algorithms, name = "Set1")
+algo_color_mapping <- c()
+i <- 0
+for (algorithm in algorithms) {
+    i <- i + 1
+    algo_color_mapping[algorithm] = palette[[i]]
+}
+
+pdf("plots.pdf")
+print(performace_plot(data,
+    objective = "avg_km1",
+    hide_y_axis_title = FALSE,
+    show_infeasible_tick = FALSE,
+    show_timeout_tick = TRUE,
+    widths = c(3, 2, 1, 1),
+    latex_export = FALSE,
+    small_size = FALSE))
+
+for (i in 1:(num_algorithms - 1)) {
+    for (j in (i+1):num_algorithms) {
+        print(performace_plot(list(data[[i]], data[[j]]),
+            objective = "avg_km1",
+            hide_y_axis_title = FALSE,
+            show_infeasible_tick = FALSE,
+            show_timeout_tick = TRUE,
+            widths = c(3, 2, 1, 1),
+            latex_export = FALSE,
+            small_size = FALSE))
+    }
+}
+
+print(running_time_box_plot(data,
+    show_infeasible_tick = TRUE,
+    show_timeout_tick = TRUE,
+    order = algorithms,
+    latex_export = FALSE,
+    small_size = FALSE))
+dev.off()
+

@@ -406,5 +406,9 @@ if [[ $mode == "purge" ]]; then
     fi
 fi
 
+if [[ $mode == "plot" ]]; then 
+    MakePlots ${_algorithms[@]}
+fi
+
 exit 0
 
