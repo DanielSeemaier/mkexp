@@ -46,6 +46,10 @@ while [[ $# -gt 0 ]]; do
             mode="stats"
             shift
             ;;
+        --help)
+            mode="help"
+            shift
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -56,6 +60,23 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ $mode == "help" ]]; then 
+    echo "Usage: call from within a directory containing a file named 'Experiment'"
+    echo ""
+    echo "MakeExperiment [--parse, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo ""
+    echo "Without any options, generate the jobfiles and directory structure to run the experiment."
+    echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as position arguments"
+    echo ""
+    echo "Options are:"
+    echo "    --parse: Parse log files (after executing the experiment) and output CSV files"
+    echo "    --plot:  Generate performance- and running time plots from the CSV files"
+    echo "    --stats: Compute some statistics from the CSV files"
+    echo "    --clean: Delete generated experiment files"
+    echo "    --purge: --clean, but also delete log and result files"
+    exit 0
+fi
 
 # If positional arguments are present, filter active algorithms with it
 filter_algorithms=0
