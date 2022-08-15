@@ -20,12 +20,44 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
-# If arguments are present, filter active algorithms with it
-filter_algorithms=$((${#@} != 0))
+# Parse arguments
+mode="generate"
 declare -A active_algorithms
-for algorithm in ${@}; do 
-    active_algorithms[$algorithm]=1
+
+while [[ $# -gt 0 ]]; do 
+    case $1 in 
+        --parse)
+            mode="parse"
+            shift
+            ;;
+        --plot)
+            mode="plot"
+            shift 
+            ;;
+        --clean)
+            mode="clean"
+            shift 
+            ;;
+        --purge)
+            mode="purge"
+            shift
+            ;;
+        -*|--*)
+            echo "Error: unknown option $1"
+            exit 1
+            ;;
+        *)
+            active_algorithms[$1]=1
+            shift
+            ;;
+    esac
 done
+
+# If positional arguments are present, filter active algorithms with it
+filter_algorithms=0
+if [[ -v active_algorithms[@] ]]; then
+    filter_algorithms=1
+fi
 
 ###############################################################################
 LoadPartitioner() {
@@ -192,6 +224,10 @@ ScaledKaGen() {
 }
 
 PrintSummary() {
+    if [[ $mode != "generate" ]]; then 
+        return 0
+    fi
+
     echo "Custom algorithm definitions:"
     for algorithm in ${!_algorithm_definition_names[@]}; do 
         echo "- $algorithm <- ${_algorithm_definition_bases[$algorithm]}"
@@ -244,22 +280,30 @@ if [[ $filter_algorithms != "0" ]]; then
 fi
 
 # Install required partitioners
-for algorithm in ${_algorithms[@]}; do
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
-        InstallPartitioner "${_algorithm_definition_bases[$algorithm]}"
-    else 
-        InstallPartitioner "$algorithm"
-    fi
-done
+if [[ $mode == "generate" ]]; then
+    for algorithm in ${_algorithms[@]}; do
+        if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+            InstallPartitioner "${_algorithm_definition_bases[$algorithm]}"
+        else 
+            InstallPartitioner "$algorithm"
+        fi
+    done
+fi
 
 # Default unset variables
 [[ -v "_nodes_x_mpis_x_threads" ]] || _nodes_x_mpis_x_threads+=("1x1x1")
 [[ -v "_epsilons" ]] || _epsilons+=("0.03")
 [[ -v "_seeds" ]] || _seeds+=("0")
 
-# Create submit file
 gitignore_filename="$PWD/.gitignore"
-cat <<EOT > "$gitignore_filename"
+submit_filename="$PWD/submit.sh"
+job_files_dir="$PWD/jobs"
+log_files_dir="$PWD/logs"
+results_dir="$PWD/results"
+
+# Create files file
+if [[ $mode == "generate" ]]; then 
+    cat <<EOT > "$gitignore_filename"
 submit.sh
 parse.sh
 nohup.out
@@ -267,26 +311,20 @@ logs/
 jobs/
 EOT
 
-submit_filename="$PWD/submit.sh"
-echo "#!/usr/bin/env bash" > "$submit_filename"
-chmod +x "$submit_filename"
+    echo "#!/usr/bin/env bash" > "$submit_filename"
+    chmod +x "$submit_filename"
 
-job_files_dir="$PWD/jobs"
-mkdir -p "$job_files_dir"
+    mkdir -p "$job_files_dir"
+    mkdir -p "$log_files_dir"
 
-log_files_dir="$PWD/logs"
-mkdir -p "$log_files_dir"
+    for algorithm in ${_algorithms[@]}; do 
+        mkdir -p "$log_files_dir/$algorithm"
+    done
+fi
 
-for algorithm in ${_algorithms[@]}; do 
-    mkdir -p "$log_files_dir/$algorithm"
-done
-
-parser_filename="$PWD/parse.sh"
-echo "#!/usr/bin/env bash" > "$parser_filename"
-chmod +x "$parser_filename"
-
-results_dir="$PWD/results"
-mkdir -p "$results_dir"
+if [[ $mode == "parse" ]]; then
+    mkdir -p "$results_dir"
+fi
 
 # Generate jobs
 LoadSystem "$_system"
@@ -310,48 +348,63 @@ FromDiskInvocation() {
     fi
 }
 
-declare -a jobfiles
-for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
-    nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
-    mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
-    threads=$(ParseThreads "$nodes_x_mpis_x_threads")
+if [[ $mode == "generate" ]]; then
+    declare -a jobfiles
+    for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
+        nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
+        mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
+        threads=$(ParseThreads "$nodes_x_mpis_x_threads")
 
-    job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
-    GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
-    jobfiles+=("$job_filename")
-   
-    for seed in ${_seeds[@]}; do 
-        for epsilon in ${_epsilons[@]}; do 
-            for algorithm in ${_algorithms[@]}; do
-                for k in ${_ks[@]}; do
-                    # Graphs from disk
-                    for graph in ${_graphs[@]}; do
-                        log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
-                        exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" "$nodes" "$mpis" "$threads")
-                        exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
-                        exe_with_timelimit="$exe_with_mpi"
-                        if [[ "$_timelimit_per_instance" != "" ]]; then 
-                            exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
-                        fi
-                        echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
+        job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
+        GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
+        jobfiles+=("$job_filename")
+
+        for seed in ${_seeds[@]}; do 
+            for epsilon in ${_epsilons[@]}; do 
+                for algorithm in ${_algorithms[@]}; do
+                    for k in ${_ks[@]}; do
+                        # Graphs from disk
+                        for graph in ${_graphs[@]}; do
+                            log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                            exe=$(FromDiskInvocation "$seed" "$epsilon" "$algorithm" "$k" "$graph" "$nodes" "$mpis" "$threads")
+                            exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
+                            exe_with_timelimit="$exe_with_mpi"
+                            if [[ "$_timelimit_per_instance" != "" ]]; then 
+                                exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
+                            fi
+                            echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
+                        done
                     done
-
-                    # Graphs from KaGen
                 done
             done
         done
     done
-done
 
-GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
+    GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
+fi 
 
-for algorithm in ${_algorithms[@]}; do 
-    base="$algorithm"
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
-        base="${_algorithm_definition_bases[$algorithm]}"
+if [[ $mode == "parse" ]]; then
+    for algorithm in ${_algorithms[@]}; do 
+        base="$algorithm"
+        if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
+            base="${_algorithm_definition_bases[$algorithm]}"
+        fi
+        ParseLogs "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+    done
+fi
+
+if [[ $mode == "clean" || $mode == "purge" ]]; then 
+    rm -rf "$submit_filename" "$job_files_dir" parse.sh
+fi
+if [[ $mode == "purge" ]]; then
+    echo "!!! About to delete the following directories:"
+    echo "    $log_files_dir"
+    echo "    $results_dir"
+    read -p "Continue (y/n)?" cont
+    if [[ $cont == "y" ]]; then
+        rm -rf "$log_files_dir" "$results_dir"
     fi
-    echo "ParseLogs \"$base\" \"$log_files_dir/$algorithm\" > \"$results_dir/$algorithm.csv\"" >> "$parser_filename"
-done
+fi
 
 exit 0
 
