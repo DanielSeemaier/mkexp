@@ -2,6 +2,7 @@
 options(error=traceback)
 
 library(this.path)
+
 root = paste0(dirname(this.path()), "/..")
 source(paste0(root, "/plots/functions.R"), chdir = TRUE)
 
@@ -29,42 +30,28 @@ for (algorithm in algorithms) {
     data <- append(data, list(df))
 }
 
-palette <- brewer.pal(n = num_algorithms, name = "Set1")
-algo_color_mapping <- c()
-i <- 0
-for (algorithm in algorithms) {
-    i <- i + 1
-    algo_color_mapping[algorithm] = palette[[i]]
+gmean <- function(x) {
+    return(exp(mean(log(x))))
 }
-
-pdf("plots.pdf")
-print(performace_plot(data,
-    objective = "avg_km1",
-    hide_y_axis_title = FALSE,
-    show_infeasible_tick = FALSE,
-    show_timeout_tick = TRUE,
-    widths = c(3, 2, 1, 1),
-    latex_export = FALSE,
-    small_size = FALSE))
 
 for (i in 1:(num_algorithms - 1)) {
     for (j in (i+1):num_algorithms) {
-        print(performace_plot(list(data[[i]], data[[j]]),
-            objective = "avg_km1",
-            hide_y_axis_title = FALSE,
-            show_infeasible_tick = FALSE,
-            show_timeout_tick = TRUE,
-            widths = c(3, 2, 1, 1),
-            latex_export = FALSE,
-            small_size = FALSE))
+        a <- data[[i]]
+        b <- data[[j]]
+
+        a_ok <- subset(a, failed == FALSE)
+        b_ok <- subset(b, failed == FALSE)
+        
+        a_graphs <- unique(a_ok$graph)
+        b_graphs <- unique(b_ok$graph)
+
+        a_common <- subset(a_ok, graph %in% b_graphs)
+        b_common <- subset(b_ok, graph %in% a_graphs)
+
+        cat(paste0(algorithms[[i]], " vs. ", algorithms[[j]], "\n"))
+        cat(paste0("  # instances: ", nrow(a_common), " vs. ", nrow(b_common), "\n"))
+        cat(paste0("  gmean cut: ", gmean(a_common$avg_cut), " vs. ", gmean(b_common$avg_cut), "\n"))
+        cat(paste0("  time: ", gmean(a_common$avg_time), " vs. ",  gmean(b_common$avg_time), "\n"))
     }
 }
-
-print(running_time_box_plot(data,
-    show_infeasible_tick = TRUE,
-    show_timeout_tick = TRUE,
-    order = algorithms,
-    latex_export = FALSE,
-    small_size = FALSE))
-dev.off()
 

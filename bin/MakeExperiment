@@ -42,6 +42,10 @@ while [[ $# -gt 0 ]]; do
             mode="purge"
             shift
             ;;
+        --stats)
+            mode="stats"
+            shift
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -408,6 +412,10 @@ fi
 
 if [[ $mode == "plot" ]]; then 
     MakePlots ${_algorithms[@]}
+fi
+
+if [[ $mode == "stats" ]]; then 
+    MakeStats ${_algorithms[@]}
 fi
 
 exit 0
