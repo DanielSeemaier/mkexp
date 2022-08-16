@@ -19,6 +19,9 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
+# Init git submodules 
+git -C "$script_pwd" submodule update --init --recursive 
+
 # Parse arguments
 mode="generate"
 declare -A active_algorithms
@@ -48,6 +51,14 @@ while [[ $# -gt 0 ]]; do
             mode="help"
             shift
             ;;
+        --submit)
+            mode="submit"
+            shift
+            ;;
+        --install)
+            mode="install"
+            shift 
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -62,13 +73,15 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "MakeExperiment [--parse, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
-    echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as position arguments"
+    echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
     echo ""
     echo "Options are:"
-    echo "    --parse: Parse log files (after executing the experiment) and output CSV files"
+    echo "    --install: Install partitioners"
+    echo "    --submit: Start the experiment"
+    echo "    --results: Parse log files (after executing the experiment) and output CSV files"
     echo "    --plot:  Generate performance- and running time plots from the CSV files"
     echo "    --stats: Compute some statistics from the CSV files"
     echo "    --clean: Delete generated experiment files"
@@ -306,7 +319,7 @@ fi
 PREFIX="$PWD/usr"
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
 
-if [[ $mode == "generate" ]]; then
+if [[ $mode == "generate" || $mode == "install" ]]; then
     for algorithm in ${_algorithms[@]}; do
         if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
             InstallPartitioner "${_algorithm_definition_bases[$algorithm]}"
@@ -411,6 +424,7 @@ if [[ $mode == "generate" ]]; then
 fi 
 
 if [[ $mode == "results" ]]; then
+    mkdir -p "$results_dir"
     for algorithm in ${_algorithms[@]}; do 
         base="$algorithm"
         if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
@@ -427,10 +441,10 @@ if [[ $mode == "purge" ]]; then
     echo "!!! About to delete the following directories:"
     echo "    $log_files_dir"
     echo "    $results_dir"
-    echo "    $DGP_PREFIX"
+    echo "    $PREFIX"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir" "$DGP_PREFIX"
+        rm -rf "$log_files_dir" "$results_dir" "$PREFIX"
     fi
 fi
 
@@ -440,6 +454,13 @@ fi
 
 if [[ $mode == "stats" ]]; then 
     mkstats ${_algorithms[@]}
+fi
+
+if [[ $mode == "submit" ]]; then 
+    if [[ ! -f "$submit_filename" ]]; then 
+        mkexp
+    fi
+    bash "$submit_filename"
 fi
 
 exit 0
