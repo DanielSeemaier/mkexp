@@ -2,43 +2,45 @@
 BEGIN {
     header()
     reset()
+}
+
+/__BEGIN_FILE__/ {
+    sub(/__BEGIN_FILE__ /, "", $0)
+    split($0, parts, "___")
+    data["Graph"] = parts[1]
+
+    split(parts[2], parts, "_")
+    for (i in parts) {
+        if (match(parts[i], /k([0-9]+)/, m)) {
+            data["K"] = m[1]
+        } else if (match(parts[i], /P([0-9]+)x([0-9]+)x([0-9]+)/, m)) {
+            data["NumNodes"] = m[1]
+            data["NumMPIsPerNode"] = m[2]
+            data["NumThreadsPerMPI"] = m[3]
+        } else if (match(parts[i], /seed([0-9]+)/, m)) {
+            data["Seed"] = m[1]
+        } else if (match(parts[i], /eps([0-9\.\-e]+)/, m)) {
+            data["Epsilon"] = m[1]
+        }
+    }
+
     level = 0
 }
 
 /__END_FILE__/ {
     yield()
-    level = 0
 }
 
 match($0, /global_n=([0-9]+) global_m=([0-9]+)/, m) {
     if (level == 0) {
-	data["N"] = m[1]
-	data["M"] = m[2]
-	level++
+	    data["N"] = m[1]
+	    data["M"] = m[2]
+        level++
     }
 }
 
-match($0, /MPI size=([0-9]+)/, m) {
-    data["Nodes"] = m[1]
-}
-
-match($0, /__BEGIN_FILE__ (.*)__k.*/, m) {
-    data["Graph"] = m[1]
-}
-
-# from file
-match($0, /graph_filename=(.*\/([^ ]*)(\.graph|\.bgf)).* seed=([0-9]+).* partition\.k=([0-9]+).* parallel\.num_threads=([0-9]+)/, m) {
-    data["Graph"] = m[2]
+match($0, /seed=([0-9]+).*/, m) {
     data["Seed"] = m[4]
-    data["K"] = m[5]
-    data["Threads"] = m[6]
-}
-
-# from generator
-match($0, /seed=([0-9]+).* partition\.k=([0-9]+).* parallel\.num_threads=([0-9]+)/, m) {
-    data["Seed"] = m[1]
-    data["K"] = m[2]
-    data["Threads"] = m[3]
 }
 
 match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
@@ -53,11 +55,6 @@ match($0, /-> cut=([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
-match($0, /Initial partition: cut=([0-9]+) imbalance=([0-9\.\-e]+)/, m) {
-    data["InitialCut"] = m[1] 
-    data["InitialImbalance"] = m[2]
-}
-
 END {
     yield()
 }
@@ -69,35 +66,31 @@ function header() {
     printf "K,"
     printf "Seed,"
     printf "Cut,"
+    printf "Epsilon,"
     printf "Balance,"
-    printf "InitialCut,"
-    printf "InitialImbalance,"
     printf "Time,"
     printf "NumNodes,"
-    printf "NumThreads,"
-    printf "NumPEs,"
+    printf "NumMPIsPerNode,"
+    printf "NumThreadsPerMPI,"
     printf "Failed\n"
 }
 
 function yield() {
-    if (length(data) <= 4) { return }
-    
-    PEs = data["Nodes"] * data["Threads"]
-    failed = (length(data) != 12)
-    
+    if (length(data) == 0) { return }
+
+    failed = length(data) != 12
     printf "%s,", data["Graph"]
     printf "%d,", data["N"]
     printf "%d,", data["M"]
     printf "%d,", data["K"]
     printf "%d,", data["Seed"]
     printf "%d,", data["Cut"]
+    printf "%f,", data["Epsilon"]
     printf "%f,", data["Balance"]
-    printf "%d,", data["InitialCut"]
-    printf "%f,", data["InitialImbalance"]
     printf "%f,", data["Time"]
-    printf "%d,", data["Nodes"]
-    printf "%d,", data["Threads"]
-    printf "%d,", PEs
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
     printf "%d\n", failed
     
     reset()
