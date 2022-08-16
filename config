@@ -1,0 +1,2 @@
+[[ -f "$script_pwd/../private" ]] && . "$script_pwd/../private"
+

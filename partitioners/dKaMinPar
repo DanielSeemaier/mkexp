@@ -1,15 +1,15 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ ! -x "$DGP_PREFIX/bin/dKaMinPar" ]]; then
+    if [[ ! -x "$PREFIX/bin/dKaMinPar" ]]; then
         return 1
     fi
-    if [[ ! -d "$DGP_PREFIX/src/KaMinPar" ]]; then 
+    if [[ ! -d "$PREFIX/src/KaMinPar" ]]; then 
         return 1
     fi
 
-    git -C "$DGP_PREFIX/src/KaMinPar" fetch
-    local_hash=$(git -C "$DGP_PREFIX/src/KaMinPar" rev-parse HEAD)
-    remote_hash=$(git -C "$DGP_PREFIX/src/KaMinPar" rev-parse @{u})
+    git -C "$PREFIX/src/KaMinPar" fetch
+    local_hash=$(git -C "$PREFIX/src/KaMinPar" rev-parse HEAD)
+    remote_hash=$(git -C "$PREFIX/src/KaMinPar" rev-parse @{u})
     if [[ "$local_hash" == "$remote_hash" ]]; then 
         return 0
     fi
@@ -18,7 +18,7 @@ IsInstalled() {
 }
 
 Binary() {
-    echo "$DGP_PREFIX/bin/dKaMinPar"
+    echo "$PREFIX/bin/dKaMinPar"
 }
 
 Install() {
@@ -26,17 +26,17 @@ Install() {
         return 0
     fi
 
-    if [[ ! -d "$DGP_PREFIX/src/KaMinPar" ]]; then 
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$DGP_PREFIX/src/KaMinPar"
-        git -C "$DGP_PREFIX/src/KaMinPar" submodule update --init --recursive
+    if [[ ! -d "$PREFIX/src/KaMinPar" ]]; then 
+        git clone git@github.com:DanielSeemaier/KaMinPar.git "$PREFIX/src/KaMinPar"
+        git -C "$PREFIX/src/KaMinPar" submodule update --init --recursive
     else 
-        git -C "$DGP_PREFIX/src/KaMinPar" pull
+        git -C "$PREFIX/src/KaMinPar" pull
     fi
 
-    cmake -S "$DGP_PREFIX/src/KaMinPar" -B "$DGP_PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
-    cmake --build "$DGP_PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
-    mkdir -p "$DGP_PREFIX/bin"
-    cp "$DGP_PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$(Binary)"
+    cmake -S "$PREFIX/src/KaMinPar" -B "$PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
+    mkdir -p "$PREFIX/bin"
+    cp "$PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$(Binary)"
 }
 
 InvokeFromDisk() {

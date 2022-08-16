@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 ###############################################################################
-# MakeExperiment                                                              #
+# mkexp                                                                       #
 #-----------------------------------------------------------------------------# 
 # Reads the `Experiment` file in the current working directory and creates    #
 # jobfiles for the experiment.                                                #
 ###############################################################################
-
 set -o pipefail
 set -o errtrace
 set -o nounset
@@ -23,15 +22,14 @@ script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 # Parse arguments
 mode="generate"
 declare -A active_algorithms
-
 while [[ $# -gt 0 ]]; do 
     case $1 in 
-        --parse)
-            mode="parse"
+        --results)
+            mode="results"
             shift
             ;;
-        --plot)
-            mode="plot"
+        --plots)
+            mode="plots"
             shift 
             ;;
         --clean)
@@ -305,6 +303,9 @@ if [[ $filter_algorithms != "0" ]]; then
 fi
 
 # Install required partitioners
+PREFIX="$PWD/usr"
+mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
+
 if [[ $mode == "generate" ]]; then
     for algorithm in ${_algorithms[@]}; do
         if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
@@ -334,6 +335,7 @@ parse.sh
 nohup.out
 logs/
 jobs/
+usr/
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
@@ -408,13 +410,13 @@ if [[ $mode == "generate" ]]; then
     GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
 fi 
 
-if [[ $mode == "parse" ]]; then
+if [[ $mode == "results" ]]; then
     for algorithm in ${_algorithms[@]}; do 
         base="$algorithm"
         if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
             base="${_algorithm_definition_bases[$algorithm]}"
         fi
-        ParseLogs "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+        mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
     done
 fi
 
@@ -425,18 +427,19 @@ if [[ $mode == "purge" ]]; then
     echo "!!! About to delete the following directories:"
     echo "    $log_files_dir"
     echo "    $results_dir"
+    echo "    $DGP_PREFIX"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir"
+        rm -rf "$log_files_dir" "$results_dir" "$DGP_PREFIX"
     fi
 fi
 
-if [[ $mode == "plot" ]]; then 
-    MakePlots ${_algorithms[@]}
+if [[ $mode == "plots" ]]; then 
+    mkplots ${_algorithms[@]}
 fi
 
 if [[ $mode == "stats" ]]; then 
-    MakeStats ${_algorithms[@]}
+    mkstats ${_algorithms[@]}
 fi
 
 exit 0

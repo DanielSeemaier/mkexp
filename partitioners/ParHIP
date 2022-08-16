@@ -1,15 +1,15 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ ! -x "$DGP_PREFIX/bin/parhip" ]]; then
+    if [[ ! -x "$PREFIX/bin/parhip" ]]; then
         return 1
     fi
-    if [[ ! -d "$DGP_PREFIX/src/KaHIP" ]]; then 
+    if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
         return 1
     fi
 
-    git -C "$DGP_PREFIX/src/KaHIP" fetch
-    local_hash=$(git -C "$DGP_PREFIX/src/KaHIP" rev-parse HEAD)
-    remote_hash=$(git -C "$DGP_PREFIX/src/KaHIP" rev-parse @{u})
+    git -C "$PREFIX/src/KaHIP" fetch
+    local_hash=$(git -C "$PREFIX/src/KaHIP" rev-parse HEAD)
+    remote_hash=$(git -C "$PREFIX/src/KaHIP" rev-parse @{u})
     if [[ "$local_hash" == "$remote_hash" ]]; then 
         return 0
     fi
@@ -18,7 +18,7 @@ IsInstalled() {
 }
 
 Binary() {
-    echo "$DGP_PREFIX/bin/parhip"
+    echo "$PREFIX/bin/parhip"
 }
 
 Install() {
@@ -26,19 +26,19 @@ Install() {
         return 0
     fi
 
-    if [[ ! -d "$DGP_PREFIX/src/KaHIP" ]]; then 
-        git clone git@github.com:KaHIP/KaHIP.git "$DGP_PREFIX/src/KaHIP"
+    if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
+        git clone git@github.com:KaHIP/KaHIP.git "$PREFIX/src/KaHIP"
     else 
-        git -C "$DGP_PREFIX/src/KaHIP" pull
+        git -C "$PREFIX/src/KaHIP" pull
     fi
     
     current_pwd="$PWD"
-    cd "$DGP_PREFIX/src/KaHIP"
+    cd "$PREFIX/src/KaHIP"
     CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
     cd "$current_pwd"
 
-    mkdir -p "$DGP_PREFIX/bin"
-    cp "$DGP_PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
+    mkdir -p "$PREFIX/bin"
+    cp "$PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
 }
 
 InvokeFromDisk() {

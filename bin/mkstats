@@ -9,9 +9,13 @@ source(paste0(root, "/plots/functions.R"), chdir = TRUE)
 algorithms = commandArgs(trailingOnly = TRUE)
 num_algorithms = length(algorithms)
 
+filter = c("amazon", "eu-2005", "youtube")
+`%notin%` <- Negate(`%in%`)
+
 data <- list()
 for (algorithm in algorithms) {
     df <- read.csv(paste0("results/", algorithm, ".csv"))
+    df <- subset(df, Graph %notin% filter)
     df$algorithm <- algorithm
     df$graph <- sub(".graph", "", df$Graph)
     df$imbalance <- df$Balance
@@ -48,9 +52,12 @@ for (i in 1:(num_algorithms - 1)) {
         a_common <- subset(a_ok, graph %in% b_graphs)
         b_common <- subset(b_ok, graph %in% a_graphs)
 
+        a_gmean <- gmean(a_common$avg_cut)
+        b_gmean <- gmean(b_common$avg_cut)
+
         cat(paste0(algorithms[[i]], " vs. ", algorithms[[j]], "\n"))
         cat(paste0("  # instances: ", nrow(a_common), " vs. ", nrow(b_common), "\n"))
-        cat(paste0("  gmean cut: ", gmean(a_common$avg_cut), " vs. ", gmean(b_common$avg_cut), "\n"))
+        cat(paste0("  gmean cut: ", a_gmean, " (1.00) vs. ", b_gmean, " (", b_gmean / a_gmean, ")\n"))
         cat(paste0("  time: ", gmean(a_common$avg_time), " vs. ",  gmean(b_common$avg_time), "\n"))
     }
 }

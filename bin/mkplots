@@ -8,9 +8,14 @@ source(paste0(root, "/plots/functions.R"), chdir = TRUE)
 algorithms = commandArgs(trailingOnly = TRUE)
 num_algorithms = length(algorithms)
 
+filter = c("amazon", "eu-2005", "youtube")
+`%notin%` <- Negate(`%in%`)
+
 data <- list()
 for (algorithm in algorithms) {
     df <- read.csv(paste0("results/", algorithm, ".csv"))
+    df <- subset(df, Graph %notin% filter)
+
     df$algorithm <- algorithm
     df$graph <- sub(".graph", "", df$Graph)
     df$imbalance <- df$Balance
@@ -49,7 +54,19 @@ print(performace_plot(data,
 
 for (i in 1:(num_algorithms - 1)) {
     for (j in (i+1):num_algorithms) {
-        print(performace_plot(list(data[[i]], data[[j]]),
+        a <- data[[i]]
+        b <- data[[j]]
+
+        a_ok <- subset(a, failed == FALSE)
+        b_ok <- subset(b, failed == FALSE)
+        
+        a_graphs <- unique(a_ok$graph)
+        b_graphs <- unique(b_ok$graph)
+
+        a_common <- subset(a_ok, graph %in% b_graphs)
+        b_common <- subset(b_ok, graph %in% a_graphs)
+
+        print(performace_plot(list(a_common, b_common),
             objective = "avg_km1",
             hide_y_axis_title = FALSE,
             show_infeasible_tick = FALSE,
