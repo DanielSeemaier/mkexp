@@ -1,15 +1,18 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ ! -x "$PREFIX/bin/dKaMinPar" ]]; then
+    version="$1"
+
+    if [[ ! -x "$(Binary "$version")" ]]; then
         return 1
     fi
-    if [[ ! -d "$PREFIX/src/KaMinPar" ]]; then 
+    if [[ ! -d "$PREFIX/src/$version/KaMinPar" ]]; then 
         return 1
     fi
 
-    git -C "$PREFIX/src/KaMinPar" fetch
-    local_hash=$(git -C "$PREFIX/src/KaMinPar" rev-parse HEAD)
-    remote_hash=$(git -C "$PREFIX/src/KaMinPar" rev-parse @{u})
+    mkdir -p "$PREFIX/src/$version"
+    git -C "$PREFIX/src/$version/KaMinPar" fetch
+    local_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse HEAD)
+    remote_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse @{u})
     if [[ "$local_hash" == "$remote_hash" ]]; then 
         return 0
     fi
@@ -18,40 +21,54 @@ IsInstalled() {
 }
 
 Binary() {
-    echo "$PREFIX/bin/dKaMinPar"
+    version="$1"
+    echo "$PREFIX/bin/dKaMinPar-$version"
 }
 
 Install() {
-    if IsInstalled; then 
+    version="$1"
+
+    if IsInstalled "$version"; then 
         return 0
     fi
 
-    if [[ ! -d "$PREFIX/src/KaMinPar" ]]; then 
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$PREFIX/src/KaMinPar"
-        git -C "$PREFIX/src/KaMinPar" submodule update --init --recursive
+    src_dir="$PREFIX/src/$version/KaMinPar"
+
+    if [[ ! -d "$src_dir" ]]; then 
+        mkdir -p "$src_dir"
+        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
+        git -C "$src_dir" submodule update --init --recursive
     else 
-        git -C "$PREFIX/src/KaMinPar" pull
+        git -C "$src_dir" fetch origin
     fi
 
-    cmake -S "$PREFIX/src/KaMinPar" -B "$PREFIX/src/KaMinPar/build" -DCMAKE_BUILD_TYPE=Release
-    cmake --build "$PREFIX/src/KaMinPar/build" --target dKaMinPar --parallel
+    branch="main"
+    if [[ "$version" != "latest" ]]; then 
+        branch="$version"
+    fi
+    git -C "$src_dir" reset --hard "origin/$branch"
+
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$src_dir/build" --target dKaMinPar --parallel
     mkdir -p "$PREFIX/bin"
-    cp "$PREFIX/src/KaMinPar/build/apps/dKaMinPar" "$(Binary)"
+
+    cp "$src_dir/build/apps/dKaMinPar" "$(Binary "$version")"
 }
 
 InvokeFromDisk() {
-    graph="$1"
-    k="$2"
-    epsilon="$3"
-    seed="$4"
-    threads="$7"
-    arguments="${@:8}"
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    threads="$6"
+    arguments="${@:7}"
     
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
     if [[ -f "$graph" ]]; then
-        echo "$(Binary) -G $graph -k $k -e $epsilon --seed=$seed -t $threads $arguments"
+        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $threads $arguments"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1

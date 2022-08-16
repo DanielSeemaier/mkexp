@@ -27,6 +27,10 @@ mode="generate"
 declare -A active_algorithms
 while [[ $# -gt 0 ]]; do 
     case $1 in 
+        --dry-run)
+            mode="dry-run"
+            shift 
+            ;;
         --results)
             mode="results"
             shift
@@ -73,7 +77,7 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
@@ -113,8 +117,10 @@ InvokePartitionerFromDisk() {
 }
 
 InstallPartitioner() {
-    LoadPartitioner "${@}"
-    Install
+    name="$1"
+    version="$2"
+    LoadPartitioner "$name"
+    Install "$version"
 }
 
 LoadSystem() {
@@ -177,6 +183,7 @@ ParseTimelimit() {
 declare -A _algorithm_definition_names
 declare -A _algorithm_definition_bases
 declare -A _algorithm_definition_arguments
+declare -A _algorithm_definition_versions
 
 declare -a _algorithms
 declare -a _ks
@@ -204,6 +211,25 @@ DefineAlgorithm() {
     _algorithm_definition_arguments[$name]="$custom_arguments"
 }
 
+DefineAlgorithmVersion() {
+    name="$1"
+    base_algorithm="$2"
+    version="$3"
+
+    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
+        echo "Warning: overwriting already defined algorithm $name"
+    }
+
+    [[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
+        echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
+    }
+
+    _algorithm_definition_names[$name]=1
+    _algorithm_definition_bases[$name]="$base_algorithm"
+    _algorithm_definition_arguments[$name]=""
+    _algorithm_definition_versions[$name]="$version"
+}
+
 System() {
     _system="$1"
 }
@@ -219,6 +245,7 @@ Algorithms() {
 Threads() {
     _nodes_x_mpis_x_threads+=(${@})
 }
+
 Seeds() {
     _seeds+=(${@})
 }
@@ -259,15 +286,48 @@ ScaledKaGen() {
     return 0
 }
 
+GetAlgorithmBase() {
+    algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        GetAlgorithmBase "${_algorithm_definition_bases[$algorithm]}"
+    else 
+        echo "$algorithm"
+    fi
+}
+
+GetAlgorithmArguments() {
+    algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        additional_arguments=$(GetAlgorithmArguments "${_algorithm_definition_bases[$algorithm]}")
+        echo "${_algorithm_definition_arguments[$algorithm]} $additional_arguments"
+    else 
+        echo ""
+    fi
+}
+
+GetAlgorithmVersion() {
+    algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+       if [[ -v "_algorithm_definition_versions[$algorithm]" ]]; then 
+           echo "${_algorithm_definition_versions[$algorithm]}"
+       else 
+           GetAlgorithmVersion "${_algorithm_definition_bases[$algorithm]}"
+       fi
+    else 
+        echo "latest"
+    fi
+}
+
 PrintSummary() {
-    if [[ $mode != "generate" ]]; then 
+    if [[ $mode != "generate" && $mode != "dry-run" ]]; then 
         return 0
     fi
 
     echo "Custom algorithm definitions:"
     for algorithm in ${!_algorithm_definition_names[@]}; do 
-        echo "- $algorithm <- ${_algorithm_definition_bases[$algorithm]}"
-        echo "  ${_algorithm_definition_arguments[$algorithm]}"
+        echo "- $algorithm <- $(GetAlgorithmBase "$algorithm")"
+        echo "  Version: $(GetAlgorithmVersion "$algorithm")"
+        echo "  Arguments: $(GetAlgorithmArguments "$algorithm")"
     done
     echo ""
 
@@ -302,6 +362,7 @@ PrintSummary() {
 # Read Experiment file
 . Experiment
 
+
 # Filter active algorithms
 if [[ $filter_algorithms != "0" ]]; then 
     declare -a filtered_algorithms
@@ -321,11 +382,9 @@ mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
 
 if [[ $mode == "generate" || $mode == "install" ]]; then
     for algorithm in ${_algorithms[@]}; do
-        if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
-            InstallPartitioner "${_algorithm_definition_bases[$algorithm]}"
-        else 
-            InstallPartitioner "$algorithm"
-        fi
+        base=$(GetAlgorithmBase "$algorithm")
+        version=$(GetAlgorithmVersion "$algorithm")
+        InstallPartitioner "$base" "$version"
     done
 fi
 
@@ -379,13 +438,11 @@ FromDiskInvocation() {
     mpis="$7"
     threads="$8"
 
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
-        base="${_algorithm_definition_bases[$algorithm]}"
-        arguments="${_algorithm_definition_arguments[$algorithm]}"
-        InvokePartitionerFromDisk "$base" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$arguments"
-    else
-        InvokePartitionerFromDisk "$algorithm" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" ""
-    fi
+    base=$(GetAlgorithmBase "$algorithm")
+    version=$(GetAlgorithmVersion "$algorithm")
+    arguments=$(GetAlgorithmArguments "$algorithm")
+
+    InvokePartitionerFromDisk "$base" "$version" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$arguments"
 }
 
 if [[ $mode == "generate" ]]; then
@@ -426,10 +483,7 @@ fi
 if [[ $mode == "results" ]]; then
     mkdir -p "$results_dir"
     for algorithm in ${_algorithms[@]}; do 
-        base="$algorithm"
-        if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then
-            base="${_algorithm_definition_bases[$algorithm]}"
-        fi
+        base=$(GetAlgorithmBase "$algorithm")
         mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
     done
 fi

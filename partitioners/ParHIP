@@ -22,6 +22,11 @@ Binary() {
 }
 
 Install() {
+    if [[ "$version" != "latest" ]]; 
+        echo "Error: version support not implemented"
+        exit 1
+    fi 
+
     if IsInstalled; then 
         return 0
     fi
@@ -42,12 +47,13 @@ Install() {
 }
 
 InvokeFromDisk() {
-    graph="$1"
-    k="$2"
-    epsilon="$3"
-    seed="$4"
-    threads="$7"
-    arguments="${@:8}"
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    threads="$6"
+    arguments="${@:7}"
   
     # .bgf > .graph > .metis
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
