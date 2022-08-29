@@ -6,6 +6,9 @@ IsInstalled() {
     if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
         return 1
     fi
+    if [[ ! -x "$PREFIX/bin/InMemoryParhip" ]]; then 
+        return 1 
+    fi
 
     git -C "$PREFIX/src/KaHIP" fetch
     local_hash=$(git -C "$PREFIX/src/KaHIP" rev-parse HEAD)
@@ -31,6 +34,7 @@ Install() {
         return 0
     fi
 
+    # Standalone ParHIP
     if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
         git clone git@github.com:KaHIP/KaHIP.git "$PREFIX/src/KaHIP"
     else 
@@ -39,11 +43,40 @@ Install() {
     
     current_pwd="$PWD"
     cd "$PREFIX/src/KaHIP"
-    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
+    #CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
     cd "$current_pwd"
 
     mkdir -p "$PREFIX/bin"
     cp "$PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
+    cp "$PREFIX/src/KaHIP/deploy/libparhip"* "$PREFIX/lib/"
+    cp "$PREFIX/src/KaHIP/deploy/parhip_interface.h" "$PREFIX/include/"
+    cp "$PREFIX/src/KaHIP/deploy/parallel/libkahip"* "$PREFIX/lib/"
+
+    # InMemory -> KaGen
+    if [[ ! -x "$PREFIX/bin/KaGen" ]]; then # Requirement: KaGen
+        src_dir="$PREFIX/src/KaGen"
+        if [[ ! -d "$PREFIX/src/KaGen" ]]; then 
+            git clone git@github.com:sebalamm/KaGen.git "$src_dir"
+        else
+            git -C "$src_dir" pull
+        fi
+        git -C "$src_dir" submodule update --init --remote --recursive
+        
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+        cmake --build "$src_dir/build" --parallel
+    
+        cp "$src_dir/build/app/KaGen" "$PREFIX/bin"
+        cp "$src_dir/build/library/libkagen"* "$PREFIX/lib"
+        cp "$src_dir/library/"*"kagen.h" "$PREFIX/include"
+        cp "$src_dir/build/extlib/sampling/sampling/libsampling"* "$PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/tlx/tlx/libtlx"* "$PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/spooky/libspooky"* "$PREFIX/lib"
+    fi 
+
+    src_dir="$ROOT/src/InMemoryDriver/"
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release 
+    cmake --build "$src_dir/build" --target InMemoryParhip --parallel 
+    cp "$src_dir/build/InMemoryParhip" "$PREFIX/bin"
 }
 
 InvokeFromDisk() {
@@ -72,6 +105,54 @@ InvokeFromDisk() {
 }
 
 InvokeFromKaGen() {
-    >&2 echo "Warning: not implemented"
-    return 1
+    param_version="$1"
+    param_generator="$2"
+    param_k="$3"
+    param_epsilon="$4"
+    param_seed="$5"
+    param_nodes="$6"
+    param_threads="$8"
+    param_kagen_arguments="$9"
+    param_algo_arguments="${@:10}"
+
+    echo -n "$PREFIX/bin/InMemoryParhip "
+    echo -n "$param_seed " # interprete as number of repetitions 
+    echo -n "$param_k "
+
+    preconfig="${param_algo_arguments[0]}"
+    if [[ "${param_algo_arguments[@]}" == *"--preconfiguration=ecosocial"* ]]; then 
+        echo -n "1 "
+    elif [[ "${param_algo_arguments[@]}" == *"--preconfiguration=fastsocial"* ]]; then 
+        echo -n "0 "
+    else
+        >&2 echo "Warning: unsupported argument ${param_algo_arguments[@]}"
+        return 1 
+    fi
+    echo -n "$param_generator "
+
+    kagen_n=$(ParseKaGenArgument "n" $param_kagen_arguments)
+    kagen_m=$(ParseKaGenArgument "m" $param_kagen_arguments)
+    kagen_p=$(ParseKaGenArgument "p" $param_kagen_arguments)
+    kagen_a=$(ParseKaGenArgument "a" $param_kagen_arguments)
+    kagen_b=$(ParseKaGenArgument "b" $param_kagen_arguments)
+    kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
+    kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
+
+    if [[ ! -z "$kagen_a" ]]; then 
+        echo -n "$kagen_a $kagen_b $kagen_c "
+    fi
+    if [[ ! -z "$kagen_p" ]]; then 
+        echo -n "$kagen_p "
+    fi
+    if [[ ! -z "$kagen_gamma" ]]; then 
+        echo -n "$kagen_gamma "
+    fi
+    if [[ ! -z "$kagen_n" ]]; then 
+        echo -n "$((kagen_n+param_nodes-1)) " # log n
+    fi
+    if [[ ! -z "$kagen_m" ]]; then 
+        echo -n "$((kagen_m+param_nodes-1)) " # log m
+    fi
+
+    echo ""
 }

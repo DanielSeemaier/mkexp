@@ -20,8 +20,8 @@ MPI OpenMPI
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
-#Algorithms dKaMinPar ParHIP-Eco dKaMinPar-FM
-Algorithms dKaMinPar
+Algorithms ParHIP-Fast
+#Algorithms dKaMinPar
 
 # [Mandatory]
 # Values of k.
@@ -36,7 +36,8 @@ Ks 4
 # (== run the experiment with just a single MPI process).
 #       N M T M T T
 #       V V V V V V
-Threads 4x2x3 4x5 6
+#Threads 4x2x3 4x5 6
+Threads 1 2x2x1
 
 # Timelimit for the whole experiment
 Timelimit 1:00:00 
@@ -44,6 +45,8 @@ Timelimit 1:00:00
 # [Optional]
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
 TimelimitPerInstance 30:00
+
+Seeds 1 2 3 4 5
 
 # [Optional]
 # Directory containing all graphs to be included in the experiment.

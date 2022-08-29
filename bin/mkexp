@@ -124,7 +124,7 @@ InvokePartitionerFromDisk() {
 
 InvokePartitionerFromKaGen() {
     LoadPartitioner "$1"
-    InvokeFromKaGen ${@:2}
+    InvokeFromKaGen "${@:2}"
 }
 
 InstallPartitioner() {
@@ -422,6 +422,21 @@ fi
 # Install required partitioners
 PREFIX="$PWD/usr"
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
+ROOT="$script_pwd/../"
+
+export PATH="$PREFIX/bin:$PATH"
+export C_INCLUDE_PATH="$PREFIX/include:${C_INCLUDE_PATH-""}"
+export CPLUS_INCLUDE_PATH="$PREFIX/include:${CPLUS_INCLUDE_PATH-""}"
+export LIBRARY_PATH="$PREFIX/lib:${LIBRARY_PATH-""}"
+export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH-""}"
+
+ExportEnv() {
+    echo "export PATH=\"$PATH\""
+    echo "export C_INCLUDE_PATH=\"$C_INCLUDE_PATH\""
+    echo "export CPLUS_INCLUDE_PATH=\"$CPLUS_INCLUDE_PATH\""
+    echo "export LIBRARY_PATH=\"$LIBRARY_PATH\""
+    echo "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\""
+}
 
 if [[ $skip_install == "0" && ($mode == "generate" || $mode == "install") ]]; then
     for algorithm in ${_algorithms[@]}; do
@@ -480,18 +495,19 @@ if [[ $mode == "generate" ]]; then
 
         job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
         GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
+        ExportEnv > "$job_filename"
         jobfiles+=("$job_filename")
 
-        for seed in ${_seeds[@]}; do 
-            for epsilon in ${_epsilons[@]}; do 
-                for algorithm in ${_algorithms[@]}; do
-                    algo_base=$(GetAlgorithmBase "$algorithm")
-                    algo_version=$(GetAlgorithmVersion "$algorithm")
-                    algo_arguments=$(GetAlgorithmArguments "$algorithm")
+        for epsilon in ${_epsilons[@]}; do 
+            for algorithm in ${_algorithms[@]}; do
+                algo_base=$(GetAlgorithmBase "$algorithm")
+                algo_version=$(GetAlgorithmVersion "$algorithm")
+                algo_arguments=$(GetAlgorithmArguments "$algorithm")
 
-                    for k in ${_ks[@]}; do
-                        # Graphs from disk
-                        for graph in ${_graphs[@]}; do
+                for k in ${_ks[@]}; do
+                    # Graphs from disk
+                    for graph in ${_graphs[@]}; do
+                        for seed in ${_seeds[@]}; do 
                             log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
                             exe=$(InvokePartitionerFromDisk "$algo_base" "$algo_version" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$algo_arguments")
                             exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
@@ -500,31 +516,38 @@ if [[ $mode == "generate" ]]; then
                                 exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
                             fi
                             echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
-                        done
+                        done # seed
+                    done # graph
 
-                        # KaGen graphs
-                        for i in ${!_kagen_graphs[@]}; do 
-                            kagen="${_kagen_graphs[$i]}"
-                            kagen_str="$(echo "$kagen" | tr ' ' '-')"
-                            kagen_arguments_arr=($kagen)
-                            kagen_generator="${kagen_arguments_arr[0]}"
-                            kagen_arguments="${kagen_arguments_arr[@]:1}"
+                    # KaGen graphs
+                    for i in ${!_kagen_graphs[@]}; do
+                        seed="${#_seeds[@]}"
 
-                            log_filename="$log_files_dir/$algorithm/${kagen_str}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                        kagen="${_kagen_graphs[$i]}"
+                        kagen_str="$(echo "$kagen" | tr ' ' '-')"
+                        kagen_arguments_arr=($kagen)
+                        kagen_generator="${kagen_arguments_arr[0]}"
+                        kagen_arguments="${kagen_arguments_arr[@]:1}"
 
-                            exe=$(InvokePartitionerFromKaGen "$algo_base" "$algo_version" "$kagen_generator" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$kagen_arguments" "$algo_arguments")
-                            exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
-                            exe_with_timelimit="$exe_with_mpi"
-                            if [[ "$_timelimit_per_instance" != "" ]]; then 
-                                exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
-                            fi
-                            echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
-                        done
-                    done
-                done
-            done
-        done
-    done
+                        log_filename="$log_files_dir/$algorithm/${kagen_str}-ws=${_kagen_ws[$i]}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+
+                        fake_nodes="$nodes"
+                        if [[ "${_kagen_ws[$i]}" == 0 ]]; then 
+                            fake_nodes=1
+                        fi
+                        echo "$kagen_arguments"
+                        exe=$(InvokePartitionerFromKaGen "$algo_base" "$algo_version" "$kagen_generator" "$k" "$epsilon" "$seed" "$fake_nodes" "$mpis" "$threads" "$kagen_arguments" "$algo_arguments")
+                        exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
+                        exe_with_timelimit="$exe_with_mpi"
+                        if [[ "$_timelimit_per_instance" != "" ]]; then 
+                            exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
+                        fi
+                        echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
+                    done # generator
+                done # k
+            done # algorithm
+        done # epsilon
+    done # parallelism setting
 
     GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
 fi 
