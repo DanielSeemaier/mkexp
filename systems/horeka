@@ -1,28 +1,54 @@
 #!/bin/bash 
-system_cores_per_node=64
-system_max_cores_per_node=78
+HOREKA_OPENMPI_VERSION="4.0"
 
-system_validate() {
-    if [[ "$param_mpi" != "openmpi" ]]; then
-        echo "Error: unsupported mpi implementation"
-        return 1
-    fi
+GenerateJobfileHeader() {
+    param_mpi="$1"
+    param_nodes="$2"
+    param_mpis="$3"
+    param_threads="$4"
+    param_timelimit="$5"
 
-    return 0
-}
-
-system_generate_slurm_job_header() {
     echo "#SBATCH --nodes=${param_nodes}"
-    echo "#SBATCH --ntasks=$((param_nodes*param_cores))"
-    echo "#SBATCH --cpus-per-task=${param_cores}"
-    echo "#SBATCH --ntasks-per-node=$((system_cores_per_node/param_cores))"
-    echo "#SBATCH --time=${param_time}"
+    echo "#SBATCH --ntasks=$((param_nodes*param_mpis))"
+    echo "#SBATCH --cpus-per-task=${param_threads}"
+    echo "#SBATCH --ntasks-per-node=${param_mpis}"
+    echo "#SBATCH --time=${param_timelimit}"
     echo "#SBATCH --export=ALL"
     echo "#SBATCH --mem=230gb"
     echo "#SBATCH --partition=cpuonly"
-    echo "module load mpi/openmpi/4.0"
+
+    if [[ "$param_mpi" == "OpenMPI" ]]; then 
+        echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
+    fi
+
+    echo "unset OMP_NUM_THREADS"
+    echo "unset OMP_PROC_BIND"
+    echo "unset OMP_PLACES"
 }
 
-system_generate_mpi_cmd() {
-    echo "mpirun -n $((system_cores_per_node*param_nodes/param_cores)) --bind-to core --map-by socket:PE=${param_cores} "
+GenerateJobfileEntry() {
+    param_nodes="$1"
+    param_mpis="$2"
+    param_threads="$3"
+    param_exe="$4"
+
+    case "$_mpi" in
+        none)
+            >&2 echo "Error: application must be run with MPI"
+            exit 1
+            ;;
+        OpenMPI)
+            echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} -report-bindings ${param_exe}"
+            ;;
+        *)
+            >&2 echo "Error: unsupported MPI $_mpi"
+            exit 1
+    esac
 }
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do 
+        echo "sbatch $jobfile"
+    done
+}
+
