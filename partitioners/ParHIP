@@ -22,7 +22,7 @@ Binary() {
 }
 
 Install() {
-    if [[ "$version" != "latest" ]]; 
+    if [[ "$version" != "latest" ]]; then
         echo "Error: version support not implemented"
         exit 1
     fi 
@@ -69,4 +69,9 @@ InvokeFromDisk() {
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
+}
+
+InvokeFromKaGen() {
+    >&2 echo "Warning: not implemented"
+    return 1
 }

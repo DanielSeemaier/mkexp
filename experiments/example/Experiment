@@ -10,7 +10,7 @@ DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
 
 # [Optional] 
 # System on which this experiment should be run on.
-System i10
+System horeka
 
 # [Optional] 
 # MPI implementation that should be used to run this experiment.
@@ -20,7 +20,8 @@ MPI OpenMPI
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
-Algorithms dKaMinPar ParHIP-Eco dKaMinPar-FM
+#Algorithms dKaMinPar ParHIP-Eco dKaMinPar-FM
+Algorithms dKaMinPar
 
 # [Mandatory]
 # Values of k.
@@ -35,7 +36,10 @@ Ks 4
 # (== run the experiment with just a single MPI process).
 #       N M T M T T
 #       V V V V V V
-Threads 1x2x3 4x5 6
+Threads 4x2x3 4x5 6
+
+# Timelimit for the whole experiment
+Timelimit 1:00:00 
 
 # [Optional]
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
@@ -43,22 +47,22 @@ TimelimitPerInstance 30:00
 
 # [Optional]
 # Directory containing all graphs to be included in the experiment.
-Graphs /G/
+#Graphs /G/
 
 # [Optional]
 # Graph to be included in the experiment, without file extension. This way, the 
 # graph can be provided in multiple formats for different graph partitioners.
-Graph /G/144
+#Graph /G/144
 
 # [Optional]
 # Generate a graph in-memory using KaGen. Must be supported by the graph 
 # partitioner.
-KaGen rgg2d 10 15
+KaGen rgg2d n=10 m=15
 
 # [Optional]
 # Like KaGen, but the size of the graph is scaled with the number of compute
 # nodes.
-ScaledKaGen rgg2d 10 15
+ScaledKaGen rgg2d n=10 m=15
 
 # [Optional]
 # Print a summary after generating the experiment files.
