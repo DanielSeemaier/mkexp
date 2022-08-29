@@ -19,6 +19,8 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
+ROOT="$script_pwd/../"
+
 # Init git submodules 
 git -C "$script_pwd" submodule update --init --recursive 
 
@@ -69,6 +71,10 @@ while [[ $# -gt 0 ]]; do
             skip_install=1
             shift
             ;;
+        --init)
+            mode="init"
+            shift 
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -83,7 +89,7 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
@@ -96,6 +102,11 @@ if [[ $mode == "help" ]]; then
     echo "    --stats: Compute some statistics from the CSV files"
     echo "    --clean: Delete generated experiment files"
     echo "    --purge: --clean, but also delete log and result files"
+    echo "    -init: Initialize a new experiment"
+    exit 0
+fi
+if [[ $mode == "init" ]]; then 
+    cp "$ROOT/example/Experiment" "$PWD"
     exit 0
 fi
 
@@ -400,6 +411,7 @@ PrintSummary() {
 # Check that there is an Experiment file
 [[ -f "Experiment" ]] || {
     echo "Error: no Experiment file contained in the current working directory"
+    echo "  Run 'mkexp --init' to initialize a new experiment in the current directory"
     exit 1
 }
 
@@ -422,7 +434,6 @@ fi
 # Install required partitioners
 PREFIX="$PWD/usr"
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
-ROOT="$script_pwd/../"
 
 export PATH="$PREFIX/bin:$PATH"
 export C_INCLUDE_PATH="$PREFIX/include:${C_INCLUDE_PATH-""}"
@@ -535,7 +546,7 @@ if [[ $mode == "generate" ]]; then
                         if [[ "${_kagen_ws[$i]}" == 0 ]]; then 
                             fake_nodes=1
                         fi
-                        echo "$kagen_arguments"
+
                         exe=$(InvokePartitionerFromKaGen "$algo_base" "$algo_version" "$kagen_generator" "$k" "$epsilon" "$seed" "$fake_nodes" "$mpis" "$threads" "$kagen_arguments" "$algo_arguments")
                         exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
                         exe_with_timelimit="$exe_with_mpi"

@@ -43,7 +43,7 @@ Install() {
     
     current_pwd="$PWD"
     cd "$PREFIX/src/KaHIP"
-    #CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
+    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
     cd "$current_pwd"
 
     mkdir -p "$PREFIX/bin"

@@ -4,13 +4,12 @@
 # Define new algorithms by providing additional CLI arguments to predefined 
 # algorithms.
 #               New name         Based upon  CLI arguments...
-DefineAlgorithm dKaMinPar-FM     dKaMinPar   --r-algorithm=prob-lp+fm
 DefineAlgorithm ParHIP-Fast      ParHIP      --preconfiguration=fastsocial
 DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
 
 # [Optional] 
 # System on which this experiment should be run on.
-System horeka
+System generic
 
 # [Optional] 
 # MPI implementation that should be used to run this experiment.
@@ -20,12 +19,11 @@ MPI OpenMPI
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
-Algorithms ParHIP-Fast
-#Algorithms dKaMinPar
+Algorithms ParHIP-Fast ParHIP-Eco
 
 # [Mandatory]
 # Values of k.
-Ks 4
+Ks 2 4 8
 
 # [Optional]
 # <Number of nodes N>x<Number of MPI processes M>x<Number of threads T> to be 
@@ -36,16 +34,17 @@ Ks 4
 # (== run the experiment with just a single MPI process).
 #       N M T M T T
 #       V V V V V V
-#Threads 4x2x3 4x5 6
-Threads 1 2x2x1
+Threads 8x4x2 4x2 2
 
 # Timelimit for the whole experiment
-Timelimit 1:00:00 
+#Timelimit 1:00:00 
 
 # [Optional]
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
-TimelimitPerInstance 30:00
+#TimelimitPerInstance 30:00
 
+# [Optional]
+# Seeds for RNG; multiple seeds = repeated execution
 Seeds 1 2 3 4 5
 
 # [Optional]
@@ -61,12 +60,20 @@ Seeds 1 2 3 4 5
 # Generate a graph in-memory using KaGen. Must be supported by the graph 
 # partitioner.
 KaGen rgg2d n=10 m=15
+#KaGen rgg3d n=10 m=15 
+#KaGen rdg2d n=10 
+#KaGen rdg3d n=10 
+#KaGen grid2d p=0.5 n=10 
+#KaGen grid3d p=0.5 n=10 
+#KaGen rhg gamma=3.0 n=10 m=15 
+#KaGen rmat a=0.1 b=0.2 c=0.3 n=10 m=15
 
 # [Optional]
 # Like KaGen, but the size of the graph is scaled with the number of compute
 # nodes.
-ScaledKaGen rgg2d n=10 m=15
+#ScaledKaGen rgg2d n=10 m=15
 
 # [Optional]
 # Print a summary after generating the experiment files.
 PrintSummary
+
