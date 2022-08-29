@@ -1,9 +1,0 @@
-#!/bin/bash
-algorithm_generate_invoke() {
-    if [[ "$param_num_cores" != "1" ]]; then 
-        echo "Error: multiple cores per node are not supported"
-        return 1 
-    fi
-    
-    echo "$DGP_PREFIX/bin/parhip --k=$param_k --imbalance=$param_eps --preconfiguration=fastsocial"
-}
