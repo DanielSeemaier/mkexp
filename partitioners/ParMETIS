@@ -1,0 +1,180 @@
+#!/bin/bash
+IsInstalled() {
+    if [[ ! -x "$GLOBAL_PREFIX/bin/pm_parmetis" ]]; then
+        return 1
+    fi
+    if [[ ! -x "$GLOBAL_PREFIX/bin/InMemoryParmetis" ]]; then 
+        return 1 
+    fi
+
+    return 0
+}
+
+Binary() {
+    echo "$GLOBAL_PREFIX/bin/pm_parmetis"
+}
+
+Install() {
+    if [[ "$version" != "latest" ]]; then
+        echo "Error: version support not implemented"
+        exit 1
+    fi 
+
+    if IsInstalled; then 
+        return 0
+    fi
+
+    current_pwd="$PWD"
+
+    # Install GKlib
+    if [[ ! -f "$GLOBAL_PREFIX/lib/libGKlib.a" ]]; then 
+        src_gklib="$GLOBAL_PREFIX/src/GKlib"
+        if [[ ! -d "$src_gklib" ]]; then 
+            git clone git@github.com:KarypisLab/GKlib.git "$src_gklib"
+        else
+            git -C "$src_gklib" pull 
+        fi
+
+        cd "$src_gklib" 
+        make config prefix="$GLOBAL_PREFIX"
+        make
+        make install
+        cd "$current_pwd"
+    fi
+
+    # Install METIS 
+    if [[ ! -f "$GLOBAL_PREFIX/lib/libmetis.a" ]]; then 
+        src_metis="$GLOBAL_PREFIX/src/METIS"
+        if [[ ! -d "$src_metis" ]]; then 
+            git clone https://github.com/KarypisLab/METIS.git "$src_metis"
+        else 
+            git -C "$src_metis" pull 
+        fi
+
+        cd "$src_metis"
+        make config prefix="$GLOBAL_PREFIX" i64=1
+        make install
+        cd "$current_pwd"
+    fi
+
+    # Standalone ParMETIS
+    if [[ ! -f "$GLOBAL_PREFIX/bin/pm_parmetis" ]]; then 
+        src_parmetis="$GLOBAL_PREFIX/src/ParMETIS"
+        if [[ ! -d "$src_parmetis" ]]; then
+            git clone git@github.com:KarypisLab/ParMETIS.git "$src_parmetis"
+        fi
+
+        # Current master does not compile
+        git -C "$src_parmetis" checkout bd219d2982c29d91c84b1a486e53206d29e8ec7a
+
+        # Patch main to allow custom epsilons
+        cp "$ROOT/src/parmetis.c" "$src_parmetis/programs/parmetis.c"
+
+        cd "$src_parmetis"
+        make config prefix="$GLOBAL_PREFIX"
+        make install
+        cd "$current_pwd"
+    fi
+
+    # InMemory -> KaGen
+    if [[ ! -x "$GLOBAL_PREFIX/bin/KaGen" ]]; then # Requirement: KaGen
+        src_dir="$GLOBAL_PREFIX/src/KaGen"
+        if [[ ! -d "$GLOBAL_PREFIX/src/KaGen" ]]; then 
+            git clone git@github.com:sebalamm/KaGen.git "$src_dir"
+        else
+            git -C "$src_dir" pull
+        fi
+        git -C "$src_dir" submodule update --init --remote --recursive
+        
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+        cmake --build "$src_dir/build" --parallel
+    
+        cp "$src_dir/build/app/KaGen" "$GLOBAL_PREFIX/bin"
+        cp "$src_dir/build/library/libkagen"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/library/"*"kagen.h" "$GLOBAL_PREFIX/include"
+        cp "$src_dir/build/extlib/sampling/sampling/libsampling"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/tlx/tlx/libtlx"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/spooky/libspooky"* "$GLOBAL_PREFIX/lib"
+    fi
+
+    if [[ ! -f "$GLOBAL_PREFIX/bin/InMemoryParmetis" ]]; then 
+        src_inmemory="$ROOT/src/InMemoryDriver/"
+        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release 
+        cmake --build "$src_inmemory/build" --target InMemoryParmetis --parallel 
+        cp "$src_inmemory/build/InMemoryParmetis" "$GLOBAL_PREFIX/bin"
+    fi
+}
+
+InvokeFromDisk() {
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    threads="$6"
+    arguments="${@:7}"
+  
+    # .graph > .metis
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) $graph 1 $k 0 0 3 $seed $epsilon"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+InvokeFromKaGen() {
+    param_version="$1"
+    param_generator="$2"
+    param_k="$3"
+    param_epsilon="$4"
+    param_seed="$5"
+    param_nodes="$6"
+    param_threads="$8"
+    param_kagen_arguments="$9"
+    param_algo_arguments="${@:10}"
+
+    echo -n "$GLOBAL_PREFIX/bin/InMemoryParmetis "
+    echo -n "$param_seed " # interprete as number of repetitions 
+    echo -n "$param_k "
+
+    preconfig="${param_algo_arguments[0]}"
+    if [[ "${param_algo_arguments[@]}" == *"--preconfiguration=ecosocial"* ]]; then 
+        echo -n "1 "
+    elif [[ "${param_algo_arguments[@]}" == *"--preconfiguration=fastsocial"* ]]; then 
+        echo -n "0 "
+    else
+        >&2 echo "Warning: unsupported argument ${param_algo_arguments[@]}"
+        return 1 
+    fi
+    echo -n "$param_generator "
+
+    kagen_n=$(ParseKaGenArgument "n" $param_kagen_arguments)
+    kagen_m=$(ParseKaGenArgument "m" $param_kagen_arguments)
+    kagen_p=$(ParseKaGenArgument "p" $param_kagen_arguments)
+    kagen_a=$(ParseKaGenArgument "a" $param_kagen_arguments)
+    kagen_b=$(ParseKaGenArgument "b" $param_kagen_arguments)
+    kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
+    kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
+
+    if [[ ! -z "$kagen_a" ]]; then 
+        echo -n "$kagen_a $kagen_b $kagen_c "
+    fi
+    if [[ ! -z "$kagen_p" ]]; then 
+        echo -n "$kagen_p "
+    fi
+    if [[ ! -z "$kagen_gamma" ]]; then 
+        echo -n "$kagen_gamma "
+    fi
+    if [[ ! -z "$kagen_n" ]]; then 
+        echo -n "$((kagen_n+param_nodes-1)) " # log n
+    fi
+    if [[ ! -z "$kagen_m" ]]; then 
+        echo -n "$((kagen_m+param_nodes-1)) " # log m
+    fi
+
+    echo ""
+}

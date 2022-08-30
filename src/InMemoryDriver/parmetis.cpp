@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm comm = MPI_COMM_WORLD;
     std::vector<idx_t> partition(num_nodes);
     double imbalance = 0.03;
-    int cut;
+    idx_t cut;
 
     idx_t wgtflag = 0;  // no weights
     idx_t numflag = 0;  // arrays start at 0

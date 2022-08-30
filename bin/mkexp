@@ -433,13 +433,15 @@ fi
 
 # Install required partitioners
 PREFIX="$PWD/usr"
+GLOBAL_PREFIX="$ROOT/usr"
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
+mkdir -p "$GLOBAL_PREFIX" "$GLOBAL_PREFIX/bin" "$GLOBAL_PREFIX/lib" "$GLOBAL_PREFIX/include"
 
-export PATH="$PREFIX/bin:$PATH"
-export C_INCLUDE_PATH="$PREFIX/include:${C_INCLUDE_PATH-""}"
-export CPLUS_INCLUDE_PATH="$PREFIX/include:${CPLUS_INCLUDE_PATH-""}"
-export LIBRARY_PATH="$PREFIX/lib:${LIBRARY_PATH-""}"
-export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH-""}"
+export PATH="$PREFIX/bin:$GLOBAL_PREFIX/bin:$PATH"
+export C_INCLUDE_PATH="$PREFIX/include:$GLOBAL_PREFIX/include:${C_INCLUDE_PATH-""}"
+export CPLUS_INCLUDE_PATH="$PREFIX/include:$GLOBAL_PREFIX/include:${CPLUS_INCLUDE_PATH-""}"
+export LIBRARY_PATH="$PREFIX/lib:$GLOBAL_PREFIX/lib:${LIBRARY_PATH-""}"
+export LD_LIBRARY_PATH="$PREFIX/lib:$GLOBAL_PREFIX/lib:${LD_LIBRARY_PATH-""}"
 
 ExportEnv() {
     echo "export PATH=\"$PATH\""
