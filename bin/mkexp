@@ -19,7 +19,7 @@ while [ -L "$source" ]; do
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 
-ROOT="$script_pwd/../"
+ROOT="$(realpath "$script_pwd/../")"
 
 # Init git submodules 
 git -C "$script_pwd" submodule update --init --recursive 

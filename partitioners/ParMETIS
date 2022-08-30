@@ -112,7 +112,7 @@ InvokeFromDisk() {
     epsilon="$4"
     seed="$5"
     threads="$6"
-    arguments="${@:7}"
+    arguments="${@:9}"
   
     # .graph > .metis
     [[ -f "$graph.graph" ]] && graph="$graph.graph"

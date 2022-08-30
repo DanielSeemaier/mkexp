@@ -1,18 +1,15 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ ! -x "$PREFIX/bin/parhip" ]]; then
+    if [[ ! -x "$GLOBAL_PREFIX/bin/parhip" ]]; then
         return 1
     fi
-    if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
-        return 1
-    fi
-    if [[ ! -x "$PREFIX/bin/InMemoryParhip" ]]; then 
+    if [[ ! -x "$GLOBAL_PREFIX/bin/InMemoryParhip" ]]; then 
         return 1 
     fi
 
-    git -C "$PREFIX/src/KaHIP" fetch
-    local_hash=$(git -C "$PREFIX/src/KaHIP" rev-parse HEAD)
-    remote_hash=$(git -C "$PREFIX/src/KaHIP" rev-parse @{u})
+    git -C "$GLOBAL_PREFIX/src/KaHIP" fetch
+    local_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse HEAD)
+    remote_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse @{u})
     if [[ "$local_hash" == "$remote_hash" ]]; then 
         return 0
     fi
@@ -21,7 +18,7 @@ IsInstalled() {
 }
 
 Binary() {
-    echo "$PREFIX/bin/parhip"
+    echo "$GLOBAL_PREFIX/bin/parhip"
 }
 
 Install() {
@@ -35,27 +32,27 @@ Install() {
     fi
 
     # Standalone ParHIP
-    if [[ ! -d "$PREFIX/src/KaHIP" ]]; then 
-        git clone git@github.com:KaHIP/KaHIP.git "$PREFIX/src/KaHIP"
+    if [[ ! -d "$GLOBAL_PREFIX/src/KaHIP" ]]; then 
+        git clone git@github.com:KaHIP/KaHIP.git "$GLOBAL_PREFIX/src/KaHIP"
     else 
-        git -C "$PREFIX/src/KaHIP" pull
+        git -C "$GLOBAL_PREFIX/src/KaHIP" pull
     fi
     
     current_pwd="$PWD"
-    cd "$PREFIX/src/KaHIP"
+    cd "$GLOBAL_PREFIX/src/KaHIP"
     CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
     cd "$current_pwd"
 
-    mkdir -p "$PREFIX/bin"
-    cp "$PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
-    cp "$PREFIX/src/KaHIP/deploy/libparhip"* "$PREFIX/lib/"
-    cp "$PREFIX/src/KaHIP/deploy/parhip_interface.h" "$PREFIX/include/"
-    cp "$PREFIX/src/KaHIP/deploy/parallel/libkahip"* "$PREFIX/lib/"
+    mkdir -p "$GLOBAL_PREFIX/bin"
+    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
+    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/libparhip"* "$GLOBAL_PREFIX/lib/"
+    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parhip_interface.h" "$GLOBAL_PREFIX/include/"
+    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parallel/libkahip"* "$GLOBAL_PREFIX/lib/"
 
     # InMemory -> KaGen
-    if [[ ! -x "$PREFIX/bin/KaGen" ]]; then # Requirement: KaGen
-        src_dir="$PREFIX/src/KaGen"
-        if [[ ! -d "$PREFIX/src/KaGen" ]]; then 
+    if [[ ! -x "$GLOBAL_PREFIX/bin/KaGen" ]]; then # Requirement: KaGen
+        src_dir="$GLOBAL_PREFIX/src/KaGen"
+        if [[ ! -d "$GLOBAL_PREFIX/src/KaGen" ]]; then 
             git clone git@github.com:sebalamm/KaGen.git "$src_dir"
         else
             git -C "$src_dir" pull
@@ -65,18 +62,18 @@ Install() {
         cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
         cmake --build "$src_dir/build" --parallel
     
-        cp "$src_dir/build/app/KaGen" "$PREFIX/bin"
-        cp "$src_dir/build/library/libkagen"* "$PREFIX/lib"
-        cp "$src_dir/library/"*"kagen.h" "$PREFIX/include"
-        cp "$src_dir/build/extlib/sampling/sampling/libsampling"* "$PREFIX/lib"
-        cp "$src_dir/build/extlib/sampling/extlib/tlx/tlx/libtlx"* "$PREFIX/lib"
-        cp "$src_dir/build/extlib/sampling/extlib/spooky/libspooky"* "$PREFIX/lib"
+        cp "$src_dir/build/app/KaGen" "$GLOBAL_PREFIX/bin"
+        cp "$src_dir/build/library/libkagen"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/library/"*"kagen.h" "$GLOBAL_PREFIX/include"
+        cp "$src_dir/build/extlib/sampling/sampling/libsampling"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/tlx/tlx/libtlx"* "$GLOBAL_PREFIX/lib"
+        cp "$src_dir/build/extlib/sampling/extlib/spooky/libspooky"* "$GLOBAL_PREFIX/lib"
     fi 
 
     src_dir="$ROOT/src/InMemoryDriver/"
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release 
     cmake --build "$src_dir/build" --target InMemoryParhip --parallel 
-    cp "$src_dir/build/InMemoryParhip" "$PREFIX/bin"
+    cp "$src_dir/build/InMemoryParhip" "$GLOBAL_PREFIX/bin"
 }
 
 InvokeFromDisk() {
@@ -85,8 +82,7 @@ InvokeFromDisk() {
     k="$3"
     epsilon="$4"
     seed="$5"
-    threads="$6"
-    arguments="${@:7}"
+    arguments="${@:9}"
   
     # .bgf > .graph > .metis
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
@@ -115,7 +111,7 @@ InvokeFromKaGen() {
     param_kagen_arguments="$9"
     param_algo_arguments="${@:10}"
 
-    echo -n "$PREFIX/bin/InMemoryParhip "
+    echo -n "$GLOBAL_PREFIX/bin/InMemoryParhip "
     echo -n "$param_seed " # interprete as number of repetitions 
     echo -n "$param_k "
 
