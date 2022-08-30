@@ -26,6 +26,8 @@ Install() {
 
     current_pwd="$PWD"
 
+    export CMAKE_GENERATOR="Unix Makefiles" 
+
     # Install GKlib
     if [[ ! -f "$GLOBAL_PREFIX/lib/libGKlib.a" ]]; then 
         src_gklib="$GLOBAL_PREFIX/src/GKlib"
