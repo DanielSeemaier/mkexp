@@ -86,7 +86,7 @@ Install() {
         else
             git -C "$src_dir" pull
         fi
-        git -C "$src_dir" submodule update --init --remote --recursive
+        git -C "$src_dir" submodule update --init --recursive
         
         cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
         cmake --build "$src_dir/build" --parallel
