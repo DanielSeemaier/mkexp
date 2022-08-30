@@ -27,6 +27,7 @@ git -C "$script_pwd" submodule update --init --recursive
 # Parse arguments
 mode="generate"
 skip_install=0
+local_install=0
 
 declare -A active_algorithms
 while [[ $# -gt 0 ]]; do 
@@ -73,6 +74,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --init)
             mode="init"
+            shift 
+            ;;
+        --local)
+            local_install=1 
             shift 
             ;;
         -*|--*)
@@ -434,6 +439,9 @@ fi
 # Install required partitioners
 PREFIX="$PWD/usr"
 GLOBAL_PREFIX="$ROOT/usr"
+if [[ "$local_install" == 1 ]]; then 
+    GLOBAL_PREFIX="$PREFIX"
+fi
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
 mkdir -p "$GLOBAL_PREFIX" "$GLOBAL_PREFIX/bin" "$GLOBAL_PREFIX/lib" "$GLOBAL_PREFIX/include"
 
