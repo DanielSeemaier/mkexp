@@ -1,0 +1,73 @@
+#!/bin/bash
+IsInstalled() {
+    if [[ ! -x "$GLOBAL_PREFIX/bin/xtrapulp" ]]; then
+        return 1
+    fi
+
+    return 0
+}
+
+Binary() {
+    echo "$GLOBAL_PREFIX/bin/xtrapulp"
+}
+
+Install() {
+    if [[ "$version" != "latest" ]]; then
+        echo "Error: version support not implemented"
+        exit 1
+    fi 
+
+    if IsInstalled; then 
+        return 0
+    fi
+
+    current_pwd="$PWD"
+
+    export CMAKE_GENERATOR="Unix Makefiles" 
+
+    if [[ ! -f "$GLOBAL_PREFIX/bin/xtrapulp" ]]; then 
+        src_xtrapulp="$GLOBAL_PREFIX/src/PuLP"
+        if [[ ! -d "$src_xtrapulp" ]]; then
+            git clone git@github.com:HPCGraphAnalysis/PuLP.git "$src_xtrapulp"
+        fi
+
+        # 64 bit binary file format (unused currently)
+        cp "$ROOT/src/xtrapulp/main.cpp" "$src_xtrapulp/xtrapulp/0.3/main.cpp"
+        
+        # Patch METIS file format 
+        cp "$ROOT/src/xtrapulp/io_pp.cpp" "$src_xtrapulp/xtrapulp/0.3/io_pp.cpp"
+
+        cd "$src_xtrapulp"
+        ./install
+        cd "$current_pwd"
+
+        cp "$src_xtrapulp/xtrapulp/0.3/xtrapulp" "$GLOBAL_PREFIX/bin/xtrapulp"
+    fi
+}
+
+InvokeFromDisk() {
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    threads="$6"
+    arguments="${@:9}"
+  
+    # .graph > .metis
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    balance=$(echo "1.0+$epsilon" | bc)
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) $graph $k -a -v $balance -s $seed"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+InvokeFromKaGen() {
+    >2& echo "Error: not supported"
+    exit 1
+}
