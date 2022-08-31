@@ -561,9 +561,9 @@ if [[ $mode == "generate" ]]; then
                         exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
                         exe_with_timelimit="$exe_with_mpi"
                         if [[ "$_timelimit_per_instance" != "" ]]; then 
-                            exe_with_timelimit="timeout $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
+                            exe_with_timelimit="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
                         fi
-                        echo "$exe_with_timelimit >> $log_filename" >> "$job_filename"
+                        echo "$exe_with_timelimit 2>&1 >> $log_filename" >> "$job_filename"
                     done # generator
                 done # k
             done # algorithm
