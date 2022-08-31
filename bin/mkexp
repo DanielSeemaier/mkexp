@@ -487,6 +487,7 @@ nohup.out
 logs/
 jobs/
 usr/
+.Rhistory
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
