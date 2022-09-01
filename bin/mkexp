@@ -509,6 +509,9 @@ fi
 LoadSystem "$_system"
 
 if [[ $mode == "generate" ]]; then
+    infofile="INFO"
+    echo "Generated at $(date) on $(hostname)" > "$infofile"
+
     declare -a jobfiles
     for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
         nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
