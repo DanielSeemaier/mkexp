@@ -54,7 +54,8 @@ InvokeFromDisk() {
     threads="$6"
     arguments="${@:9}"
   
-    # .graph > .metis
+    # .graph.trimmed > .graph > .metis
+    [[ -f "$graph.graph.trimmed" ]] && graph="$graph.graph.trimmed"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
