@@ -9,3 +9,7 @@
 5. Once the experiment was executed, run `mkexp --results` to generate standardized CSV files containing the results. 
    Then, run `mkexp --plots` to generate performance profiles based on the results (required `R` with some packages preinstalled).
 
+## Extending the Framework
+
+To add a new partitioner, create a new file in `partitioners/`. This file contains instructions to download / compile / install the partitioner and invoke it.
+Additionally, create a new AWK script in `parsers/` with the same name that parses the logfiles and generates CSV output.
