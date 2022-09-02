@@ -27,7 +27,8 @@ Binary() {
 
 Install() {
     version="$1"
-
+    options="$2"
+    
     if IsInstalled "$version"; then 
         return 0
     fi
@@ -48,7 +49,8 @@ Install() {
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+    >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
     mkdir -p "$PREFIX/bin"
 

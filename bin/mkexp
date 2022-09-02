@@ -146,8 +146,9 @@ InvokePartitionerFromKaGen() {
 InstallPartitioner() {
     name="$1"
     version="$2"
+    options="$3"
     LoadPartitioner "$name"
-    Install "$version"
+    Install "$version" "$options"
 }
 
 LoadSystem() {
@@ -225,6 +226,8 @@ declare -A _algorithm_definition_bases
 declare -A _algorithm_definition_arguments
 declare -A _algorithm_definition_versions
 
+declare -A _algorithm_build_options
+
 declare -a _algorithms
 declare -a _ks
 declare -a _seeds
@@ -238,6 +241,13 @@ _timelimit=""
 _timelimit_per_instance=""
 _system="generic"
 _mpi="none"
+
+BuildOptions() {
+    name="$1"
+    options="${*:2}"
+    _algorithm_build_options[$name]="$options"
+    local_install=1 # always install locally if there are custom build options
+}
 
 DefineAlgorithm() {
     name="$1"
@@ -463,7 +473,11 @@ if [[ $skip_install == "0" && ($mode == "generate" || $mode == "install") ]]; th
     for algorithm in ${_algorithms[@]}; do
         base=$(GetAlgorithmBase "$algorithm")
         version=$(GetAlgorithmVersion "$algorithm")
-        InstallPartitioner "$base" "$version"
+        options=""
+        if [[ -v "_algorithm_build_options[$base]" ]]; then 
+            options="${_algorithm_build_options[$base]}"
+        fi
+        InstallPartitioner "$base" "$version" "$options"
     done
 fi
 
@@ -471,7 +485,6 @@ fi
 [[ -v "_nodes_x_mpis_x_threads" ]] || _nodes_x_mpis_x_threads+=("1x1x1")
 [[ -v "_epsilons" ]] || _epsilons+=("0.03")
 [[ -v "_seeds" ]] || _seeds+=("0")
-
 gitignore_filename="$PWD/.gitignore"
 submit_filename="$PWD/submit.sh"
 job_files_dir="$PWD/jobs"
@@ -589,13 +602,14 @@ if [[ $mode == "clean" || $mode == "purge" ]]; then
     rm -rf "$submit_filename" "$job_files_dir" parse.sh
 fi
 if [[ $mode == "purge" ]]; then
-    echo "!!! About to delete the following directories:"
+    echo "!!! About to delete the following files and directories:"
     echo "    $log_files_dir"
     echo "    $results_dir"
     echo "    $PREFIX"
+    echo "    $PWD/INFO"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir" "$PREFIX"
+        rm -rf "$log_files_dir" "$results_dir" "$PREFIX" "$PWD/INFO"
     fi
 fi
 
