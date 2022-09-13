@@ -19,7 +19,7 @@ MPI OpenMPI
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
-Algorithms ParHIP-Fast ParHIP-Eco
+Algorithms ParHIP-Fast ParHIP-Eco XtraPuLP
 
 # [Mandatory]
 # Values of k.

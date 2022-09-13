@@ -23,6 +23,7 @@ Install() {
 
     current_pwd="$PWD"
 
+
     export CMAKE_GENERATOR="Unix Makefiles" 
 
     if [[ ! -f "$GLOBAL_PREFIX/bin/xtrapulp" ]]; then 
@@ -30,6 +31,8 @@ Install() {
         if [[ ! -d "$src_xtrapulp" ]]; then
             git clone git@github.com:HPCGraphAnalysis/PuLP.git "$src_xtrapulp"
         fi
+
+        cp "$ROOT/src/xtrapulp.cpp" "$src_xtrapulp/xtrapulp/0.3/xtrapulp.cpp"
 
         cd "$src_xtrapulp"
         ./install
