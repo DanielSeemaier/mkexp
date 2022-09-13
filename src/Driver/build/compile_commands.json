@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/seemaier/distributed-graph-partitioner/src/Driver/build",
-  "command": "/software/gcc/12.1.0/bin/g++ -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -O3 -DNDEBUG -pthread -fopenmp -o CMakeFiles/FromBinaryXtraPuLP.dir/xtrapulp.cpp.o -c /home/seemaier/distributed-graph-partitioner/src/Driver/xtrapulp.cpp",
-  "file": "/home/seemaier/distributed-graph-partitioner/src/Driver/xtrapulp.cpp"
-}
-]
