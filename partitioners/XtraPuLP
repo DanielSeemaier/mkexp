@@ -1,6 +1,6 @@
 #!/bin/bash
 IsInstalled() {
-    if [[ ! -x "$GLOBAL_PREFIX/bin/xtrapulp" ]]; then
+    if [[ ! -x "$GLOBAL_PREFIX/bin/xtrapulp" || ! -x "$GLOBAL_PREFIX/bin/InMemoryXtraPuLP" ]]; then
         return 1
     fi
 
@@ -31,17 +31,20 @@ Install() {
             git clone git@github.com:HPCGraphAnalysis/PuLP.git "$src_xtrapulp"
         fi
 
-        # 64 bit binary file format (unused currently)
-        cp "$ROOT/src/xtrapulp/main.cpp" "$src_xtrapulp/xtrapulp/0.3/main.cpp"
-        
-        # Patch METIS file format 
-        cp "$ROOT/src/xtrapulp/io_pp.cpp" "$src_xtrapulp/xtrapulp/0.3/io_pp.cpp"
-
         cd "$src_xtrapulp"
         ./install
         cd "$current_pwd"
 
         cp "$src_xtrapulp/xtrapulp/0.3/xtrapulp" "$GLOBAL_PREFIX/bin/xtrapulp"
+        cp "$src_xtrapulp/xtrapulp/0.3/libxtrapulp.a" "$GLOBAL_PREFIX/lib/libxtrapulp.a"
+        cp "$src_xtrapulp/xtrapulp/0.3/xtrapulp.h" "$GLOBAL_PREFIX/include/xtrapulp.h"
+    fi
+
+    if [[ ! -f "$GLOBAL_PREFIX/bin/InMemoryXtraPuLP" ]]; then 
+        src_inmemory="$ROOT/src/InMemoryDriver/"
+        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release 
+        cmake --build "$src_inmemory/build" --target InMemoryXtraPuLP --parallel 
+        cp "$src_inmemory/build/InMemoryXtraPuLP" "$GLOBAL_PREFIX/bin"
     fi
 }
 
