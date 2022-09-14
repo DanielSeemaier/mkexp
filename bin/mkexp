@@ -241,12 +241,17 @@ _timelimit=""
 _timelimit_per_instance=""
 _system="generic"
 _mpi="none"
+_oversubscribe_mpi=0
 
 BuildOptions() {
     name="$1"
     options="${*:2}"
     _algorithm_build_options[$name]="$options"
     local_install=1 # always install locally if there are custom build options
+}
+
+Oversubscribe() {
+    _oversubscribe_mpi=1
 }
 
 DefineAlgorithm() {
@@ -405,12 +410,6 @@ PrintSummary() {
         is_ws="${_kagen_ws[$i]}"
         echo "- $arguments (Weakly scaled: $is_ws)"
     done 
-    echo ""
-
-    echo "Weakly scaled KaGen graphs:"
-    for graph in "${_ws_kagen_graphs[@]}"; do 
-        echo "- $graph"
-    done
     echo ""
 
     echo "Parallel executions:"
