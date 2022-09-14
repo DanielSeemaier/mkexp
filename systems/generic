@@ -20,10 +20,12 @@ GenerateJobfileEntry() {
             ;;
         OpenMPI)
             oversubscribe=""
+            overload=""
             if [[ "$_oversubscribe_mpi" == "1" ]]; then 
                 oversubscribe="-oversubscribe"
+                overload=":overload-allowed"
             fi
-            echo "mpirun -n $mpis $oversubscribe --bind-to core --map-by socket:PE=${threads} $exe"
+            echo "mpirun -n $mpis $oversubscribe --bind-to core$overload --map-by socket:PE=${threads} $exe"
             ;;
         *)
             >&2 echo "Error: unsupported MPI $_mpi"
