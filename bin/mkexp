@@ -414,7 +414,7 @@ PrintSummary() {
 
     echo "Parallel executions:"
     for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
-        echo "- $(ParseNodes "$nodes_x_mpis_x_threads")x$(ParseMPIs "$nodes_x_mpis_x_threads")x$(ParseThreads "$nodes_x_mpis_x_threads")"
+        echo "- $(ParseNodes "$nodes_x_mpis_x_threads") nodes X $(ParseMPIs "$nodes_x_mpis_x_threads") MPI processes X $(ParseThreads "$nodes_x_mpis_x_threads") threads"
     done
     echo ""
 
