@@ -94,12 +94,14 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--local] [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
     echo ""
     echo "Options are:"
+    echo "    --local: Install partitioners to the experiment directory instead of a global directory"
+    echo ""
     echo "    --install: Install partitioners"
     echo "    --submit: Start the experiment"
     echo "    --results: Parse log files (after executing the experiment) and output CSV files"
@@ -107,7 +109,7 @@ if [[ $mode == "help" ]]; then
     echo "    --stats: Compute some statistics from the CSV files"
     echo "    --clean: Delete generated experiment files"
     echo "    --purge: --clean, but also delete log and result files"
-    echo "    -init: Initialize a new experiment"
+    echo "    --init: Initialize a new experiment"
     exit 0
 fi
 if [[ $mode == "init" ]]; then 
