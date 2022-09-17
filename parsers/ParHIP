@@ -46,6 +46,10 @@ match($0, /log>total partitioning time elapsed ([0-9\.e\-]+)/, m) {
     data["Time"] = m[1]
 }
 
+match($0, /timeout/, m) {
+    data["Timeout"] = 1
+}
+
 END {
     yield()
 }
@@ -63,13 +67,14 @@ function header() {
     printf "NumNodes,"
     printf "NumMPIsPerNode,"
     printf "NumThreadsPerMPI,"
+    printf "Timeout,"
     printf "Failed\n"
 }
 
 function yield() {
-    if (length(data) == 0) { return }
+    if (length(data) <= 1) { return }
 
-    failed = length(data) != 12
+    failed = length(data) != 13
     printf "%s,", data["Graph"]
     printf "%d,", data["N"]
     printf "%d,", data["M"]
@@ -82,6 +87,7 @@ function yield() {
     printf "%d,", data["NumNodes"]
     printf "%d,", data["NumMPIsPerNode"]
     printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d,", data["Timeout"]
     printf "%d\n", failed
     
     reset()
@@ -89,4 +95,5 @@ function yield() {
 
 function reset() {
     split("", data)
+    data["Timeout"] = 0
 }
