@@ -88,7 +88,7 @@ Install() {
         fi
         git -C "$src_dir" submodule update --init --recursive
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $2
         cmake --build "$src_dir/build" --parallel
     
         cp "$src_dir/build/app/KaGen" "$GLOBAL_PREFIX/bin"
@@ -101,7 +101,7 @@ Install() {
 
     if [[ ! -f "$GLOBAL_PREFIX/bin/InMemoryParmetis" ]]; then 
         src_inmemory="$ROOT/src/InMemoryDriver/"
-        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release 
+        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release $2
         cmake --build "$src_inmemory/build" --target InMemoryParmetis --parallel 
         cp "$src_inmemory/build/InMemoryParmetis" "$GLOBAL_PREFIX/bin"
     fi

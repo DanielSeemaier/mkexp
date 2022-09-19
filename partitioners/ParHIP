@@ -59,7 +59,7 @@ Install() {
         fi
         git -C "$src_dir" submodule update --init --recursive
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $2
         cmake --build "$src_dir/build" --parallel
     
         cp "$src_dir/build/app/KaGen" "$GLOBAL_PREFIX/bin"
@@ -71,7 +71,7 @@ Install() {
     fi 
 
     src_dir="$ROOT/src/InMemoryDriver/"
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release 
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $2
     cmake --build "$src_dir/build" --target InMemoryParhip --parallel 
     cp "$src_dir/build/InMemoryParhip" "$GLOBAL_PREFIX/bin"
 }

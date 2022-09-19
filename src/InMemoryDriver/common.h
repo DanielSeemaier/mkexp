@@ -85,8 +85,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::cerr << "arguments: " << generator_name << " <n> <m>\n";
                 std::exit(1);
             }
-            config.n = std::atol(argv[A]);
-            config.m = std::atol(argv[A + 1]);
+            config.n = 1ul << std::atol(argv[A]);
+            config.m = 1ul << std::atol(argv[A + 1]);
             break;
 
         case Generator::RDG2D:
@@ -95,7 +95,7 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::cerr << "arguments: " << generator_name << " <n>\n";
                 std::exit(1);
             }
-            config.n = std::atol(argv[A]);
+            config.n = 1ul << std::atol(argv[A]);
             break;
 
         case Generator::GRID2D:
@@ -105,7 +105,7 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::exit(1);
             }
             config.prob = std::atof(argv[A]);
-            config.n = std::atol(argv[A + 1]);
+            config.n = 1ul << std::atol(argv[A + 1]);
             break;
 
         case Generator::RHG:
@@ -115,8 +115,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::exit(1);
             }
             config.gamma = std::atof(argv[A]);
-            config.n = std::atol(argv[A + 1]);
-            config.m = std::atol(argv[A + 2]);
+            config.n = 1ul << std::atol(argv[A + 1]);
+            config.m = 1ul << std::atol(argv[A + 2]);
             break;
 
         case Generator::RMAT:
@@ -128,8 +128,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
             config.a = std::atof(argv[A]);
             config.b = std::atof(argv[A + 1]);
             config.c = std::atof(argv[A + 2]);
-            config.n = std::atol(argv[A + 3]);
-            config.m = std::atol(argv[A + 4]);
+            config.n = 1ul << std::atol(argv[A + 3]);
+            config.m = 1ul << std::atol(argv[A + 4]);
             break;
     }
 
