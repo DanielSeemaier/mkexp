@@ -5,34 +5,41 @@ library(this.path)
 root = paste0(dirname(this.path()), "/..")
 source(paste0(root, "/plots/functions.R"), chdir = TRUE)
 
-algorithms = commandArgs(trailingOnly = TRUE)
-num_algorithms = length(algorithms)
-
-filter = c("amazon", "eu-2005", "youtube")
-`%notin%` <- Negate(`%in%`)
+in_algorithms <- commandArgs(trailingOnly = TRUE)
+algorithms <- c()
 
 data <- list()
-for (algorithm in algorithms) {
+for (algorithm in in_algorithms) {
     df <- read.csv(paste0("results/", algorithm, ".csv"))
-    df <- subset(df, Graph %notin% filter)
+    threads <- unique(df$NumThreadsPerMPI)
 
-    df$algorithm <- algorithm
-    df$graph <- sub(".graph", "", df$Graph)
-    df$imbalance <- df$Balance
-    df$objective <- "km1"
-    df$km1 <- df$Cut
-    df$cut <- df$Cut 
-    df$totalPartitionTime <- df$Time
-    df$num_threads <- df$NumPEs
-    df$seed <- 0
-    df$k <- df$K
-    df <- df %>% mutate(failed = ifelse(Failed == 1, "yes", "no"))
+    for (thread in threads) {
+        falgorithm <- paste0(algorithm, "-", thread)
+        fdf <- df %>% dplyr::filter(NumThreadsPerMPI == thread)
 
-    df <- aggreg_data(df, timelimit = 3600, seeds = 9999, epsilon = 0.04)
-    df$algorithm <- algorithm
+        fdf$algorithm <- falgorithm
+        fdf$graph <- sub(".graph", "", fdf$Graph)
+        fdf$imbalance <- fdf$Balance
+        fdf$objective <- "km1"
+        fdf$km1 <- fdf$Cut
+        fdf$cut <- fdf$Cut 
+        fdf$totalPartitionTime <- fdf$Time
+        fdf$num_threads <- fdf$NumPEs
+        fdf$seed <- 0
+        fdf$k <- fdf$K
+        fdf <- fdf %>% mutate(failed = ifelse(Failed == 1, "yes", "no"))
+        #fdf <- fdf %>% dplyr::filter(k < 1024)
 
-    data <- append(data, list(df))
+        fdf <- aggreg_data(fdf, timelimit = 3600, seeds = 9999, epsilon = 0.03)
+    
+        fdf$algorithm <- falgorithm
+
+        data <- append(data, list(fdf))
+        algorithms <- c(algorithms, falgorithm)
+    }
 }
+
+num_algorithms = length(algorithms)
 
 palette <- brewer.pal(n = num_algorithms, name = "Set1")
 algo_color_mapping <- c()
@@ -41,6 +48,8 @@ for (algorithm in algorithms) {
     i <- i + 1
     algo_color_mapping[algorithm] = palette[[i]]
 }
+
+
 
 pdf("plots.pdf")
 print(performace_plot(data,
@@ -57,16 +66,7 @@ for (i in 1:(num_algorithms - 1)) {
         a <- data[[i]]
         b <- data[[j]]
 
-        a_ok <- subset(a, failed == FALSE)
-        b_ok <- subset(b, failed == FALSE)
-        
-        a_graphs <- unique(a_ok$graph)
-        b_graphs <- unique(b_ok$graph)
-
-        a_common <- subset(a_ok, graph %in% b_graphs)
-        b_common <- subset(b_ok, graph %in% a_graphs)
-
-        print(performace_plot(list(a_common, b_common),
+        print(performace_plot(list(a, b),
             objective = "avg_km1",
             hide_y_axis_title = FALSE,
             show_infeasible_tick = FALSE,
