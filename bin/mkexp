@@ -534,7 +534,7 @@ if [[ $mode == "generate" ]]; then
 
         job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
         GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
-        ExportEnv > "$job_filename"
+        ExportEnv >> "$job_filename"
         jobfiles+=("$job_filename")
 
         for epsilon in ${_epsilons[@]}; do 

@@ -8,6 +8,7 @@ GenerateJobfileHeader() {
     param_threads="$4"
     param_timelimit="$5"
 
+    echo "#!/bin/bash"
     echo "#SBATCH --nodes=${param_nodes}"
     echo "#SBATCH --ntasks=$((param_nodes*param_mpis))"
     echo "#SBATCH --cpus-per-task=${param_threads}"
