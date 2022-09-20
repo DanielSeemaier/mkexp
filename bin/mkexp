@@ -502,6 +502,8 @@ logs/
 jobs/
 usr/
 .Rhistory
+slurm/
+slurm-*
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
