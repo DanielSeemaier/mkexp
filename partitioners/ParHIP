@@ -134,6 +134,8 @@ InvokeFromKaGen() {
     kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
     kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
 
+    log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
+
     if [[ ! -z "$kagen_a" ]]; then 
         echo -n "$kagen_a $kagen_b $kagen_c "
     fi
@@ -144,10 +146,10 @@ InvokeFromKaGen() {
         echo -n "$kagen_gamma "
     fi
     if [[ ! -z "$kagen_n" ]]; then 
-        echo -n "$((kagen_n+param_nodes-1)) " # log n
+        echo -n "$((kagen_n+log_nodes)) " # log n
     fi
     if [[ ! -z "$kagen_m" ]]; then 
-        echo -n "$((kagen_m+param_nodes-1)) " # log m
+        echo -n "$((kagen_m+log_nodes)) " # log m
     fi
 
     echo ""
