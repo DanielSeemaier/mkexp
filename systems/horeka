@@ -39,7 +39,8 @@ GenerateJobfileEntry() {
             exit 1
             ;;
         OpenMPI)
-            echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} -report-bindings ${param_exe}"
+            #echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} -report-bindings ${param_exe}"
+            echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} ${param_exe}"
             ;;
         *)
             >&2 echo "Error: unsupported MPI $_mpi"
