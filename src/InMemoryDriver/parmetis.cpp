@@ -35,30 +35,36 @@ int main(int argc, char *argv[]) {
     }
     std::vector<real_t> ubvec(1);
     ubvec[0] = 1.03;
-   
+
     std::vector<idx_t> options(3);
-    options[0] = 1; // use options
-    options[1] = 1; // show timings
+    options[0] = 1;  // use options
+    options[1] = 1;  // show timings
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     for (int iter = 0; iter < config.repetitions; ++iter) {
-        options[2] = iter; // seed
-                           
+        options[2] = iter;  // seed
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
         auto start = std::chrono::steady_clock::now();
         ParMETIS_V3_PartKway(vtxdist.data(), xadj.data(), adjncy.data(),
                              nullptr, nullptr, &wgtflag, &numflag, &ncon, &k,
                              tpwgts.data(), ubvec.data(), options.data(), &cut,
                              partition.data(), &comm);
+        MPI_Barrier(MPI_COMM_WORLD);
         auto end = std::chrono::steady_clock::now();
+
+        const double imbalance = compute_balance<idx_t>(
+            num_nodes, k, partition.data());
 
         if (rank == 0) {
             auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
                             end - start)
                             .count();
             std::cout << "RESULT cut=" << cut << " time=" << 1.0 * time / 1000
-                      << std::endl;
+                      << " imbalance=" << imbalance << std::endl;
         }
     }
 

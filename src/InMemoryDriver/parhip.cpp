@@ -31,18 +31,24 @@ int main(int argc, char *argv[]) {
     for (int iter = 0; iter < config.repetitions; ++iter) {
         int mode = config.eco ? ECOSOCIAL : FASTSOCIAL;
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         auto start = std::chrono::steady_clock::now();
         ParHIPPartitionKWay(vtxdist.data(), xadj.data(), adjncy.data(), nullptr,
                             nullptr, &k, &imbalance, false, iter, mode, &cut,
                             partition.data(), &comm);
+        MPI_Barrier(MPI_COMM_WORLD);
         auto end = std::chrono::steady_clock::now();
+
+        const double imbalance =
+            compute_balance<idxtype>(num_nodes, k, partition.data());
 
         if (rank == 0) {
             auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
                             end - start)
                             .count();
             std::cout << "RESULT cut=" << cut << " time=" << 1.0 * time / 1000
-                      << std::endl;
+                      << " imbalance=" << imbalance << std::endl;
         }
     }
 

@@ -4,6 +4,7 @@
 #include <mpi.h>
 
 #include <iostream>
+#include <numeric>
 #include <string>
 
 namespace driver {
@@ -177,5 +178,27 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
     }
 
     __builtin_unreachable();
+}
+
+template <typename IDX>
+double compute_balance(const IDX n, const IDX k, IDX *partition) {
+    std::vector<unsigned long long> local_block_sizes(k);
+    for (IDX u = 0; u < n; ++u) {
+        ++local_block_sizes[partition[u]];
+    }
+
+    std::vector<unsigned long long> block_sizes(k);
+    MPI_Reduce(local_block_sizes.data(), block_sizes.data(), k, MPI_UNSIGNED_LONG_LONG,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+
+    const IDX sum = std::accumulate(block_sizes.begin(), block_sizes.end(), 0);
+    const double avg_size = 1.0 * sum / k;
+    double max_imbalance = 0.0;
+    for (IDX b = 0; b < k; ++b) {
+        max_imbalance =
+            std::max<double>(max_imbalance, block_sizes[b] / avg_size);
+    }
+
+    return max_imbalance;
 }
 }  // namespace driver
