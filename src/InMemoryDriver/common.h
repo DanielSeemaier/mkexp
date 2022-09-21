@@ -191,7 +191,7 @@ double compute_balance(const IDX n, const IDX k, IDX *partition) {
     MPI_Reduce(local_block_sizes.data(), block_sizes.data(), k, MPI_UNSIGNED_LONG_LONG,
                MPI_SUM, 0, MPI_COMM_WORLD);
 
-    const IDX sum = std::accumulate(block_sizes.begin(), block_sizes.end(), 0);
+    const IDX sum = std::accumulate(block_sizes.begin(), block_sizes.end(), 0ull);
     const double avg_size = 1.0 * sum / k;
     double max_imbalance = 0.0;
     for (IDX b = 0; b < k; ++b) {

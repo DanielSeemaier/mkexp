@@ -46,7 +46,15 @@ int main(int argc, char *argv[]) {
     for (int iter = 0; iter < config.repetitions; ++iter) {
         options[2] = iter;  // seed
 
+        if (rank == 0) {
+            std::cout << "> Waiting for barrier ..." << std::endl;
+        }
+
         MPI_Barrier(MPI_COMM_WORLD);
+
+        if (rank == 0) {
+            std::cout << "ParMETIS iteration " << iter << " ..." << std::endl;
+        }
 
         auto start = std::chrono::steady_clock::now();
         ParMETIS_V3_PartKway(vtxdist.data(), xadj.data(), adjncy.data(),
@@ -55,6 +63,10 @@ int main(int argc, char *argv[]) {
                              partition.data(), &comm);
         MPI_Barrier(MPI_COMM_WORLD);
         auto end = std::chrono::steady_clock::now();
+
+        if (rank == 0) {
+            std::cout << "ParMETIS iteration " << iter << ": done" << std::endl;
+        }
 
         const double imbalance = compute_balance<idx_t>(
             num_nodes, k, partition.data());
