@@ -88,7 +88,7 @@ Install() {
         fi
         git -C "$src_dir" submodule update --init --recursive
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $2
         cmake --build "$src_dir/build" --parallel
     
         cp "$src_dir/build/app/KaGen" "$GLOBAL_PREFIX/bin"
@@ -101,7 +101,7 @@ Install() {
 
     if [[ ! -f "$GLOBAL_PREFIX/bin/InMemoryParmetis" ]]; then 
         src_inmemory="$ROOT/src/InMemoryDriver/"
-        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release 
+        cmake -S "$src_inmemory" -B "$src_inmemory/build" -DCMAKE_BUILD_TYPE=Release $2
         cmake --build "$src_inmemory/build" --target InMemoryParmetis --parallel 
         cp "$src_inmemory/build/InMemoryParmetis" "$GLOBAL_PREFIX/bin"
     fi
@@ -162,6 +162,8 @@ InvokeFromKaGen() {
     kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
     kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
 
+    log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
+
     if [[ ! -z "$kagen_a" ]]; then 
         echo -n "$kagen_a $kagen_b $kagen_c "
     fi
@@ -172,10 +174,10 @@ InvokeFromKaGen() {
         echo -n "$kagen_gamma "
     fi
     if [[ ! -z "$kagen_n" ]]; then 
-        echo -n "$((kagen_n+param_nodes-1)) " # log n
+        echo -n "$((kagen_n+log_nodes)) " # log n
     fi
     if [[ ! -z "$kagen_m" ]]; then 
-        echo -n "$((kagen_m+param_nodes-1)) " # log m
+        echo -n "$((kagen_m+log_nodes)) " # log m
     fi
 
     echo ""

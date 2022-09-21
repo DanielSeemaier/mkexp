@@ -47,12 +47,37 @@ match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
+match($0, /TIME /, M) {
+    sub(/TIME /, "", $0)
+    split($0, parts, " ")
+
+    for (i in parts) {
+        if (match(parts[i], /partitioning\[repetition_[0-9]+\]=([0-9\.\-e]+)/, m)) {
+            times[times_index++] = m[1]
+        }
+    }
+}
+
 match($0, /io=[0-9\.\-e]+.* partitioning=([0-9\.e\-]+)/, m) {
-    data["Time"] = m[1]
+    times[times_index++] = m[1]
 }
 
 match($0, /-> cut=([0-9]+)/, m) {
     data["Cut"] = m[1]
+}
+
+match($0, /  Cut:[[:space:]]*([0-9]+)/, m) {
+    has_cut = 1
+    tmp_cut = m[1]
+}
+match($0, /  Imbalance:[[:space:]]*([0-9\.\-e]+)/, m) {
+    tmp_imbalance = m[1]
+}
+/################################################################################/ {
+    if (has_cut) {
+        cuts[cuts_index++] = tmp_cut
+        imbalances[imbalances_index++] = tmp_imbalance
+    }
 }
 
 END {
@@ -78,24 +103,50 @@ function header() {
 function yield() {
     if (length(data) == 0) { return }
 
-    failed = length(data) != 12
-    printf "%s,", data["Graph"]
-    printf "%d,", data["N"]
-    printf "%d,", data["M"]
-    printf "%d,", data["K"]
-    printf "%d,", data["Seed"]
-    printf "%d,", data["Cut"]
-    printf "%f,", data["Epsilon"]
-    printf "%f,", data["Balance"]
-    printf "%f,", data["Time"]
-    printf "%d,", data["NumNodes"]
-    printf "%d,", data["NumMPIsPerNode"]
-    printf "%d,", data["NumThreadsPerMPI"]
-    printf "%d\n", failed
+    failed = length(data) < 9
+
+    if (times_index == 0) {
+        printf "%s,", data["Graph"]
+        printf "%d,", data["N"]
+        printf "%d,", data["M"]
+        printf "%d,", data["K"]
+        printf "%d,", data["Seed"]
+        printf "%d,", data["Cut"]
+        printf "%f,", data["Epsilon"]
+        printf "%f,", data["Balance"]
+        printf "%f,", data["Time"]
+        printf "%d,", data["NumNodes"]
+        printf "%d,", data["NumMPIsPerNode"]
+        printf "%d,", data["NumThreadsPerMPI"]
+        printf "%d\n", failed
+    }
+
+    for (i = 0; i < times_index; i++) {
+        printf "%s,", data["Graph"]
+        printf "%d,", data["N"]
+        printf "%d,", data["M"]
+        printf "%d,", data["K"]
+        printf "%d,", i 
+        printf "%d,", cuts[i]
+        printf "%f,", data["Epsilon"]
+        printf "%f,", imbalances[i]
+        printf "%f,", times[i]
+        printf "%d,", data["NumNodes"]
+        printf "%d,", data["NumMPIsPerNode"]
+        printf "%d,", data["NumThreadsPerMPI"]
+        printf "%d\n", failed
+    }
     
     reset()
 }
 
 function reset() {
     split("", data)
+    split("", cuts)
+    split("", imbalances)
+    split("", times)
+    times_index = 0
+    cuts_index = 0
+    imbalances_index = 0
+    has_cut = 0
 }
