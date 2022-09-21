@@ -93,10 +93,10 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
         case Generator::RDG2D:
         case Generator::RDG3D:
             if (argc != 1) {
-                std::cerr << "arguments: " << generator_name << " <n>\n";
+                std::cerr << "arguments: " << generator_name << " <m>\n";
                 std::exit(1);
             }
-            config.n = 1ul << std::atol(argv[A]);
+            config.m = 1ul << std::atol(argv[A]);
             break;
 
         case Generator::GRID2D:
@@ -152,10 +152,10 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
             return kagen.GenerateRGG3D_NM(config.n, config.m);
 
         case Generator::RDG2D:
-            return kagen.GenerateRDG2D(config.n, false);
+            return kagen.GenerateRDG2D_M(config.m, false);
 
         case Generator::RDG3D:
-            return kagen.GenerateRDG3D(config.n);
+            return kagen.GenerateRDG3D_M(config.m);
 
         case Generator::BA:
             return kagen.GenerateBA_NM(config.n, config.m);
