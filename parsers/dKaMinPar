@@ -47,37 +47,19 @@ match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /TIME /, M) {
-    sub(/TIME /, "", $0)
-    split($0, parts, " ")
-
-    for (i in parts) {
-        if (match(parts[i], /partitioning\[repetition_[0-9]+\]=([0-9\.\-e]+)/, m)) {
-            times[times_index++] = m[1]
-        }
-    }
-}
-
-match($0, /io=[0-9\.\-e]+.* partitioning=([0-9\.e\-]+)/, m) {
-    times[times_index++] = m[1]
+match($0, /TIME.*partitioning\.sort_and_rearrange_graph=([0-9\.\-e]+)/, m) {
+    global_partitioning_time += m[1]
 }
 
 match($0, /-> cut=([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
-match($0, /  Cut:[[:space:]]*([0-9]+)/, m) {
-    has_cut = 1
-    tmp_cut = m[1]
-}
-match($0, /  Imbalance:[[:space:]]*([0-9\.\-e]+)/, m) {
-    tmp_imbalance = m[1]
-}
-/################################################################################/ {
-    if (has_cut) {
-        cuts[cuts_index++] = tmp_cut
-        imbalances[imbalances_index++] = tmp_imbalance
-    }
+match($0, /REPETITION run=[0-9]+ cut=([0-9]+) imbalance=([0-9\.\-e]+) time=([0-9\.\-e]+)/, m) {
+    cuts[runs] = m[1]
+    imbalances[runs] = m[2]
+    times[runs] = m[3]
+    runs++
 }
 
 END {
@@ -105,7 +87,7 @@ function yield() {
 
     failed = length(data) < 9
 
-    if (times_index == 0) {
+    if (runs == 0) {
         printf "%s,", data["Graph"]
         printf "%d,", data["N"]
         printf "%d,", data["M"]
@@ -121,7 +103,7 @@ function yield() {
         printf "%d\n", failed
     }
 
-    for (i = 0; i < times_index; i++) {
+    for (i = 0; i < runs; i++) {
         printf "%s,", data["Graph"]
         printf "%d,", data["N"]
         printf "%d,", data["M"]
@@ -130,7 +112,7 @@ function yield() {
         printf "%d,", cuts[i]
         printf "%f,", data["Epsilon"]
         printf "%f,", imbalances[i]
-        printf "%f,", times[i]
+        printf "%f,", times[i] + global_partitioning_time
         printf "%d,", data["NumNodes"]
         printf "%d,", data["NumMPIsPerNode"]
         printf "%d,", data["NumThreadsPerMPI"]
@@ -145,8 +127,7 @@ function reset() {
     split("", cuts)
     split("", imbalances)
     split("", times)
-    times_index = 0
-    cuts_index = 0
-    imbalances_index = 0
+    runs = 0
     has_cut = 0
+    global_partitioning_time = 0
 }
