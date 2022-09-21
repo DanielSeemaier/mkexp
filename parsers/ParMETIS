@@ -38,7 +38,7 @@ match($0, /^Number of edges:[[:space:]]*([0-9]+)/, m) {
 
 match($0, /way Cut:[[:space:]]*([0-9]+)[[:space:]]*Balance:[[:space:]]*([0-9\.e\-]+)/, m) {
     data["Cut"] = m[1]
-    data["Balance"] = m[2]
+    data["Balance"] = m[2] - 1.0
 }
 
 match($0, /Total:[[:space:]]*Max:[[:space:]]*([0-9\.e\-]+)/, m) {
@@ -49,9 +49,10 @@ match($0, /timeout/, m) {
     data["Timeout"] = 1
 }
 
-match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+)/, m) {
+match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+) imbalance=([0-9\.\-e]+)/, m) {
     cuts[runs] = m[1]
     times[runs] = m[2]
+    imbalances[runs] = m[3]
     runs++
 }
 
@@ -77,7 +78,7 @@ function header() {
 }
 
 function yield() {
-    if (length(data) <= 1) { return }
+    if (length(data) <= 3) { return }
 
     failed = length(data) != 11
 
@@ -105,7 +106,7 @@ function yield() {
         printf "%d,", i
         printf "%d,", cuts[i]
         printf "%f,", data["Epsilon"]
-        printf "%f,", -1
+        printf "%f,", imbalances[i]
         printf "%f,", times[i]
         printf "%d,", data["NumNodes"]
         printf "%d,", data["NumMPIsPerNode"]
@@ -129,4 +130,5 @@ function reset() {
     runs = 0
     split("", cuts)
     split("", times)
+    split("", imbalances)
 }
