@@ -199,6 +199,6 @@ double compute_balance(const IDX n, const IDX k, IDX *partition) {
             std::max<double>(max_imbalance, block_sizes[b] / avg_size);
     }
 
-    return max_imbalance;
+    return max_imbalance - 1.0;
 }
 }  // namespace driver
