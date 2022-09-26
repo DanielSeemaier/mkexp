@@ -82,6 +82,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
         case Generator::RGG3D:
         case Generator::BA:
         case Generator::KRONECKER:
+        case Generator::GRID2D:
+        case Generator::GRID3D:
             if (argc != 2) {
                 std::cerr << "arguments: " << generator_name << " <n> <m>\n";
                 std::exit(1);
@@ -97,16 +99,6 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::exit(1);
             }
             config.m = 1ul << std::atol(argv[A]);
-            break;
-
-        case Generator::GRID2D:
-        case Generator::GRID3D:
-            if (argc != 2) {
-                std::cerr << "arguments: " << generator_name << " <prob> <n>\n";
-                std::exit(1);
-            }
-            config.prob = std::atof(argv[A]);
-            config.n = 1ul << std::atol(argv[A + 1]);
             break;
 
         case Generator::RHG:
@@ -164,10 +156,10 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
             return kagen.GenerateRHG_NM(config.gamma, config.n, config.m);
 
         case Generator::GRID2D:
-            return kagen.GenerateGrid2D_N(config.n, config.prob);
+            return kagen.GenerateGrid2D_NM(config.n, config.m);
 
         case Generator::GRID3D:
-            return kagen.GenerateGrid3D_N(config.n, config.prob);
+            return kagen.GenerateGrid3D_NM(config.n, config.m);
 
         case Generator::KRONECKER:
             return kagen.GenerateKronecker(config.n, config.m);
