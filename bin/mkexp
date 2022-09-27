@@ -244,6 +244,7 @@ _timelimit_per_instance=""
 _system="generic"
 _mpi="none"
 _oversubscribe_mpi=0
+_scale_ks=0
 
 BuildOptions() {
     name="$1"
@@ -311,6 +312,10 @@ Seeds() {
 
 Ks() {
     _ks+=(${@})
+}
+
+ScaleKs() {
+    _scale_ks=1
 }
 
 Timelimit() {
@@ -502,6 +507,8 @@ logs/
 jobs/
 usr/
 .Rhistory
+slurm/
+slurm-*
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
@@ -534,7 +541,7 @@ if [[ $mode == "generate" ]]; then
 
         job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
         GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
-        ExportEnv > "$job_filename"
+        ExportEnv >> "$job_filename"
         jobfiles+=("$job_filename")
 
         for epsilon in ${_epsilons[@]}; do 
@@ -544,6 +551,10 @@ if [[ $mode == "generate" ]]; then
                 algo_arguments=$(GetAlgorithmArguments "$algorithm")
 
                 for k in ${_ks[@]}; do
+                    if [[ "$_scale_ks" == "1" ]]; then 
+                        k=$((k*nodes)) 
+                    fi
+
                     # Graphs from disk
                     for graph in ${_graphs[@]}; do
                         for seed in ${_seeds[@]}; do 

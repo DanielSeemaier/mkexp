@@ -4,6 +4,7 @@
 #include <mpi.h>
 
 #include <iostream>
+#include <numeric>
 #include <string>
 
 namespace driver {
@@ -81,31 +82,23 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
         case Generator::RGG3D:
         case Generator::BA:
         case Generator::KRONECKER:
+        case Generator::GRID2D:
+        case Generator::GRID3D:
             if (argc != 2) {
                 std::cerr << "arguments: " << generator_name << " <n> <m>\n";
                 std::exit(1);
             }
-            config.n = std::atol(argv[A]);
-            config.m = std::atol(argv[A + 1]);
+            config.n = 1ul << std::atol(argv[A]);
+            config.m = 1ul << std::atol(argv[A + 1]);
             break;
 
         case Generator::RDG2D:
         case Generator::RDG3D:
             if (argc != 1) {
-                std::cerr << "arguments: " << generator_name << " <n>\n";
+                std::cerr << "arguments: " << generator_name << " <m>\n";
                 std::exit(1);
             }
-            config.n = std::atol(argv[A]);
-            break;
-
-        case Generator::GRID2D:
-        case Generator::GRID3D:
-            if (argc != 2) {
-                std::cerr << "arguments: " << generator_name << " <prob> <n>\n";
-                std::exit(1);
-            }
-            config.prob = std::atof(argv[A]);
-            config.n = std::atol(argv[A + 1]);
+            config.m = 1ul << std::atol(argv[A]);
             break;
 
         case Generator::RHG:
@@ -115,8 +108,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
                 std::exit(1);
             }
             config.gamma = std::atof(argv[A]);
-            config.n = std::atol(argv[A + 1]);
-            config.m = std::atol(argv[A + 2]);
+            config.n = 1ul << std::atol(argv[A + 1]);
+            config.m = 1ul << std::atol(argv[A + 2]);
             break;
 
         case Generator::RMAT:
@@ -128,8 +121,8 @@ inline Configuration parse_arguments(int argc, char *argv[]) {
             config.a = std::atof(argv[A]);
             config.b = std::atof(argv[A + 1]);
             config.c = std::atof(argv[A + 2]);
-            config.n = std::atol(argv[A + 3]);
-            config.m = std::atol(argv[A + 4]);
+            config.n = 1ul << std::atol(argv[A + 3]);
+            config.m = 1ul << std::atol(argv[A + 4]);
             break;
     }
 
@@ -151,10 +144,10 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
             return kagen.GenerateRGG3D_NM(config.n, config.m);
 
         case Generator::RDG2D:
-            return kagen.GenerateRDG2D(config.n, false);
+            return kagen.GenerateRDG2D_M(config.m, false);
 
         case Generator::RDG3D:
-            return kagen.GenerateRDG3D(config.n);
+            return kagen.GenerateRDG3D_M(config.m);
 
         case Generator::BA:
             return kagen.GenerateBA_NM(config.n, config.m);
@@ -163,10 +156,10 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
             return kagen.GenerateRHG_NM(config.gamma, config.n, config.m);
 
         case Generator::GRID2D:
-            return kagen.GenerateGrid2D_N(config.n, config.prob);
+            return kagen.GenerateGrid2D_NM(config.n, config.m);
 
         case Generator::GRID3D:
-            return kagen.GenerateGrid3D_N(config.n, config.prob);
+            return kagen.GenerateGrid3D_NM(config.n, config.m);
 
         case Generator::KRONECKER:
             return kagen.GenerateKronecker(config.n, config.m);
@@ -177,5 +170,27 @@ inline kagen::KaGenResult generate_graph(const Configuration &config) {
     }
 
     __builtin_unreachable();
+}
+
+template <typename IDX>
+double compute_balance(const IDX n, const IDX k, IDX *partition) {
+    std::vector<unsigned long long> local_block_sizes(k);
+    for (IDX u = 0; u < n; ++u) {
+        ++local_block_sizes[partition[u]];
+    }
+
+    std::vector<unsigned long long> block_sizes(k);
+    MPI_Reduce(local_block_sizes.data(), block_sizes.data(), k, MPI_UNSIGNED_LONG_LONG,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+
+    const IDX sum = std::accumulate(block_sizes.begin(), block_sizes.end(), 0ull);
+    const double avg_size = 1.0 * sum / k;
+    double max_imbalance = 0.0;
+    for (IDX b = 0; b < k; ++b) {
+        max_imbalance =
+            std::max<double>(max_imbalance, block_sizes[b] / avg_size);
+    }
+
+    return max_imbalance - 1.0;
 }
 }  // namespace driver

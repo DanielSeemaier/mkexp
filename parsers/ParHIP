@@ -34,6 +34,17 @@ match($0, /n:([0-9]+) m: ([0-9]+)/, m) {
     data["M"] = m[2]
 }
 
+match($0, /^Number of vertices:[[:space:]]*([0-9]+)/, m) {
+    if (!("N" in data)) {
+        data["N"] = m[1]
+    }
+}
+match($0, /^Number of edges:[[:space:]]*([0-9]+)/, m) {
+    if (!("M" in data)) {
+        data["M"] = m[1]
+    }
+}
+
 match($0, /log>final edge cut ([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
@@ -48,6 +59,13 @@ match($0, /log>total partitioning time elapsed ([0-9\.e\-]+)/, m) {
 
 match($0, /timeout/, m) {
     data["Timeout"] = 1
+}
+
+match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+) imbalance=([0-9\.\-e]+)/, m) {
+    cuts[runs] = m[1]
+    times[runs] = m[2]
+    imbalances[runs] = m[3]
+    runs++
 }
 
 END {
@@ -74,21 +92,45 @@ function header() {
 function yield() {
     if (length(data) <= 1) { return }
 
-    failed = length(data) != 13
-    printf "%s,", data["Graph"]
-    printf "%d,", data["N"]
-    printf "%d,", data["M"]
-    printf "%d,", data["K"]
-    printf "%d,", data["Seed"]
-    printf "%d,", data["Cut"]
-    printf "%f,", data["Epsilon"]
-    printf "%f,", data["Balance"]
-    printf "%f,", data["Time"]
-    printf "%d,", data["NumNodes"]
-    printf "%d,", data["NumMPIsPerNode"]
-    printf "%d,", data["NumThreadsPerMPI"]
-    printf "%d,", data["Timeout"]
-    printf "%d\n", failed
+    failed = length(data) < 10
+
+    if (runs == 0) {
+        printf "%s,", data["Graph"]
+        printf "%d,", data["N"]
+        printf "%d,", data["M"]
+        printf "%d,", data["K"]
+        printf "%d,", data["Seed"]
+        printf "%d,", data["Cut"]
+        printf "%f,", data["Epsilon"]
+        printf "%f,", data["Balance"]
+        printf "%f,", data["Time"]
+        printf "%d,", data["NumNodes"]
+        printf "%d,", data["NumMPIsPerNode"]
+        printf "%d,", data["NumThreadsPerMPI"]
+        printf "%d,", data["Timeout"]
+        printf "%d\n", failed
+    }
+    for (i = 0; i < runs; i++) {
+        timeout = 0
+        if (i + 1 == runs) {
+            #timeout = data["Timeout"]
+        }
+
+        printf "%s,", data["Graph"]
+        printf "%d,", data["N"]
+        printf "%d,", data["M"]
+        printf "%d,", data["K"]
+        printf "%d,", i
+        printf "%d,", cuts[i]
+        printf "%f,", data["Epsilon"]
+        printf "%f,", imbalances[i]
+        printf "%f,", times[i]
+        printf "%d,", data["NumNodes"]
+        printf "%d,", data["NumMPIsPerNode"]
+        printf "%d,", data["NumThreadsPerMPI"]
+        printf "%d,", timeout
+        printf "%d\n", failed
+    }
     
     reset()
 }
@@ -96,4 +138,8 @@ function yield() {
 function reset() {
     split("", data)
     data["Timeout"] = 0
+    runs = 0
+    split("", cuts)
+    split("", times)
+    split("", imbalances)
 }
