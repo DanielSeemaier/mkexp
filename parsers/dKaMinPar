@@ -39,16 +39,17 @@ match($0, /global_n=([0-9]+) global_m=([0-9]+)/, m) {
     }
 }
 
-match($0, /seed=([0-9]+).*/, m) {
-    data["Seed"] = m[4]
+match($0, /seed=([0-9]+)/, m) {
+    data["Seed"] = m[1]
 }
 
 match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /TIME.*partitioning\.sort_and_rearrange_graph=([0-9\.\-e]+)/, m) {
-    global_partitioning_time += m[1]
+match($0, /TIME.*partitioning=([0-9\.\-e]+).*partitioning\.sort_and_rearrange_graph=([0-9\.\-e]+)/, m) {
+    data["Time"] = m[1]
+    global_partitioning_time += m[2]
 }
 
 match($0, /-> cut=([0-9]+)/, m) {

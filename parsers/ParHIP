@@ -92,7 +92,7 @@ function header() {
 function yield() {
     if (length(data) <= 1) { return }
 
-    failed = length(data) < 10
+    failed = length(data) < 11
 
     if (runs == 0) {
         printf "%s,", data["Graph"]
