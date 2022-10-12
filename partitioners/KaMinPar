@@ -37,7 +37,7 @@ Install() {
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
+        git clone git@github.com:KaHIP/KaMinPar.git "$src_dir"
         git -C "$src_dir" submodule update --init --recursive
     else 
         git -C "$src_dir" fetch origin
@@ -48,7 +48,7 @@ Install() {
     if [[ "$version" != "latest" ]]; then 
         branch="$version"
     fi
-    git -C "$src_dir" reset --hard "origin/$branch"
+#    git -C "$src_dir" reset --hard "origin/$branch"
 
     >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
@@ -64,6 +64,7 @@ InvokeFromDisk() {
     k="$3"
     epsilon="$4"
     seed="$5"
+    nodes="$7"
     threads="$8"
     arguments="${@:9}"
     
@@ -71,7 +72,7 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
     if [[ -f "$graph" ]]; then
-        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $threads $arguments"
+        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $nodes $arguments"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
