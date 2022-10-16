@@ -100,16 +100,16 @@ InvokeFromKaGen() {
     param_kagen_arguments="${9}"
     param_algo_arguments="${@:10}"
 
-    echo -n "$(Binary "$param_version") -k $param_k -e $param_epsilon --repetitions=$param_seed -t $param_threads $param_algo_arguments --g=$param_generator "
+    echo -n "$(Binary "$param_version") -k $param_k -e $param_epsilon --repetitions=$param_seed -t $param_threads $param_algo_arguments --g-type=$param_generator "
 
     AddKaGenParam "n" "--g-n" $param_kagen_arguments
     AddKaGenParam "m" "--g-m" $param_kagen_arguments
     AddKaGenParam "p" "--g-p" $param_kagen_arguments
     AddKaGenParam "gamma" "--g-gamma" $param_kagen_arguments
     AddKaGenParam "periodic" "--g-periodic" $param_kagen_arguments
-    AddKaGenParam "a" "--g-a" $param_kagen_arguments
-    AddKaGenParam "b" "--g-b" $param_kagen_arguments
-    AddKaGenParam "c" "--g-c" $param_kagen_arguments
+    AddKaGenParam "a" "--g-prob-a" $param_kagen_arguments
+    AddKaGenParam "b" "--g-prob-b" $param_kagen_arguments
+    AddKaGenParam "c" "--g-prob-c" $param_kagen_arguments
 
     echo -n "--g-scale=$param_nodes "
 
