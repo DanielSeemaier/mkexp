@@ -13,6 +13,3 @@
 [submodule "partitioner/METIS"]
 	path = partitioner/METIS
 	url = git@github.com:KarypisLab/METIS.git
-[submodule "plots"]
-	path = plots
-	url = git@github.com:DanielSeemaier/experimental_plot_scripts.git

@@ -1,87 +1,54 @@
 #!/usr/bin/env Rscript
-options(error=traceback)
+options(show.error.locations = TRUE)
+options(error = traceback)
 
-library(this.path)
+if (!require("this.path", character.only = TRUE, warn.conflicts = FALSE)) {
+    install.packages("this.path")
+}
 root = paste0(dirname(this.path()), "/..")
-source(paste0(root, "/plots/functions.R"), chdir = TRUE)
+source(paste0(root, "/plots/performance_profile_plot.R"), chdir = TRUE)
 
-in_algorithms <- commandArgs(trailingOnly = TRUE)
-algorithms <- c()
+algorithms <- commandArgs(trailingOnly = TRUE)
 
 data <- list()
-for (algorithm in in_algorithms) {
-    df <- read.csv(paste0("results/", algorithm, ".csv"))
-    threads <- unique(df$NumThreadsPerMPI)
-
-    for (thread in threads) {
-        falgorithm <- paste0(algorithm, "-", thread)
-        fdf <- df %>% dplyr::filter(NumThreadsPerMPI == thread)
-
-        fdf$algorithm <- falgorithm
-        fdf$graph <- sub(".graph", "", fdf$Graph)
-        fdf$imbalance <- fdf$Balance
-        fdf$objective <- "km1"
-        fdf$km1 <- fdf$Cut
-        fdf$cut <- fdf$Cut 
-        fdf$totalPartitionTime <- fdf$Time
-        fdf$num_threads <- fdf$NumPEs
-        fdf$seed <- 0
-        fdf$k <- fdf$K
-        fdf <- fdf %>% mutate(failed = ifelse(Failed == 1, "yes", "no"))
-        #fdf <- fdf %>% dplyr::filter(k < 1024)
-
-        fdf <- aggreg_data(fdf, timelimit = 3600, seeds = 9999, epsilon = 0.03)
-    
-        fdf$algorithm <- falgorithm
-
-        data <- append(data, list(fdf))
-        algorithms <- c(algorithms, falgorithm)
+for (algorithm in algorithms) {
+    df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
+    if (length(unique(df$NumThreadsPerMPI)) > 1) {
+        df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumthreadsPerMPI))
     }
+    data <- append(data, list(df))
 }
 
 num_algorithms = length(algorithms)
 
-palette <- brewer.pal(n = num_algorithms, name = "Set1")
-algo_color_mapping <- c()
-i <- 0
-for (algorithm in algorithms) {
-    i <- i + 1
-    algo_color_mapping[algorithm] = palette[[i]]
-}
-
-
-
 pdf("plots.pdf")
-print(performace_plot(data,
-    objective = "avg_km1",
-    hide_y_axis_title = FALSE,
-    show_infeasible_tick = FALSE,
-    show_timeout_tick = TRUE,
-    widths = c(3, 2, 1, 1),
-    latex_export = FALSE,
-    small_size = FALSE))
+all_pp <- create_performance_profile(data[[1]], data[[2]]) +
+    theme_bw() +
+    create_theme()
 
-for (i in 1:(num_algorithms - 1)) {
-    for (j in (i+1):num_algorithms) {
-        a <- data[[i]]
-        b <- data[[j]]
+print(all_pp)
 
-        print(performace_plot(list(a, b),
-            objective = "avg_km1",
-            hide_y_axis_title = FALSE,
-            show_infeasible_tick = FALSE,
-            show_timeout_tick = TRUE,
-            widths = c(3, 2, 1, 1),
-            latex_export = FALSE,
-            small_size = FALSE))
-    }
-}
+#for (i in 1:(num_algorithms - 1)) {
+#    for (j in (i+1):num_algorithms) {
+#        a <- data[[i]]
+#        b <- data[[j]]
+#
+#        print(performace_plot(list(a, b),
+#            objective = "avg_km1",
+#            hide_y_axis_title = FALSE,
+#            show_infeasible_tick = FALSE,
+#            show_timeout_tick = TRUE,
+#            widths = c(3, 2, 1, 1),
+#            latex_export = FALSE,
+#            small_size = FALSE))
+#    }
+#}
 
-print(running_time_box_plot(data,
-    show_infeasible_tick = TRUE,
-    show_timeout_tick = TRUE,
-    order = algorithms,
-    latex_export = FALSE,
-    small_size = FALSE))
+#print(running_time_box_plot(data,
+#    show_infeasible_tick = TRUE,
+#    show_timeout_tick = TRUE,
+#    order = algorithms,
+#    latex_export = FALSE,
+#    small_size = FALSE))
 dev.off()
 
