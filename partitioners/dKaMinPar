@@ -107,9 +107,9 @@ InvokeFromKaGen() {
     AddKaGenParam "p" "--g-p" $param_kagen_arguments
     AddKaGenParam "gamma" "--g-gamma" $param_kagen_arguments
     AddKaGenParam "periodic" "--g-periodic" $param_kagen_arguments
-    AddKaGenParam "a" "--g-a" $param_kagen_arguments
-    AddKaGenParam "b" "--g-b" $param_kagen_arguments
-    AddKaGenParam "c" "--g-c" $param_kagen_arguments
+    AddKaGenParam "a" "--g-prob-a" $param_kagen_arguments
+    AddKaGenParam "b" "--g-prob-b" $param_kagen_arguments
+    AddKaGenParam "c" "--g-prob-c" $param_kagen_arguments
 
     echo -n "--g-scale=$param_nodes "
 
