@@ -1,0 +1,72 @@
+#!/bin/bash
+IsInstalled() {
+    if [[ ! -x "$GLOBAL_PREFIX/bin/kaffpa" ]]; then
+        return 1
+    fi
+
+    git -C "$GLOBAL_PREFIX/src/KaHIP" fetch
+    local_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse HEAD)
+    remote_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse @{u})
+    if [[ "$local_hash" == "$remote_hash" ]]; then 
+        return 0
+    fi
+
+    return 1
+}
+
+Binary() {
+    echo "$GLOBAL_PREFIX/bin/kaffpa"
+}
+
+Install() {
+    if [[ "$version" != "latest" ]]; then
+        echo "Error: version support not implemented"
+        exit 1
+    fi 
+
+    if IsInstalled; then 
+        return 0
+    fi
+
+    # Standalone ParHIP
+    if [[ ! -d "$GLOBAL_PREFIX/src/KaHIP" ]]; then 
+        git clone git@github.com:KaHIP/KaHIP.git "$GLOBAL_PREFIX/src/KaHIP"
+    else 
+        git -C "$GLOBAL_PREFIX/src/KaHIP" pull
+    fi
+    
+    current_pwd="$PWD"
+    cd "$GLOBAL_PREFIX/src/KaHIP"
+    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
+    cd "$current_pwd"
+
+    mkdir -p "$GLOBAL_PREFIX/bin"
+    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/kaffpa" "$(Binary)"
+}
+
+InvokeFromDisk() {
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    arguments="${@:9}"
+  
+    # .graph > .metis
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    # KaHIP expects 3 for 3% etc
+    imbalance=$(echo "100*$epsilon/1" | bc)
+
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) --k=$k --imbalance=$imbalance --seed=$seed $graph $arguments"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+InvokeFromKaGen() {
+    echo "Warning: not implemented"
+}

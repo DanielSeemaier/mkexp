@@ -22,7 +22,7 @@ IsInstalled() {
 
 Binary() {
     version="$1"
-    echo "$PREFIX/bin/dKaMinPar-$version"
+    echo "$PREFIX/bin/KaMinPar-$version"
 }
 
 Install() {
@@ -37,7 +37,7 @@ Install() {
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
+        git clone git@github.com:KaHIP/KaMinPar.git "$src_dir"
         git -C "$src_dir" submodule update --init --recursive
     else 
         git -C "$src_dir" fetch origin
@@ -48,14 +48,14 @@ Install() {
     if [[ "$version" != "latest" ]]; then 
         branch="$version"
     fi
-    git -C "$src_dir" reset --hard "origin/$branch"
+#    git -C "$src_dir" reset --hard "origin/$branch"
 
     >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
-    cmake --build "$src_dir/build" --target dKaMinPar --parallel
+    cmake --build "$src_dir/build" --target KaMinPar --parallel
     mkdir -p "$PREFIX/bin"
 
-    cp "$src_dir/build/apps/dKaMinPar" "$(Binary "$version")"
+    cp "$src_dir/build/apps/KaMinPar" "$(Binary "$version")"
 }
 
 InvokeFromDisk() {
@@ -64,6 +64,7 @@ InvokeFromDisk() {
     k="$3"
     epsilon="$4"
     seed="$5"
+    nodes="$7"
     threads="$8"
     arguments="${@:9}"
     
@@ -71,47 +72,13 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
     if [[ -f "$graph" ]]; then
-        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $threads -p -T $arguments"
+        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $nodes $arguments"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
 }
 
-AddKaGenParam() {
-    param_kagen_name="$1"
-    param_kaminpar_name="$2"
-    param_arguments="${@:3}"
-
-    value=$(ParseKaGenArgument "$param_kagen_name" $param_arguments)
-    if [[ ! -z "$value" ]]; then
-        echo -n "${param_kaminpar_name}=${value} "
-    fi
-}
-
 InvokeFromKaGen() {
-    param_version="$1"
-    param_generator="$2"
-    param_k="$3"
-    param_epsilon="$4"
-    param_seed="$5"
-    param_nodes="$6"
-    param_threads="$8"
-    param_kagen_arguments="${9}"
-    param_algo_arguments="${@:10}"
-
-    echo -n "$(Binary "$param_version") -k $param_k -e $param_epsilon --repetitions=$param_seed -t $param_threads -p -T $param_algo_arguments --g-type=$param_generator "
-
-    AddKaGenParam "n" "--g-n" $param_kagen_arguments
-    AddKaGenParam "m" "--g-m" $param_kagen_arguments
-    AddKaGenParam "p" "--g-p" $param_kagen_arguments
-    AddKaGenParam "gamma" "--g-gamma" $param_kagen_arguments
-    AddKaGenParam "periodic" "--g-periodic" $param_kagen_arguments
-    AddKaGenParam "a" "--g-prob-a" $param_kagen_arguments
-    AddKaGenParam "b" "--g-prob-b" $param_kagen_arguments
-    AddKaGenParam "c" "--g-prob-c" $param_kagen_arguments
-
-    echo -n "--g-scale=$param_nodes "
-
-    echo ""
+    return
 }

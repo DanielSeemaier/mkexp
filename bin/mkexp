@@ -506,6 +506,7 @@ usr/
 .Rhistory
 slurm/
 slurm-*
+logs*/
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
