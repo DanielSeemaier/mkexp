@@ -100,18 +100,33 @@ InvokeFromKaGen() {
     param_kagen_arguments="${9}"
     param_algo_arguments="${@:10}"
 
-    echo -n "$(Binary "$param_version") -k $param_k -e $param_epsilon --repetitions=$param_seed -t $param_threads -p -T $param_algo_arguments --g-type=$param_generator "
+    echo -n "$(Binary "$param_version") -k $param_k -e $param_epsilon --repetitions=$param_seed -t $param_threads -p -T $param_algo_arguments "
+    echo -n "--generator=\"type=$param_generator"
 
-    AddKaGenParam "n" "--g-n" $param_kagen_arguments
-    AddKaGenParam "m" "--g-m" $param_kagen_arguments
-    AddKaGenParam "p" "--g-p" $param_kagen_arguments
-    AddKaGenParam "gamma" "--g-gamma" $param_kagen_arguments
-    AddKaGenParam "periodic" "--g-periodic" $param_kagen_arguments
-    AddKaGenParam "a" "--g-prob-a" $param_kagen_arguments
-    AddKaGenParam "b" "--g-prob-b" $param_kagen_arguments
-    AddKaGenParam "c" "--g-prob-c" $param_kagen_arguments
+    kagen_n=$(ParseKaGenArgument "n" $param_kagen_arguments)
+    kagen_m=$(ParseKaGenArgument "m" $param_kagen_arguments)
+    kagen_p=$(ParseKaGenArgument "p" $param_kagen_arguments)
+    kagen_a=$(ParseKaGenArgument "a" $param_kagen_arguments)
+    kagen_b=$(ParseKaGenArgument "b" $param_kagen_arguments)
+    kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
+    kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
+    log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
 
-    echo -n "--g-scale=$param_nodes "
+    if [[ ! -z "$kagen_a" ]]; then 
+        echo -n ";rmat_a=$kagen_a;rmat_b=$kagen_b;rmat_c=$kagen_c"
+    fi
+    if [[ ! -z "$kagen_p" ]]; then 
+        echo -n ";prob=$kagen_p"
+    fi
+    if [[ ! -z "$kagen_gamma" ]]; then 
+        echo -n ";gamma=$kagen_gamma"
+    fi
+    if [[ ! -z "$kagen_n" ]]; then 
+        echo -n ";N=$((kagen_n+log_nodes))" # log n
+    fi
+    if [[ ! -z "$kagen_m" ]]; then 
+        echo -n ";M=$((kagen_m+log_nodes))" # log m
+    fi
 
-    echo ""
+    echo -n "\""
 }
