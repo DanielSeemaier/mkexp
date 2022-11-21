@@ -2,53 +2,60 @@
 options(show.error.locations = TRUE)
 options(error = traceback)
 
+# Load plotting functions
 initial.options <- commandArgs(trailingOnly = FALSE)
 file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
 source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
+source(file.path(script.basename, "../plots/running_time_box_plot.R"), chdir = TRUE)
 
+# CLI arguments == algorithms to look at
 algorithms <- commandArgs(trailingOnly = TRUE)
 
+# Load result file for each algorithm
 data <- list()
+gmean_running_times <- data.frame("Algorithm" = factor(), "Time" = numeric())
 for (algorithm in algorithms) {
     df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
     if (length(unique(df$NumThreadsPerMPI)) > 1) {
         df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumthreadsPerMPI))
     }
+    gmean_running_times <- gmean_running_times |> rbind(data.frame(
+        "Algorithm" = algorithm,
+        "Time" = mean(df$AvgTime)
+    ))
     data <- append(data, list(df))
 }
 
-num_algorithms = length(algorithms)
-
-pdf("plots.pdf")
-all_pp <- create_performance_profile(data[[1]], data[[2]]) +
+# Performance profile containing all algorithms
+pdf("all_cut.pdf")
+all_pp <- do.call(create_performance_profile, data) +
     theme_bw() +
     create_theme()
-
 print(all_pp)
+dev.off()
 
-#for (i in 1:(num_algorithms - 1)) {
-#    for (j in (i+1):num_algorithms) {
-#        a <- data[[i]]
-#        b <- data[[j]]
-#
-#        print(performace_plot(list(a, b),
-#            objective = "avg_km1",
-#            hide_y_axis_title = FALSE,
-#            show_infeasible_tick = FALSE,
-#            show_timeout_tick = TRUE,
-#            widths = c(3, 2, 1, 1),
-#            latex_export = FALSE,
-#            small_size = FALSE))
-#    }
-#}
+# Pairwise performance profiles
+pdf("pairwise_cut.pdf")
+algorithm_indices <- 1 : (length(algorithms) - 1)
+for (i in 1 : (length(algorithms) - 1)) {
+    for (j in (i + 1) : length(algorithms)) {
+    pp <- create_performance_profile(data[[i]], data[[j]]) +
+        theme_bw() +
+        create_theme()
+    print(pp)
+    }
+}
+dev.off()
 
-#print(running_time_box_plot(data,
-#    show_infeasible_tick = TRUE,
-#    show_timeout_tick = TRUE,
-#    order = algorithms,
-#    latex_export = FALSE,
-#    small_size = FALSE))
+# Running time boxplots
+pdf("all_time.pdf")
+args <- data 
+args[["annotation"]] <- gmean_running_times
+all_bp <- do.call(create_running_time_boxplot, args) +
+    theme_bw() +
+    create_theme()
+print(all_bp)
 dev.off()
 

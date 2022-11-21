@@ -17,16 +17,12 @@ create_running_time_boxplot <- function(...,
                                         tick.failed = "make_infeasible",
                                         tick.errors.space_below = 0.8,
                                         tick.errors.space_between = 0.8,
-                                        label.pdf.timeout = PDF_LABEL_TIMEOUT,
-                                        label.pdf.infeasible = PDF_LABEL_INFEASIBLE,
-                                        label.pdf.failed = PDF_LABEL_FAILED,
-                                        label.tex.timeout = TEX_LABEL_TIMEOUT,
-                                        label.tex.infeasible = TEX_LABEL_INFEASIBLE,
-                                        label.tex.failed = TEX_LABEL_FAILED,
+                                        label.pdf.timeout = "timeout",
+                                        label.pdf.infeasible = "infeasible",
+                                        label.pdf.failed = "failed",
                                         colors = c(),
                                         levels = c(),
                                         annotation = data.frame(),
-                                        tex = FALSE,
                                         position.y = "left",
                                         tiny = FALSE) {
     all_datasets <- list(...)
@@ -75,27 +71,14 @@ create_running_time_boxplot <- function(...,
 
     # Create ticks 
     y_breaks <- 10 ^ seq(min_time_log10, max_time_log10, by = 1)
-    if (tex) {
-        y_labels <- sapply(y_breaks, \(val) paste0("$10^{", log10(val), "}$"))
-    } else {
-        y_labels <- sapply(y_breaks, \(val) paste0("10e", log10(val)))
-    }
+    y_labels <- sapply(y_breaks, \(val) paste0("10e", log10(val)))
     y_breaks <- c(0, y_breaks)
-    if (tex) {
-        y_labels <- c("$0$", y_labels) 
-    } else {
-        y_labels <- c("0", y_labels)
-    }
+    y_labels <- c("0", y_labels)
 
     # Remap infeasible solutions, timeouts and failed runs
     label.infeasible <- label.pdf.infeasible
     label.timeout <- label.pdf.timeout
     label.failed <- label.pdf.failed
-    if (tex) {
-        label.infeasible <- label.tex.infeasible
-        label.timeout <- label.tex.timeout 
-        label.failed <- label.tex.failed
-    }
 
     show_infeasible_tick <- show_infeasibles(pp_data, tick.infeasible)
     show_timeout_tick <- show_timeouts(pp_data, tick.timeout)
@@ -144,7 +127,7 @@ create_running_time_boxplot <- function(...,
     }
 
     if (nrow(annotation) > 0) {
-        p <- p + geom_text(aes(x = Algorithm, y = 0, label = sprintf("%.1f", Time), vjust = -0.5), annotation, size = 2.5)
+        p <- p + geom_text(aes(x = Algorithm, y = 0.01, label = sprintf("%.1f", Time), vjust = -0.5), annotation, size = 2.5)
     }
 
     # Set colors
