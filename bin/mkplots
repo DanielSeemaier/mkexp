@@ -2,11 +2,11 @@
 options(show.error.locations = TRUE)
 options(error = traceback)
 
-if (!require("this.path", character.only = TRUE, warn.conflicts = FALSE)) {
-    install.packages("this.path")
-}
-root = paste0(dirname(this.path()), "/..")
-source(paste0(root, "/plots/performance_profile_plot.R"), chdir = TRUE)
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+script.basename <- dirname(script.name)
+source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
 
 algorithms <- commandArgs(trailingOnly = TRUE)
 
