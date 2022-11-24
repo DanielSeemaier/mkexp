@@ -507,6 +507,7 @@ usr/
 slurm/
 slurm-*
 logs*/
+all_jobs.sh
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
