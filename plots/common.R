@@ -80,6 +80,16 @@ load_data <- function(name, file, seed = 0) {
     if (!("Failed" %in% colnames(df))) {
         df$Failed <- FALSE 
     }
+    if (!("Epsilon" %in% colnames(df))) {
+        print("Warning: no Epsilon column; default to 3%")
+        df$Epsilon <- 0.03
+    }
+    if (!("Balance" %in% colnames(df)) & "Imbalance" %in% colnames(df)) {
+        df$Balance <- df$Imbalance
+    } else if (!("Balance" %in% colnames(df))) {
+        print("Warning: ignoring balance")
+        df$Balance <- df$Epsilon
+    }
 
     # Fix imbalance column for ParMETIS (which is 1+x instead if 0+x)
     #if (name == "ParMETIS" & all(df$Balance >= 1.0 || df$Balance == 0)) {
