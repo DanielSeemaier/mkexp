@@ -59,3 +59,25 @@ all_bp <- do.call(create_running_time_boxplot, args) +
 print(all_bp)
 dev.off()
 
+# Running time per instance plots
+all_data <- data.frame()
+for (df in data) {
+    all_data <- rbind(all_data, df)
+}
+all_data$K <- factor(all_data$K)
+#all_data$TimePerEdge <- 1000 * 1000 * (all_data$AvgTime / all_data$M)
+graphs <- unique(all_data$Graph)
+
+pdf("per_instance_time.pdf")
+for (graph in graphs) {
+    subset_data <- all_data |> dplyr::filter(Graph == graph)
+    p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
+        geom_bar(stat = "identity", position = position_dodge()) +
+        ggtitle(graph) +
+        ylab("Time [s]") +
+        xlab("Number of Blocks") +
+        theme_bw() +
+        create_theme()
+    print(p)
+}
+dev.off()
