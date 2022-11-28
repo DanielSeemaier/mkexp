@@ -81,3 +81,17 @@ for (graph in graphs) {
     print(p)
 }
 dev.off()
+
+pdf("per_instance_cut.pdf")
+for (graph in graphs) {
+    subset_data <- all_data |> dplyr::filter(Graph == graph)
+    p <- ggplot(subset_data, aes(x = K, y = AvgCut, fill = Algorithm)) +
+        geom_bar(stat = "identity", position = position_dodge()) +
+        ggtitle(graph) +
+        ylab("Edge Cut") +
+        xlab("Number of Blocks") +
+        theme_bw() +
+        create_theme()
+    print(p)
+}
+dev.off()
