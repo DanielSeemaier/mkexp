@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     std::iota(global_ids_vec.begin(), global_ids_vec.end(),
               graph.vertex_range.first);
 
-    auto [xadj, adjncy] = kagen::BuildCSR<unsigned long>(std::move(graph));
+    auto [xadj, adjncy, vwgt, ewgt] = kagen::BuildCSR<unsigned long>(std::move(graph));
 
     unsigned long *const local_adjs = adjncy.data();
     unsigned long *const local_offsets = xadj.data();
