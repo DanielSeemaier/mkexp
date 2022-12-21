@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
     auto vtxdist = kagen::BuildVertexDistribution<unsigned long long>(
         graph, MPI_UNSIGNED_LONG_LONG, MPI_COMM_WORLD);
-    auto [xadj, adjncy] = kagen::BuildCSR<unsigned long long>(std::move(graph));
+    auto [xadj, adjncy, vwgt, ewgt] = kagen::BuildCSR<unsigned long long>(std::move(graph));
 
     int k = config.k;
     MPI_Comm comm = MPI_COMM_WORLD;
