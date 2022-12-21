@@ -6,6 +6,7 @@ BEGIN {
 
 /__BEGIN_FILE__/ {
     sub(/__BEGIN_FILE__ /, "", $0)
+    data["Filename"] = $0
     split($0, parts, "___")
     data["Graph"] = parts[1]
 
@@ -48,7 +49,7 @@ match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
 }
 
 match($0, /  Number of local nodes: \[Min=([0-9]+) \| Mean=([0-9]+) \| Max=([0-9]+)/, m) {
-    data["NumCoarseNodes"] = data["NumNodes"] * data["NumMPIsPerNode"] * m[2]
+    data["NumCoarseNodes"] = data["NumNodes"] * data["NumMPIsPerNode"] * m[3]
     data["AvgClusterWeight"] = data["N"] / data["NumCoarseNodes"]
 }
 
