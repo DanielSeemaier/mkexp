@@ -4,6 +4,7 @@ IsInstalled() {
 }
 
 Binary() {
+    echo ""
 }
 
 Install() {
@@ -29,6 +30,7 @@ Install() {
 }
 
 InvokeFromDisk() {
+    echo ""
 }
 
 AddKaGenParam() {

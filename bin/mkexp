@@ -10,6 +10,9 @@ set -o errtrace
 set -o nounset
 set -o errexit
 
+TBB_FLAG=""
+MISC_FLAG=""
+
 # Find absolute path to this script
 source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do

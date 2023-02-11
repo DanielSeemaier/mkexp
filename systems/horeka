@@ -1,6 +1,6 @@
 #!/bin/bash 
 HOREKA_OPENMPI_VERSION="4.0"
-TBB_FLAG="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb"
+TBB_FLAG="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off"
 
 GenerateJobfileHeader() {
     param_mpi="$1"
