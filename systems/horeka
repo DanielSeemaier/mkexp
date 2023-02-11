@@ -1,5 +1,6 @@
 #!/bin/bash 
 HOREKA_OPENMPI_VERSION="4.0"
+TBB_DIR="/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb"
 
 GenerateJobfileHeader() {
     param_mpi="$1"

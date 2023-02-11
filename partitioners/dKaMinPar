@@ -50,8 +50,11 @@ Install() {
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
+    TBB_FLAG=""
+    if [[ ! -v "$TBB_DIR" ]]; then 
+        TBB_FLAG="-DTBB_DIR=$TBB_DIR"
+    fi
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release "$TBB_FLAG" $options
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
     mkdir -p "$PREFIX/bin"
 
