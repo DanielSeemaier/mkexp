@@ -475,6 +475,8 @@ ExportEnv() {
     echo "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\""
 }
 
+LoadSystem "$_system"
+
 if [[ $skip_install == "0" && ($mode == "generate" || $mode == "install") ]]; then
     for algorithm in ${_algorithms[@]}; do
         base=$(GetAlgorithmBase "$algorithm")

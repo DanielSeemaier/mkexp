@@ -57,7 +57,7 @@ Install() {
             git -C "$src_dir" pull 
         fi
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On "$TBB_FLAG" $2
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On $TBB_FLAG $2
         cmake --build "$src_dir/build" --parallel
     
         cp "$src_dir/build/ParHIP" "$GLOBAL_PREFIX/bin/ParHIP_KaGen"

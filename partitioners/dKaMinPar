@@ -50,7 +50,9 @@ Install() {
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release "$TBB_FLAG" $options
+    2>&1 echo "cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG $options"
+
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG $options
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
     mkdir -p "$PREFIX/bin"
 
@@ -64,7 +66,7 @@ Install() {
             git -C "$src_dir" pull 
         fi
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On "$TBB_FLAG" $2
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On $TBB_FLAG $2
         cmake --build "$src_dir/build" --parallel
     
         cp "$src_dir/build/ParHIP" "$GLOBAL_PREFIX/bin/ParHIP_KaGen"
