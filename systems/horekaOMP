@@ -22,10 +22,6 @@ GenerateJobfileHeader() {
     if [[ "$param_mpi" == "OpenMPI" ]]; then 
         echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
     fi
-
-    echo "unset OMP_NUM_THREADS"
-    echo "unset OMP_PROC_BIND"
-    echo "unset OMP_PLACES"
 }
 
 GenerateJobfileEntry() {
