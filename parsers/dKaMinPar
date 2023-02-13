@@ -47,13 +47,17 @@ match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /TIME.*partitioning=([0-9\.\-e]+).*partitioning\.sort_and_rearrange_graph=([0-9\.\-e]+)/, m) {
+match($0, /TIME.*partitioning=([0-9\.\-e]+).*partitioning\.rearrange_graph/, m) {
     data["Time"] = m[1]
-    global_partitioning_time += m[2]
 }
 
 match($0, /-> cut=([0-9]+)/, m) {
     data["Cut"] = m[1]
+}
+
+match($0, /RESULT cut=([0-9]+) imbalance=([0-9\.\-e]+) feasible=([0-1]) k=([0-9]+)/, m) {
+    data["Cut"] = m[1]
+    data["Balance"] = m[2]
 }
 
 match($0, /REPETITION run=[0-9]+ cut=([0-9]+) imbalance=([0-9\.\-e]+) time=([0-9\.\-e]+)/, m) {
@@ -85,50 +89,25 @@ function header() {
 
 function yield() {
     if (length(data) == 0) { return }
+    failed = length(data) < 12
 
-    failed = length(data) < 9
-
-    if (runs == 0) {
-        printf "%s,", data["Graph"]
-        printf "%d,", data["N"]
-        printf "%d,", data["M"]
-        printf "%d,", data["K"]
-        printf "%d,", data["Seed"]
-        printf "%d,", data["Cut"]
-        printf "%f,", data["Epsilon"]
-        printf "%f,", data["Balance"]
-        printf "%f,", data["Time"]
-        printf "%d,", data["NumNodes"]
-        printf "%d,", data["NumMPIsPerNode"]
-        printf "%d,", data["NumThreadsPerMPI"]
-        printf "%d\n", failed
-    }
-
-    for (i = 0; i < runs; i++) {
-        printf "%s,", data["Graph"]
-        printf "%d,", data["N"]
-        printf "%d,", data["M"]
-        printf "%d,", data["K"]
-        printf "%d,", i 
-        printf "%d,", cuts[i]
-        printf "%f,", data["Epsilon"]
-        printf "%f,", imbalances[i]
-        printf "%f,", times[i] + global_partitioning_time
-        printf "%d,", data["NumNodes"]
-        printf "%d,", data["NumMPIsPerNode"]
-        printf "%d,", data["NumThreadsPerMPI"]
-        printf "%d\n", failed
-    }
+    printf "%s,", data["Graph"]
+    printf "%d,", data["N"]
+    printf "%d,", data["M"]
+    printf "%d,", data["K"]
+    printf "%d,", data["Seed"]
+    printf "%d,", data["Cut"]
+    printf "%f,", data["Epsilon"]
+    printf "%f,", data["Balance"]
+    printf "%f,", data["Time"]
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d\n", failed
     
     reset()
 }
 
 function reset() {
     split("", data)
-    split("", cuts)
-    split("", imbalances)
-    split("", times)
-    runs = 0
-    has_cut = 0
-    global_partitioning_time = 0
 }
