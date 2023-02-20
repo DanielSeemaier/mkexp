@@ -31,40 +31,32 @@ BEGIN {
     yield()
 }
 
-match($0, /global_n=([0-9]+) global_m=([0-9]+)/, m) {
-    if (level == 0) {
-	    data["N"] = m[1]
-	    data["M"] = m[2]
-        level++
-    }
+match($0, /Number of global nodes: *([0-9]+)/, m) {
+    data["N"] = m[1]
 }
 
-match($0, /seed=([0-9]+)/, m) {
+match($0, /Number of global edges: *([0-9]+)/, m) {
+    data["M"] = m[1]
+}
+
+match($0, /Seed: *([0-9]+)/, m) {
     data["Seed"] = m[1]
 }
 
-match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
+match($0, /Partition summary:/, m) {
+    Summary = 1
+}
+
+match($0, /Imbalance: *([0-9\.\-e]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /TIME.*partitioning=([0-9\.\-e]+).*partitioning\.rearrange_graph/, m) {
+match($0, /Edge cut: *([0-9]+)/, m) {
+    data["Cut"] = m[1]
+}
+
+match($0, /\|-- Partitioning: \.* ([0-9\.\-e]+) s/, m) {
     data["Time"] = m[1]
-}
-
-match($0, /-> cut=([0-9]+)/, m) {
-    data["Cut"] = m[1]
-}
-
-match($0, /RESULT cut=([0-9]+) imbalance=([0-9\.\-e]+) feasible=([0-1]) k=([0-9]+)/, m) {
-    data["Cut"] = m[1]
-    data["Balance"] = m[2]
-}
-
-match($0, /REPETITION run=[0-9]+ cut=([0-9]+) imbalance=([0-9\.\-e]+) time=([0-9\.\-e]+)/, m) {
-    cuts[runs] = m[1]
-    imbalances[runs] = m[2]
-    times[runs] = m[3]
-    runs++
 }
 
 END {
@@ -88,7 +80,9 @@ function header() {
 }
 
 function yield() {
-    if (length(data) == 0) { return }
+    if (length(data) == 0) { 
+        return 
+    }
     failed = length(data) < 12
 
     printf "%s,", data["Graph"]
@@ -110,4 +104,5 @@ function yield() {
 
 function reset() {
     split("", data)
+    Summary = 0
 }
