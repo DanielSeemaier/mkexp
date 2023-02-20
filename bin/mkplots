@@ -19,7 +19,7 @@ gmean_running_times <- data.frame("Algorithm" = factor(), "Time" = numeric())
 for (algorithm in algorithms) {
     df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
     if (length(unique(df$NumThreadsPerMPI)) > 1) {
-        df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumthreadsPerMPI))
+        df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
     }
     gmean_running_times <- gmean_running_times |> rbind(data.frame(
         "Algorithm" = algorithm,
