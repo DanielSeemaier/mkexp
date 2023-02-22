@@ -18,14 +18,16 @@ data <- list()
 gmean_running_times <- data.frame("Algorithm" = factor(), "Time" = numeric())
 for (algorithm in algorithms) {
     df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
-    if (length(unique(df$NumThreadsPerMPI)) > 1) {
-        df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+    df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+    thread_configs <- unique(df$NumThreadsPerMPI)
+    for (thread_config in thread_configs) {
+        subdf <- df %>% dplyr::filter(NumThreadsPerMPI == thread_config) 
+        gmean_running_times <- gmean_running_times |> rbind(data.frame(
+                "Algorithm" = factor(paste0(algorithm, "-", thread_config)),
+                "Time" = mean(subdf$AvgTime)
+        ))
+        data <- append(data, list(subdf))
     }
-    gmean_running_times <- gmean_running_times |> rbind(data.frame(
-        "Algorithm" = algorithm,
-        "Time" = mean(df$AvgTime)
-    ))
-    data <- append(data, list(df))
 }
 
 # Performance profile containing all algorithms
