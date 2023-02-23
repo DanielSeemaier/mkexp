@@ -142,6 +142,16 @@ InvokeFromKaGen() {
     kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
     kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
 
+    kagen_max_grid_x=$(ParseKaGenArgument "max_grid_x" $param_kagen_arguments)
+    kagen_max_grid_y=$(ParseKaGenArgument "max_grid_y" $param_kagen_arguments)
+    kagen_grid_x=$(ParseKaGenArgument "grid_x" $param_kagen_arguments)
+    kagen_grid_y=$(ParseKaGenArgument "grid_y" $param_kagen_arguments)
+    kagen_scaled_grid_y=$(ParseKaGenArgument "scaled_grid_y" $param_kagen_arguments)
+    kagen_scaled_grid_x=$(ParseKaGenArgument "scaled_grid_x" $param_kagen_arguments)
+    kagen_cols_per_pe=$(ParseKaGenArgument "cols_per_pe" $param_kagen_arguments)
+    kagen_rows_per_pe=$(ParseKaGenArgument "rows_per_pe" $param_kagen_arguments)
+    kagen_filename=$(ParseKaGenArgument "filename" $param_kagen_arguments)
+
     log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
 
     if [[ ! -z "$kagen_a" ]]; then 
@@ -158,6 +168,33 @@ InvokeFromKaGen() {
     fi
     if [[ ! -z "$kagen_m" ]]; then 
         echo -n ";M=$((kagen_m+log_nodes))" # log m
+    fi
+    if [[ ! -z "$kagen_max_grid_x" ]]; then 
+        echo -n ";max_grid_x=$kagen_max_grid_x"
+    fi
+    if [[ ! -z "$kagen_max_grid_y" ]]; then 
+        echo -n ";max_grid_y=$kagen_max_grid_y"
+    fi
+    if [[ ! -z "$kagen_grid_x" ]]; then 
+        echo -n ";grid_x=$kagen_grid_x"
+    fi
+    if [[ ! -z "$kagen_grid_y" ]]; then 
+        echo -n ";grid_y=$kagen_grid_y"
+    fi
+    if [[ ! -z "$kagen_cols_per_pe" ]]; then 
+        echo -n ";cols_per_pe=$kagen_cols_per_pe"
+    fi
+    if [[ ! -z "$kagen_rows_per_pe" ]]; then 
+        echo -n ";rows_per_pe=$kagen_rows_per_pe"
+    fi
+    if [[ ! -z "$kagen_filename" ]]; then 
+        echo -n ";filename=$kagen_filename"
+    fi
+    if [[ ! -z "$kagen_scaled_grid_y" ]]; then
+        echo -n ";grid_y=$((kagen_scaled_grid_y*param_nodes))"
+    fi
+    if [[ ! -z "$kagen_scaled_grid_x" ]]; then
+        echo -n ";grid_x=$((kagen_scaled_grid_x*param_nodes))"
     fi
 
     echo -n "\""

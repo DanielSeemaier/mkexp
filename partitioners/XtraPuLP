@@ -30,6 +30,31 @@ Install() {
 }
 
 InvokeFromDisk() {
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    arguments="${@:9}"
+  
+
+    echo -n "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen "
+    echo -n "-s $seed " 
+    echo -n "-k $k "
+    echo -n " $arguments"
+
+    echo -n "-G\"static"
+
+    format="metis"
+
+    # .bgf > .graph > .metis
+    [[ -f "$graph.bgf" ]] && graph="$graph.bgf" && format="binary-parhip"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    echo -n ";filename=$graph"
+    echo -n ";input_format=$format"
+    echo -n "\""
     echo ""
 }
 
