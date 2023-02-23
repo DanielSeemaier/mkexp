@@ -129,7 +129,7 @@ InvokeFromKaGen() {
     param_algo_arguments="${@:10}"
 
     echo -n "$GLOBAL_PREFIX/bin/ParMETIS_KaGen "
-    echo -n "-s $param_seed " # interprete as number of repetitions 
+    echo -n "-s $param_seed " 
     echo -n "-k $param_k "
 
     echo -n "-G\"$param_generator"

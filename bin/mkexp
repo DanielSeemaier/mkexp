@@ -575,28 +575,28 @@ if [[ $mode == "generate" ]]; then
 
                     # KaGen graphs
                     for i in ${!_kagen_graphs[@]}; do
-                        seed="${#_seeds[@]}"
+                        for seed in ${_seeds[@]}; do
+                            kagen="${_kagen_graphs[$i]}"
+                            kagen_str="$(echo "$kagen" | tr ' ' '-')"
+                            kagen_arguments_arr=($kagen)
+                            kagen_generator="${kagen_arguments_arr[0]}"
+                            kagen_arguments="${kagen_arguments_arr[@]:1}"
 
-                        kagen="${_kagen_graphs[$i]}"
-                        kagen_str="$(echo "$kagen" | tr ' ' '-')"
-                        kagen_arguments_arr=($kagen)
-                        kagen_generator="${kagen_arguments_arr[0]}"
-                        kagen_arguments="${kagen_arguments_arr[@]:1}"
+                            log_filename="$log_files_dir/$algorithm/${kagen_str}-ws=${_kagen_ws[$i]}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
 
-                        log_filename="$log_files_dir/$algorithm/${kagen_str}-ws=${_kagen_ws[$i]}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                            fake_nodes="$nodes"
+                            if [[ "${_kagen_ws[$i]}" == 0 ]]; then 
+                                fake_nodes=1
+                            fi
 
-                        fake_nodes="$nodes"
-                        if [[ "${_kagen_ws[$i]}" == 0 ]]; then 
-                            fake_nodes=1
-                        fi
-
-                        exe=$(InvokePartitionerFromKaGen "$algo_base" "$algo_version" "$kagen_generator" "$k" "$epsilon" "$seed" "$fake_nodes" "$mpis" "$threads" "$kagen_arguments" "$algo_arguments")
-                        exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
-                        exe_with_timelimit="$exe_with_mpi"
-                        if [[ "$_timelimit_per_instance" != "" ]]; then 
-                            exe_with_timelimit="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
-                        fi
-                        echo "$exe_with_timelimit >> $log_filename 2>&1" >> "$job_filename"
+                            exe=$(InvokePartitionerFromKaGen "$algo_base" "$algo_version" "$kagen_generator" "$k" "$epsilon" "$seed" "$fake_nodes" "$mpis" "$threads" "$kagen_arguments" "$algo_arguments")
+                            exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
+                            exe_with_timelimit="$exe_with_mpi"
+                            if [[ "$_timelimit_per_instance" != "" ]]; then 
+                                exe_with_timelimit="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
+                            fi
+                            echo "$exe_with_timelimit >> $log_filename 2>&1" >> "$job_filename"
+                        done # seed
                     done # generator
                 done # k
             done # algorithm
