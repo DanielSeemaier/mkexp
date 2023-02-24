@@ -580,7 +580,7 @@ if [[ $mode == "generate" ]]; then
                         # KaGen graphs
                         for i in ${!_kagen_graphs[@]}; do
                             kagen="${_kagen_graphs[$i]}"
-                            kagen_str="$(echo "$kagen" | sed -En 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/p' | tr ' ' '-')"
+                            kagen_str="$(echo "$kagen" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/p' | tr ' ' '-')"
                             kagen_arguments_arr=($kagen)
                             kagen_generator="${kagen_arguments_arr[0]}"
                             kagen_arguments="${kagen_arguments_arr[@]:1}"
