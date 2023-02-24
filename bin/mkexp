@@ -542,17 +542,17 @@ if [[ $mode == "generate" ]]; then
     echo "Generated at $(date) on $(hostname)" > "$infofile"
 
     declare -a jobfiles
-    for seed in ${_seeds[@]}; do
-        for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
-            nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
-            mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
-            threads=$(ParseThreads "$nodes_x_mpis_x_threads")
+    for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
+        nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
+        mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
+        threads=$(ParseThreads "$nodes_x_mpis_x_threads")
 
-            job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
-            GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
-            ExportEnv >> "$job_filename"
-            jobfiles+=("$job_filename")
+        job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
+        GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
+        ExportEnv >> "$job_filename"
+        jobfiles+=("$job_filename")
 
+        for seed in ${_seeds[@]}; do
             for epsilon in ${_epsilons[@]}; do 
                 for algorithm in ${_algorithms[@]}; do
                     algo_base=$(GetAlgorithmBase "$algorithm")
@@ -585,7 +585,8 @@ if [[ $mode == "generate" ]]; then
                             kagen_generator="${kagen_arguments_arr[0]}"
                             kagen_arguments="${kagen_arguments_arr[@]:1}"
 
-                            log_filename="$log_files_dir/$algorithm/${kagen_str}-ws=${_kagen_ws[$i]}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                            run_identifier="${kagen_str}-ws=${_kagen_ws[$i]}___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}"
+                            log_filename="$log_files_dir/$algorithm/${run_identifier}.log"
 
                             fake_nodes="$nodes"
                             if [[ "${_kagen_ws[$i]}" == 0 ]]; then 
