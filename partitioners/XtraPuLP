@@ -48,7 +48,7 @@ InvokeFromDisk() {
     format="metis"
 
     # .bgf > .graph > .metis
-    [[ -f "$graph.bgf" ]] && graph="$graph.bgf" && format="binary-parhip"
+    #[[ -f "$graph.bgf" ]] && graph="$graph.bgf" && format="binary-parhip"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
