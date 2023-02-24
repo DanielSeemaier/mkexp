@@ -497,6 +497,7 @@ gitignore_filename="$PWD/.gitignore"
 submit_filename="$PWD/submit.sh"
 job_files_dir="$PWD/jobs"
 log_files_dir="$PWD/logs"
+misc_files_dir="$PWD/misc"
 results_dir="$PWD/results"
 
 # Create files file
@@ -513,6 +514,7 @@ slurm/
 slurm-*
 logs*/
 all_jobs.sh
+misc/
 EOT
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
@@ -520,9 +522,11 @@ EOT
 
     mkdir -p "$job_files_dir"
     mkdir -p "$log_files_dir"
+    mkdir -p "$misc_files_dir"
 
     for algorithm in ${_algorithms[@]}; do 
         mkdir -p "$log_files_dir/$algorithm"
+        mkdir -p "$misc_files_dir/$algorithm"
     done
 fi
 
@@ -562,7 +566,8 @@ if [[ $mode == "generate" ]]; then
 
                         # Graphs from disk
                         for graph in ${_graphs[@]}; do
-                            log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
+                            run_identifier="$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}"
+                            log_filename="$log_files_dir/$algorithm/${run_identifier}.log"
                             exe=$(InvokePartitionerFromDisk "$algo_base" "$algo_version" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$algo_arguments")
                             exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
                             exe_with_timelimit="$exe_with_mpi"
