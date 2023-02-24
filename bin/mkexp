@@ -538,30 +538,30 @@ if [[ $mode == "generate" ]]; then
     echo "Generated at $(date) on $(hostname)" > "$infofile"
 
     declare -a jobfiles
-    for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
-        nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
-        mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
-        threads=$(ParseThreads "$nodes_x_mpis_x_threads")
+    for seed in ${_seeds[@]}; do
+        for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
+            nodes=$(ParseNodes "$nodes_x_mpis_x_threads")
+            mpis=$(ParseMPIs "$nodes_x_mpis_x_threads")
+            threads=$(ParseThreads "$nodes_x_mpis_x_threads")
 
-        job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
-        GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
-        ExportEnv >> "$job_filename"
-        jobfiles+=("$job_filename")
+            job_filename="$job_files_dir/jobs_${nodes}x${mpis}x${threads}.sh"
+            GenerateJobfileHeader "$_mpi" "$nodes" "$mpis" "$threads" "$_timelimit" > "$job_filename"
+            ExportEnv >> "$job_filename"
+            jobfiles+=("$job_filename")
 
-        for epsilon in ${_epsilons[@]}; do 
-            for algorithm in ${_algorithms[@]}; do
-                algo_base=$(GetAlgorithmBase "$algorithm")
-                algo_version=$(GetAlgorithmVersion "$algorithm")
-                algo_arguments=$(GetAlgorithmArguments "$algorithm")
+            for epsilon in ${_epsilons[@]}; do 
+                for algorithm in ${_algorithms[@]}; do
+                    algo_base=$(GetAlgorithmBase "$algorithm")
+                    algo_version=$(GetAlgorithmVersion "$algorithm")
+                    algo_arguments=$(GetAlgorithmArguments "$algorithm")
 
-                for k in ${_ks[@]}; do
-                    if [[ "$_scale_ks" == "1" ]]; then 
-                        k=$((k*nodes)) 
-                    fi
+                    for k in ${_ks[@]}; do
+                        if [[ "$_scale_ks" == "1" ]]; then 
+                            k=$((k*nodes)) 
+                        fi
 
-                    # Graphs from disk
-                    for graph in ${_graphs[@]}; do
-                        for seed in ${_seeds[@]}; do 
+                        # Graphs from disk
+                        for graph in ${_graphs[@]}; do
                             log_filename="$log_files_dir/$algorithm/$(basename "$graph")___P${nodes}x${mpis}x${threads}_seed${seed}_eps${epsilon}_k${k}.log"
                             exe=$(InvokePartitionerFromDisk "$algo_base" "$algo_version" "$graph" "$k" "$epsilon" "$seed" "$nodes" "$mpis" "$threads" "$algo_arguments")
                             exe_with_mpi=$(GenerateJobfileEntry "$nodes" "$mpis" "$threads" "$exe")
@@ -570,12 +570,10 @@ if [[ $mode == "generate" ]]; then
                                 exe_with_timelimit="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
                             fi
                             echo "$exe_with_timelimit >> $log_filename 2>&1" >> "$job_filename"
-                        done # seed
-                    done # graph
+                        done # graph
 
-                    # KaGen graphs
-                    for i in ${!_kagen_graphs[@]}; do
-                        for seed in ${_seeds[@]}; do
+                        # KaGen graphs
+                        for i in ${!_kagen_graphs[@]}; do
                             kagen="${_kagen_graphs[$i]}"
                             kagen_str="$(echo "$kagen" | sed -En 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/p' | tr ' ' '-')"
                             kagen_arguments_arr=($kagen)
@@ -596,12 +594,12 @@ if [[ $mode == "generate" ]]; then
                                 exe_with_timelimit="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s $exe_with_timelimit"
                             fi
                             echo "$exe_with_timelimit >> $log_filename 2>&1" >> "$job_filename"
-                        done # seed
-                    done # generator
-                done # k
-            done # algorithm
-        done # epsilon
-    done # parallelism setting
+                        done # generator
+                    done # k
+                done # algorithm
+            done # epsilon
+        done # parallelism setting
+    done
 
     GenerateJobfileSubmission ${jobfiles[@]} >> $submit_filename
 fi 
