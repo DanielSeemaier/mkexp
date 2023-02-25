@@ -59,6 +59,10 @@ match($0, /\|-- Partitioning: \.* ([0-9\.\-e]+) s/, m) {
     data["Time"] = m[1]
 }
 
+match($0, /RESULT .*time=([0-9e\-\.]+).*/, m) {
+    data["Time"] = m[1]
+}
+
 END {
     yield()
 }
