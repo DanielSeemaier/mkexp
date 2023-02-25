@@ -61,12 +61,9 @@ match($0, /timeout/, m) {
     data["Timeout"] = 1
 }
 
-match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+) imbalance=([0-9\.\-e]+)/, m) {
-    cuts[runs] = m[1]
-    times[runs] = m[2]
-    imbalances[runs] = m[3]
-    runs++
-}
+#match($0, /RESULT .*time=([0-9\.\-e]+).*/, m) {
+    #data["Time"] = m[1]
+#}
 
 END {
     yield()
@@ -110,27 +107,6 @@ function yield() {
         printf "%d,", data["Timeout"]
         printf "%d\n", failed
     }
-    for (i = 0; i < runs; i++) {
-        timeout = 0
-        if (i + 1 == runs) {
-            #timeout = data["Timeout"]
-        }
-
-        printf "%s,", data["Graph"]
-        printf "%d,", data["N"]
-        printf "%d,", data["M"]
-        printf "%d,", data["K"]
-        printf "%d,", i
-        printf "%d,", cuts[i]
-        printf "%f,", data["Epsilon"]
-        printf "%f,", imbalances[i]
-        printf "%f,", times[i]
-        printf "%d,", data["NumNodes"]
-        printf "%d,", data["NumMPIsPerNode"]
-        printf "%d,", data["NumThreadsPerMPI"]
-        printf "%d,", timeout
-        printf "%d\n", failed
-    }
     
     reset()
 }
@@ -138,8 +114,4 @@ function yield() {
 function reset() {
     split("", data)
     data["Timeout"] = 0
-    runs = 0
-    split("", cuts)
-    split("", times)
-    split("", imbalances)
 }

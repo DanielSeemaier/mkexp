@@ -49,12 +49,12 @@ match($0, /timeout/, m) {
     data["Timeout"] = 1
 }
 
-match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+) imbalance=([0-9\.\-e]+)/, m) {
-    cuts[runs] = m[1]
-    times[runs] = m[2]
-    imbalances[runs] = m[3]
-    runs++
-}
+#match($0, /RESULT cut=([0-9]+) time=([0-9\.\-e]+) imbalance=([0-9\.\-e]+)/, m) {
+    #cuts[runs] = m[1]
+    #times[runs] = m[2]
+    #imbalances[runs] = m[3]
+    #runs++
+#}
 
 END {
     yield()
@@ -82,42 +82,20 @@ function yield() {
 
     failed = length(data) < 11
 
-    if (runs == 0) {
-        printf "%s,", data["Graph"]
-        printf "%d,", data["N"]
-        printf "%d,", data["M"]
-        printf "%d,", data["K"]
-        printf "%d,", data["Seed"]
-        printf "%d,", data["Cut"]
-        printf "%f,", data["Epsilon"]
-        printf "%f,", data["Balance"]
-        printf "%f,", data["Time"]
-        printf "%d,", data["NumNodes"]
-        printf "%d,", data["NumMPIsPerNode"]
-        printf "%d,", data["NumThreadsPerMPI"]
-        printf "%d,", data["Timeout"]
-        printf "%d\n", failed
-    }
-    for (i = 0; i < runs; i++) {
-        printf "%s,", data["Graph"]
-        printf "%d,", data["N"]
-        printf "%d,", data["M"]
-        printf "%d,", data["K"]
-        printf "%d,", i
-        printf "%d,", cuts[i]
-        printf "%f,", data["Epsilon"]
-        printf "%f,", imbalances[i]
-        printf "%f,", times[i]
-        printf "%d,", data["NumNodes"]
-        printf "%d,", data["NumMPIsPerNode"]
-        printf "%d,", data["NumThreadsPerMPI"]
-        if (i + 1 == runs) {
-            printf "%d,", data["Timeout"]
-        } else {
-            printf "%d,", data[0]
-        }
-        printf "%d\n", failed
-    }
+    printf "%s,", data["Graph"]
+    printf "%d,", data["N"]
+    printf "%d,", data["M"]
+    printf "%d,", data["K"]
+    printf "%d,", data["Seed"]
+    printf "%d,", data["Cut"]
+    printf "%f,", data["Epsilon"]
+    printf "%f,", data["Balance"]
+    printf "%f,", data["Time"]
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d,", data["Timeout"]
+    printf "%d\n", failed
 
     reset()
 }
@@ -127,8 +105,4 @@ function reset() {
     data["N"] = -1
     data["M"] = -1
     data["Timeout"] = 0
-    runs = 0
-    split("", cuts)
-    split("", times)
-    split("", imbalances)
 }
