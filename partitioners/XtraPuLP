@@ -26,6 +26,7 @@ Install() {
         cp "$src_dir/build/ParMETIS" "$GLOBAL_PREFIX/bin/ParMETIS_KaGen"
         cp "$src_dir/build/dKaMinPar" "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen"
         cp "$src_dir/build/XtraPuLP" "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen"
+        cp "$src_dir/build/_deps/PuLP/src/ext_pulp/xtrapulp/0.3/xtrapulp" "$GLOBAL_PREFIX/bin/XtraPuLP"
     fi 
 }
 
@@ -38,24 +39,27 @@ InvokeFromDisk() {
     arguments="${@:9}"
   
 
-    echo -n "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen "
-    echo -n "-s $seed " 
-    echo -n "-k $k "
-    echo -n " $arguments"
-
-    echo -n "-G\"static"
 
     format="metis"
 
     # .bgf > .graph > .metis
     #[[ -f "$graph.bgf" ]] && graph="$graph.bgf" && format="binary-parhip"
-    [[ -f "$graph.graph" ]] && graph="$graph.graph"
-    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+    if [[ -f "$graph.xtrapulp" ]]; then 
+        echo -n "$GLOBAL_PREFIX/bin/XtraPuLP $graph.xtrapulp $k -v 1.03 -q"
+    else 
+        [[ -f "$graph.graph" ]] && graph="$graph.graph"
+        [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    echo -n ";filename=$graph"
-    echo -n ";input_format=$format"
-    echo -n "\""
-    echo ""
+        echo -n "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen "
+        echo -n "-s $seed " 
+        echo -n "-k $k "
+        echo -n " $arguments"
+        echo -n "-G\"static"
+        echo -n ";filename=$graph"
+        echo -n ";input_format=$format"
+        echo -n "\""
+        echo ""
+    fi
 }
 
 AddKaGenParam() {
