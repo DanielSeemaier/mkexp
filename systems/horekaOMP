@@ -22,6 +22,8 @@ GenerateJobfileHeader() {
     if [[ "$param_mpi" == "OpenMPI" ]]; then 
         echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
     fi
+
+    echo "export OMP_NUM_THREADS=${param_threads}"
 }
 
 GenerateJobfileEntry() {

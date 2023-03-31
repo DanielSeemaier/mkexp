@@ -66,13 +66,10 @@ Install() {
             git -C "$src_dir" pull 
         fi
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On $TBB_FLAG $2
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On $TBB_FLAG $2
         cmake --build "$src_dir/build" --parallel
     
-        cp "$src_dir/build/ParHIP" "$GLOBAL_PREFIX/bin/ParHIP_KaGen"
-        cp "$src_dir/build/ParMETIS" "$GLOBAL_PREFIX/bin/ParMETIS_KaGen"
         cp "$src_dir/build/dKaMinPar" "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen"
-        cp "$src_dir/build/XtraPuLP" "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen"
     fi 
 }
 
@@ -144,6 +141,11 @@ InvokeFromKaGen() {
     kagen_cols_per_pe=$(ParseKaGenArgument "cols_per_pe" $param_kagen_arguments)
     kagen_rows_per_pe=$(ParseKaGenArgument "rows_per_pe" $param_kagen_arguments)
     kagen_filename=$(ParseKaGenArgument "filename" $param_kagen_arguments)
+    kagen_weight_model=$(ParseKaGenArgument "weight_model" $param_kagen_arguments)
+    kagen_weight_multiplier=$(ParseKaGenArgument "weight_multiplier" $param_kagen_arguments)
+    kagen_weight_offset=$(ParseKaGenArgument "weight_offset" $param_kagen_arguments)
+    kagen_min_weight_threshold=$(ParseKaGenArgument "min_weight_offset" $param_kagen_arguments)
+    kagen_max_weight_threshold=$(ParseKaGenArgument "max_weight_offset" $param_kagen_arguments)
 
     log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
 
@@ -188,6 +190,21 @@ InvokeFromKaGen() {
     fi
     if [[ ! -z "$kagen_scaled_grid_x" ]]; then
         echo -n ";grid_x=$((kagen_scaled_grid_x*param_nodes))"
+    fi
+    if [[ ! -z "$kagen_weight_model" ]]; then
+        echo -n ";weight_model=$kagen_weight_model"
+    fi
+    if [[ ! -z "$kagen_weight_multiplier" ]]; then
+        echo -n ";weight_multiplier=$kagen_weight_multiplier"
+    fi
+    if [[ ! -z "$kagen_weight_offset" ]]; then
+        echo -n ";weight_offset=$kagen_weight_offset"
+    fi
+    if [[ ! -z "$kagen_min_weight_threshold" ]]; then
+        echo -n ";min_weight_threshold=$kagen_min_weight_threshold"
+    fi
+    if [[ ! -z "$kagen_max_weight_threshold" ]]; then
+        echo -n ";max_weight_threshold=$kagen_max_weight_threshold"
     fi
 
     echo -n "\""
