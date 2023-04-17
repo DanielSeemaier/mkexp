@@ -72,7 +72,7 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
     if [[ -f "$graph" ]]; then
-        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $nodes $arguments"
+        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $nodes -T -E $arguments"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
