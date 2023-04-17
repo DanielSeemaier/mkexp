@@ -15,6 +15,9 @@ GenerateJobfileEntry() {
     fi
 
     case "$_mpi" in 
+        taskset)
+            echo "taskset -c 0-$(( $threads - 1 )) $exe"
+            ;;
         none)
             echo "$exe"
             ;;
