@@ -37,7 +37,7 @@ Install() {
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"
-        git clone git@github.com:KaHIP/KaMinPar.git "$src_dir"
+        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
         git -C "$src_dir" submodule update --init --recursive
     else 
         git -C "$src_dir" fetch origin
