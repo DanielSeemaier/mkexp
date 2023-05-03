@@ -7,7 +7,13 @@ BEGIN {
 /__BEGIN_FILE__/ {
     sub(/__BEGIN_FILE__ /, "", $0)
     split($0, parts, "___")
+
     data["Graph"] = parts[1]
+    data["NumNodes"] = -1
+    data["NumMPIsPerNode"] = -1
+    data["NumThreadsPerMPI"] = -1
+    data["Seed"] = -1
+    data["Epsilon"] = 0.03
 
     split(parts[2], parts, "_")
     for (i in parts) {
@@ -23,32 +29,21 @@ BEGIN {
             data["Epsilon"] = m[1]
         }
     }
-
-    level = 0
 }
 
 /__END_FILE__/ {
     yield()
 }
 
-match($0, /CONTEXT.*seed=([0-9]+)/, m) {
-    data["Seed"] = m[1]
-}
-
-match($0, /INPUT.*n=([0-9]+) m=([0-9]+)/, m) {
-	data["N"] = m[1]
-	data["M"] = m[2]
-}
-
-match($0, /G.io=[0-9\.\-e]+ G.partitioning=([0-9\.\-e]+)/, m) {
+match($0, /`-- Partitioning: \.* *([0-9\.e\-]+) s/, m) {
     data["Time"] = m[1]
 }
 
-match($0, /-> imbalance=([0-9\.e\-]+)/, m) {
+match($0, /  Imbalance: *([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /-> cut=([0-9]+)/, m) {
+match($0, /  Edge cut: *([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
@@ -58,8 +53,6 @@ END {
 
 function header() {
     printf "Graph,"
-    printf "N,"
-    printf "M,"
     printf "K,"
     printf "Seed,"
     printf "Cut,"
@@ -75,11 +68,7 @@ function header() {
 function yield() {
     if (length(data) == 0) { return }
 
-    failed = length(data) < 9
-
     printf "%s,", data["Graph"]
-    printf "%d,", data["N"]
-    printf "%d,", data["M"]
     printf "%d,", data["K"]
     printf "%d,", data["Seed"]
     printf "%d,", data["Cut"]
@@ -89,17 +78,11 @@ function yield() {
     printf "%d,", data["NumNodes"]
     printf "%d,", data["NumMPIsPerNode"]
     printf "%d,", data["NumThreadsPerMPI"]
-    printf "%d\n", failed
+    printf "%d\n", (data["Time"] == "")
 
     reset()
 }
 
 function reset() {
     split("", data)
-    split("", cuts)
-    split("", imbalances)
-    split("", times)
-    runs = 0
-    has_cut = 0
-    global_partitioning_time = 0
 }

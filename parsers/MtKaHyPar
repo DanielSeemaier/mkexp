@@ -7,7 +7,13 @@ BEGIN {
 /__BEGIN_FILE__/ {
     sub(/__BEGIN_FILE__ /, "", $0)
     split($0, parts, "___")
+
     data["Graph"] = parts[1]
+    data["NumNodes"] = 1
+    data["NumMPIsPerNode"] = 1
+    data["NumThreadsPerMPI"] = -1
+    data["Seed"] = -1
+    data["Epsilon"] = 0.03
 
     split(parts[2], parts, "_")
     for (i in parts) {
@@ -23,23 +29,41 @@ BEGIN {
             data["Epsilon"] = m[1]
         }
     }
-
-    level = 0
 }
 
 /__END_FILE__/ {
     yield()
 }
 
-match($0, /`-- Partitioning: \.* *([0-9\.e\-]+) s/, m) {
+match($0, /  Hypergraph:.*\/(([^\/]+)\.(graph|hgr))$/, m) {
+    data["Graph"] = m[2]
+}
+
+match($0, /  k: *([0-9]+)/, m) {
+    data["K"] = m[1]
+}
+
+match($0, /  epsilon: *([0-9\.e\-]+)/, m) {
+    data["Epsilon"] = m[1]
+}
+
+match($0, /  seed: *([0-9]+)/, m) {
+    data["Seed"] = m[1]
+}
+
+match($0, /  Number of Threads: *([0-9]+)/, m) {
+    data["NumThreadsPerMPI"] = m[1]
+}
+
+match($0, / Partitioning Time *= ([0-9\.e\-]+) s/, m) {
     data["Time"] = m[1]
 }
 
-match($0, /  Imbalance: *([0-9\.e\-]+)/, m) {
+match($0, / Imbalance *= ([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
 }
 
-match($0, /  Edge cut: *([0-9]+)/, m) {
+match($0, / Hyperedge Cut.*= ([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
@@ -55,13 +79,14 @@ function header() {
     printf "Epsilon,"
     printf "Balance,"
     printf "Time,"
+    printf "NumNodes,"
+    printf "NumMPIsPerNode,"
+    printf "NumThreadsPerMPI,"
     printf "Failed\n"
 }
 
 function yield() {
     if (length(data) == 0) { return }
-
-    failed = length(data) < 7
 
     printf "%s,", data["Graph"]
     printf "%d,", data["K"]
@@ -70,17 +95,14 @@ function yield() {
     printf "%f,", data["Epsilon"]
     printf "%f,", data["Balance"]
     printf "%f,", data["Time"]
-    printf "%d\n", failed
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d\n", (data["Time"] == "")
 
     reset()
 }
 
 function reset() {
     split("", data)
-    split("", cuts)
-    split("", imbalances)
-    split("", times)
-    runs = 0
-    has_cut = 0
-    global_partitioning_time = 0
 }
