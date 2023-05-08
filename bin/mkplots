@@ -10,6 +10,9 @@ script.basename <- dirname(script.name)
 source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
 source(file.path(script.basename, "../plots/running_time_box_plot.R"), chdir = TRUE)
 
+graphs_db_filename <- file.path(script.basename, "../data/graphs.csv")
+graphs_db <- read.csv(graphs_db_filename, header = TRUE, sep = ",")
+
 # CLI arguments == algorithms to look at
 algorithms <- commandArgs(trailingOnly = TRUE)
 
@@ -20,6 +23,7 @@ for (algorithm in algorithms) {
   df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
   df <- df %>%
     dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+  df <- merge(df, graphs_db, by = "Graph", all.x = TRUE)
   thread_configs <- unique(df$NumThreadsPerMPI)
   for (thread_config in thread_configs) {
     subdf <- df %>%
@@ -86,8 +90,16 @@ for (graph in graphs) {
 dev.off()
 
 side_len <- round(sqrt(length(unique(all_data$Graph))))
-pdf("per_instance_cut.pdf", width = side_len * 2, height = side_len * 2)
-p <- ggplot(all_data, aes(x = K, y = AvgCut, fill = Algorithm)) +
+normalized_data <- all_data |>
+  dplyr::group_by(Graph, K) |>
+  dplyr::mutate(AvgCutToBest = AvgCut / min(AvgCut) - 0.9) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(Title = paste0(Graph, ", MaxDeg=", MaxDeg))
+normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
+
+
+pdf("per_instance_cut.pdf", width = side_len * 4, height = side_len * 3)
+p <- ggplot(normalized_data, aes(x = K, y = AvgCutToBest, fill = Algorithm)) +
   geom_bar(
     stat = "identity",
     position = position_dodge()
@@ -95,8 +107,10 @@ p <- ggplot(all_data, aes(x = K, y = AvgCut, fill = Algorithm)) +
   ylab("Cut rel. to Best") +
   xlab("Number of Blocks") +
   theme_bw() +
-  facet_wrap(~Graph, ncol = side_len) +
+  facet_wrap(~Title, ncol = side_len, scales = "free") +
+  scale_y_continuous(labels = function(x) x + 0.9) +
+  geom_hline(yintercept = 0.1) +
   create_theme_facet() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "right")
 print(p)
 dev.off()
