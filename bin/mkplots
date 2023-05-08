@@ -15,85 +15,88 @@ algorithms <- commandArgs(trailingOnly = TRUE)
 
 # Load result file for each algorithm
 data <- list()
-gmean_running_times <- data.frame("Algorithm" = factor(), "Time" = numeric())
+gmean_running_times <- data.frame(Algorithm = factor(), Time = numeric())
 for (algorithm in algorithms) {
-    df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
-    df <- df %>% dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
-    thread_configs <- unique(df$NumThreadsPerMPI)
-    for (thread_config in thread_configs) {
-        subdf <- df %>% dplyr::filter(NumThreadsPerMPI == thread_config) 
-        gmean_running_times <- gmean_running_times |> rbind(data.frame(
-                "Algorithm" = factor(paste0(algorithm, "-", thread_config)),
-                "Time" = mean(subdf$AvgTime)
-        ))
-        data <- append(data, list(subdf))
-    }
+  df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
+  df <- df %>%
+    dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+  thread_configs <- unique(df$NumThreadsPerMPI)
+  for (thread_config in thread_configs) {
+    subdf <- df %>%
+      dplyr::filter(NumThreadsPerMPI == thread_config)
+    gmean_running_times <- gmean_running_times |>
+      rbind(data.frame(
+        Algorithm = factor(paste0(algorithm, "-", thread_config)),
+        Time = mean(subdf$AvgTime)
+      ))
+    data <- append(data, list(subdf))
+  }
 }
 
 # Performance profile containing all algorithms
 pdf("all_cut.pdf")
-all_pp <- do.call(create_performance_profile, data) +
-    theme_bw() +
-    create_theme()
+all_pp <- do.call(create_performance_profile, data) + theme_bw() + create_theme()
 print(all_pp)
 dev.off()
 
 # Pairwise performance profiles
 pdf("pairwise_cut.pdf")
-algorithm_indices <- 1 : (length(algorithms) - 1)
-for (i in 1 : (length(algorithms) - 1)) {
-    for (j in (i + 1) : length(algorithms)) {
-    pp <- create_performance_profile(data[[i]], data[[j]]) +
-        theme_bw() +
-        create_theme()
+algorithm_indices <- 1:(length(algorithms) - 1)
+for (i in 1:(length(algorithms) - 1)) {
+  for (j in (i + 1):length(algorithms)) {
+    pp <- create_performance_profile(data[[i]], data[[j]]) + theme_bw() + create_theme()
     print(pp)
-    }
+  }
 }
 dev.off()
 
 # Running time boxplots
 pdf("all_time.pdf")
-args <- data 
+args <- data
 args[["annotation"]] <- gmean_running_times
-all_bp <- do.call(create_running_time_boxplot, args) +
-    theme_bw() +
-    create_theme()
+all_bp <- do.call(create_running_time_boxplot, args) + theme_bw() + create_theme()
 print(all_bp)
 dev.off()
 
 # Running time per instance plots
 all_data <- data.frame()
 for (df in data) {
-    all_data <- rbind(all_data, df)
+  all_data <- rbind(all_data, df)
 }
 all_data$K <- factor(all_data$K)
-#all_data$TimePerEdge <- 1000 * 1000 * (all_data$AvgTime / all_data$M)
+# all_data$TimePerEdge <- 1000 * 1000 * (all_data$AvgTime / all_data$M)
 graphs <- unique(all_data$Graph)
 
 pdf("per_instance_time.pdf")
 for (graph in graphs) {
-    subset_data <- all_data |> dplyr::filter(Graph == graph)
-    p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
-        geom_bar(stat = "identity", position = position_dodge()) +
-        ggtitle(graph) +
-        ylab("Time [s]") +
-        xlab("Number of Blocks") +
-        theme_bw() +
-        create_theme()
-    print(p)
+  subset_data <- all_data |>
+    dplyr::filter(Graph == graph)
+  p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
+    geom_bar(
+      stat = "identity",
+      position = position_dodge()
+    ) +
+    ggtitle(graph) +
+    ylab("Time [s]") +
+    xlab("Number of Blocks") +
+    theme_bw() +
+    create_theme()
+  print(p)
 }
 dev.off()
 
-pdf("per_instance_cut.pdf")
-for (graph in graphs) {
-    subset_data <- all_data |> dplyr::filter(Graph == graph)
-    p <- ggplot(subset_data, aes(x = K, y = AvgCut, fill = Algorithm)) +
-        geom_bar(stat = "identity", position = position_dodge()) +
-        ggtitle(graph) +
-        ylab("Edge Cut") +
-        xlab("Number of Blocks") +
-        theme_bw() +
-        create_theme()
-    print(p)
-}
+side_len <- round(sqrt(length(unique(all_data$Graph))))
+pdf("per_instance_cut.pdf", width = side_len * 2, height = side_len * 2)
+p <- ggplot(all_data, aes(x = K, y = AvgCut, fill = Algorithm)) +
+  geom_bar(
+    stat = "identity",
+    position = position_dodge()
+  ) +
+  ylab("Cut rel. to Best") +
+  xlab("Number of Blocks") +
+  theme_bw() +
+  facet_wrap(~Graph, ncol = side_len) +
+  create_theme_facet() +
+  theme(legend.position = "bottom")
+print(p)
 dev.off()
