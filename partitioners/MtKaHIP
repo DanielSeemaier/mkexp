@@ -1,0 +1,56 @@
+#!/bin/bash
+IsInstalled() {
+    return 1
+}
+
+Binary() {
+    echo "$GLOBAL_PREFIX/bin/MtKaHIP"
+}
+
+Install() {
+    if [[ "$version" != "latest" ]]; then
+        echo "Error: version support not implemented"
+        exit 1
+    fi 
+
+    if IsInstalled; then 
+        return 0
+    fi
+
+    if [[ ! -d "$GLOBAL_PREFIX/src/KaGen-Partitioner" ]]; then 
+        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$GLOBAL_PREFIX/src/KaGen-Partitioner"
+    else 
+        git -C "$GLOBAL_PREFIX/src/KaGen-Partitioner" pull
+    fi
+    
+    cmake -B "$GLOBAL_PREFIX/src/KaGen-Partitioner/build" -S "$GLOBAL_PREFIX/src/KaGen-Partitioner" -DCMAKE_BUILD_TYPE=Release -DBUILD_MTKAHIP=On
+    cmake --build "$GLOBAL_PREFIX/src/KaGen-Partitioner/build" --parallel
+    cp "$GLOBAL_PREFIX/src/KaGen-Partitioner/build/MtKaHIP" "$(Binary)"
+}
+
+InvokeFromDisk() {
+    version="$1"
+    graph="$2"
+    k="$3"
+    epsilon="$4"
+    seed="$5"
+    nodes="$7"
+    threads="$8"
+    arguments="${@:9}"
+    pes=$((nodes * threads))
+
+    # .graph > .metis
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ -f "$graph" ]]; then
+        echo "$(Binary) \"file;filename=$graph;input_format=metis\" -k $k -e $epsilon -s $seed -t $pes $arguments"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+InvokeFromKaGen() {
+    echo "Warning: not implemented"
+}

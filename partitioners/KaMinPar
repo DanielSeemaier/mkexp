@@ -50,7 +50,7 @@ Install() {
     fi
 #    git -C "$src_dir" reset --hard "origin/$branch"
 
-    >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
+    # >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
     cmake --build "$src_dir/build" --target KaMinPar --parallel
     mkdir -p "$PREFIX/bin"

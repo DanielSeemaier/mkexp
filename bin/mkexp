@@ -88,14 +88,12 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--local] [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
     echo ""
     echo "Options are:"
-    echo "    --local: Install partitioners to the experiment directory instead of a global directory"
-    echo ""
     echo "    --install: Install partitioners"
     echo "    --submit: Start the experiment"
     echo "    --results: Parse log files (after executing the experiment) and output CSV files"
@@ -111,13 +109,14 @@ if [[ $mode == "init" ]]; then
     exit 0
 fi
 
-# If positional arguments are present, filter active algorithms with it
+# If positional arguments are present, use it to filter active algorithms
 filter_algorithms=0
 if [[ -v active_algorithms[@] ]]; then
     filter_algorithms=1
 fi
 
 ###############################################################################
+
 LoadPartitioner() {
     name="$1"
     filename="$script_pwd/../partitioners/$name"
