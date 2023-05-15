@@ -1,39 +1,10 @@
 #!/bin/bash
-IsInstalled() {
-    version="$1"
+. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-    if [[ ! -x "$(Binary "$version")" ]]; then
-        return 1
-    fi
-    if [[ ! -d "$PREFIX/src/$version/KaMinPar" ]]; then 
-        return 1
-    fi
+InstallDiskDriver() {
+    local -n args=$1
 
-    mkdir -p "$PREFIX/src/$version"
-    git -C "$PREFIX/src/$version/KaMinPar" fetch
-    local_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse HEAD)
-    remote_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse @{u})
-    if [[ "$local_hash" == "$remote_hash" ]]; then 
-        return 0
-    fi
-
-    return 1
-}
-
-Binary() {
-    version="$1"
-    echo "$PREFIX/bin/KaMinPar-$version"
-}
-
-Install() {
-    version="$1"
-    options="$2"
-    
-    if IsInstalled "$version"; then 
-        return 0
-    fi
-
-    src_dir="$PREFIX/src/$version/KaMinPar"
+    src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"
@@ -45,41 +16,54 @@ Install() {
     fi
 
     branch="main"
-    if [[ "$version" != "latest" ]]; then 
+    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
         branch="$version"
     fi
-#    git -C "$src_dir" reset --hard "origin/$branch"
+    git -C "$src_dir" reset --hard "origin/$branch"
 
-    # >&2 echo "---> cmake -S $src_dir -B $src_dir/build -DCMAKE_BUILD_TYPE=Release $options"
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $options
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG ${args[build_options]}
     cmake --build "$src_dir/build" --target KaMinPar --parallel
-    mkdir -p "$PREFIX/bin"
+    cp "$src_dir/build/apps/KaMinPar" "${args[binary_disk]}"
+}
 
-    cp "$src_dir/build/apps/KaMinPar" "$(Binary "$version")"
+InstallKaGenDriver() {
+    local -n args=$1
+
+    src_dir="$PREFIX/src/KaGen-Partitioner"
+    if [[ ! -d "$src_dir" ]]; then
+        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
+    else 
+        git -C "$src_dir" pull 
+    fi
+        
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_KAMINPAR=On $TBB_FLAG ${args[build_options]}
+    cmake --build "$src_dir/build" --parallel
+    cp "$src_dir/build/KaMinPar" "${args[binary_kagen]}"
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen]} )); then 
+        InstallKaGenDriver install_args
+    fi
 }
 
 InvokeFromDisk() {
-    version="$1"
-    graph="$2"
-    k="$3"
-    epsilon="$4"
-    seed="$5"
-    nodes="$7"
-    threads="$8"
-    arguments="${@:9}"
-    pes=$((nodes * threads))
+    local -n args=$1
     
+    graph="${args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
+    part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
     if [[ -f "$graph" ]]; then
-        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $pes -T -E $arguments"
+        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
-}
-
-InvokeFromKaGen() {
-    return
 }

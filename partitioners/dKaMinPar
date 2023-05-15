@@ -1,39 +1,10 @@
 #!/bin/bash
-IsInstalled() {
-    version="$1"
+. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-    if [[ ! -x "$(Binary "$version")" ]]; then
-        return 1
-    fi
-    if [[ ! -d "$PREFIX/src/$version/KaMinPar" ]]; then 
-        return 1
-    fi
+InstallDiskDriver() {
+    local -n args=$1
 
-    mkdir -p "$PREFIX/src/$version"
-    git -C "$PREFIX/src/$version/KaMinPar" fetch
-    local_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse HEAD)
-    remote_hash=$(git -C "$PREFIX/src/$version/KaMinPar" rev-parse @{u})
-    if [[ "$local_hash" == "$remote_hash" ]]; then 
-        return 0
-    fi
-
-    return 1
-}
-
-Binary() {
-    version="$1"
-    echo "$PREFIX/bin/dKaMinPar-$version"
-}
-
-Install() {
-    version="$1"
-    options="$2"
-    
-    if IsInstalled "$version"; then 
-        return 0
-    fi
-
-    src_dir="$PREFIX/src/$version/KaMinPar"
+    src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"
@@ -45,168 +16,55 @@ Install() {
     fi
 
     branch="main"
-    if [[ "$version" != "latest" ]]; then 
+    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
         branch="$version"
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    2>&1 echo "cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG $options"
-
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG $options
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG ${args[build_options]}
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
-    mkdir -p "$PREFIX/bin"
+    cp "$src_dir/build/apps/dKaMinPar" "${args[binary_disk]}"
+}
 
-    cp "$src_dir/build/apps/dKaMinPar" "$(Binary "$version")"
+InstallKaGenDriver() {
+    local -n args=$1
 
-    if [[ ! -x "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen" ]]; then # Requirement: KaGen
-        src_dir="$GLOBAL_PREFIX/src/KaGen-Partitioner"
-        if [[ ! -d "$src_dir" ]]; then
-            git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-        else 
-            git -C "$src_dir" pull 
-        fi
+    src_dir="$PREFIX/src/KaGen-Partitioner"
+    if [[ ! -d "$src_dir" ]]; then
+        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
+    else 
+        git -C "$src_dir" pull 
+    fi
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On $TBB_FLAG $2
-        cmake --build "$src_dir/build" --parallel
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_DKAMINPAR=On $TBB_FLAG ${args[build_options]}
+    cmake --build "$src_dir/build" --parallel
+    cp "$src_dir/build/dKaMinPar" "${args[binary_kagen]}"
+}
+
+Install() {
+    local -n install_args=$1
     
-        cp "$src_dir/build/dKaMinPar" "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen"
-    fi 
+    if (( ${install_args[install_disk]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen]} )); then 
+        InstallKaGenDriver install_args
+    fi
 }
 
 InvokeFromDisk() {
-    version="$1"
-    graph="$2"
-    k="$3"
-    epsilon="$4"
-    seed="$5"
-    threads="$8"
-    arguments="${@:9}"
+    local -n args=$1
     
+    graph="${args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
+    [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
 
-    part_output="-o $misc_files_dir/$algorithm/$run_identifier.part"
+    part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
     if [[ -f "$graph" ]]; then
-        echo "$(Binary "$version") -G $graph -k $k -e $epsilon --seed=$seed -t $threads -T $arguments $part_output"
+        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
-}
-
-AddKaGenParam() {
-    param_kagen_name="$1"
-    param_kaminpar_name="$2"
-    param_arguments="${@:3}"
-
-    value=$(ParseKaGenArgument "$param_kagen_name" $param_arguments)
-    if [[ ! -z "$value" ]]; then
-        echo -n "${param_kaminpar_name}=${value} "
-    fi
-}
-
-InvokeFromKaGen() {
-    param_version="$1"
-    param_generator="$2"
-    param_k="$3"
-    param_epsilon="$4"
-    param_seed="$5"
-    param_nodes="$6"
-    param_threads="$8"
-    param_kagen_arguments="${9}"
-    param_algo_arguments="${@:10}"
-
-    echo -n "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen "
-    echo -n "-s $param_seed " # interprete as number of repetitions 
-    echo -n "-k $param_k "
-    echo -n "-t $param_threads"
-    echo -n " $param_algo_arguments"
-
-    echo -n "-G\"$param_generator"
-
-    kagen_n=$(ParseKaGenArgument "n" $param_kagen_arguments)
-    kagen_m=$(ParseKaGenArgument "m" $param_kagen_arguments)
-    kagen_p=$(ParseKaGenArgument "p" $param_kagen_arguments)
-    kagen_a=$(ParseKaGenArgument "a" $param_kagen_arguments)
-    kagen_b=$(ParseKaGenArgument "b" $param_kagen_arguments)
-    kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
-    kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
-
-    kagen_max_grid_x=$(ParseKaGenArgument "max_grid_x" $param_kagen_arguments)
-    kagen_max_grid_y=$(ParseKaGenArgument "max_grid_y" $param_kagen_arguments)
-    kagen_grid_x=$(ParseKaGenArgument "grid_x" $param_kagen_arguments)
-    kagen_grid_y=$(ParseKaGenArgument "grid_y" $param_kagen_arguments)
-    kagen_scaled_grid_y=$(ParseKaGenArgument "scaled_grid_y" $param_kagen_arguments)
-    kagen_scaled_grid_x=$(ParseKaGenArgument "scaled_grid_x" $param_kagen_arguments)
-    kagen_cols_per_pe=$(ParseKaGenArgument "cols_per_pe" $param_kagen_arguments)
-    kagen_rows_per_pe=$(ParseKaGenArgument "rows_per_pe" $param_kagen_arguments)
-    kagen_filename=$(ParseKaGenArgument "filename" $param_kagen_arguments)
-    kagen_weight_model=$(ParseKaGenArgument "weight_model" $param_kagen_arguments)
-    kagen_weight_multiplier=$(ParseKaGenArgument "weight_multiplier" $param_kagen_arguments)
-    kagen_weight_offset=$(ParseKaGenArgument "weight_offset" $param_kagen_arguments)
-    kagen_min_weight_threshold=$(ParseKaGenArgument "min_weight_offset" $param_kagen_arguments)
-    kagen_max_weight_threshold=$(ParseKaGenArgument "max_weight_offset" $param_kagen_arguments)
-
-    log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
-
-    if [[ ! -z "$kagen_a" ]]; then 
-        echo -n ";rmat_a=$kagen_a;rmat_b=$kagen_b;rmat_c=$kagen_c"
-    fi
-    if [[ ! -z "$kagen_p" ]]; then 
-        echo -n ";prob=$kagen_p"
-    fi
-    if [[ ! -z "$kagen_gamma" ]]; then 
-        echo -n ";gamma=$kagen_gamma"
-    fi
-    if [[ ! -z "$kagen_n" ]]; then 
-        echo -n ";N=$((kagen_n+log_nodes))" # log n
-    fi
-    if [[ ! -z "$kagen_m" ]]; then 
-        echo -n ";M=$((kagen_m+log_nodes))" # log m
-    fi
-    if [[ ! -z "$kagen_max_grid_x" ]]; then 
-        echo -n ";max_grid_x=$kagen_max_grid_x"
-    fi
-    if [[ ! -z "$kagen_max_grid_y" ]]; then 
-        echo -n ";max_grid_y=$kagen_max_grid_y"
-    fi
-    if [[ ! -z "$kagen_grid_x" ]]; then 
-        echo -n ";grid_x=$kagen_grid_x"
-    fi
-    if [[ ! -z "$kagen_grid_y" ]]; then 
-        echo -n ";grid_y=$kagen_grid_y"
-    fi
-    if [[ ! -z "$kagen_cols_per_pe" ]]; then 
-        echo -n ";cols_per_pe=$kagen_cols_per_pe"
-    fi
-    if [[ ! -z "$kagen_rows_per_pe" ]]; then 
-        echo -n ";rows_per_pe=$kagen_rows_per_pe"
-    fi
-    if [[ ! -z "$kagen_filename" ]]; then 
-        echo -n ";filename=$kagen_filename"
-    fi
-    if [[ ! -z "$kagen_scaled_grid_y" ]]; then
-        echo -n ";grid_y=$((kagen_scaled_grid_y*param_nodes))"
-    fi
-    if [[ ! -z "$kagen_scaled_grid_x" ]]; then
-        echo -n ";grid_x=$((kagen_scaled_grid_x*param_nodes))"
-    fi
-    if [[ ! -z "$kagen_weight_model" ]]; then
-        echo -n ";weight_model=$kagen_weight_model"
-    fi
-    if [[ ! -z "$kagen_weight_multiplier" ]]; then
-        echo -n ";weight_multiplier=$kagen_weight_multiplier"
-    fi
-    if [[ ! -z "$kagen_weight_offset" ]]; then
-        echo -n ";weight_offset=$kagen_weight_offset"
-    fi
-    if [[ ! -z "$kagen_min_weight_threshold" ]]; then
-        echo -n ";min_weight_threshold=$kagen_min_weight_threshold"
-    fi
-    if [[ ! -z "$kagen_max_weight_threshold" ]]; then
-        echo -n ";max_weight_threshold=$kagen_max_weight_threshold"
-    fi
-
-    echo -n "\""
-    echo ""
 }

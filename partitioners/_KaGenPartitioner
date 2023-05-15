@@ -1,0 +1,49 @@
+#!/bin/bash
+
+GenericInstall() {
+    local -n underlaying_args=$1
+    local cmake_option=$2
+    local built_binary_name=$3
+
+    src_dir="$PREFIX/src/KaGen-Partitioner/"
+    if [[ ! -d "$src_dir" ]]; then 
+        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
+    else 
+        git -C "$src_dir" pull
+    fi
+    
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $cmake_option
+    cmake --build "$src_dir/build" --parallel
+    cp "$src_dir/build/$built_binary_name" "${underlaying_args[binary_disk]}"
+    cp "$src_dir/build/$built_binary_name" "${underlaying_args[binary_kagen]}"
+}
+
+InvokeFromDisk() {
+    local -n args=$1
+    format="metis"
+
+    graph="${args[graph]}"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    echo -n "${args[binary]} "
+    echo -n "-s ${args[seed]} " 
+    echo -n "-k ${args[k]} "
+    echo -n "${args[algorithm_arguments]} "
+    echo -n "-G\"static"
+    echo -n ";filename=$graph"
+    echo -n ";input_format=$format"
+    echo -n "\""
+    echo ""
+}
+
+InvokeFromKaGen() {
+    local -n args=$1
+    echo -n "${args[binary]} "
+    echo -n "-s ${args[seed]} " 
+    echo -n "-k ${args[k]} "
+    echo -n "-t ${args[num_threads]} "
+    echo -n "${args[algorithm_arguments]} "
+    echo -n "-G\"${args[kagen_arguments_stringified]}\""
+    echo ""
+}

@@ -4,22 +4,19 @@ GenerateJobfileHeader() {
 }
 
 GenerateJobfileEntry() {
-    nodes="$1"
-    mpis="$2"
-    threads="$3"
-    exe="$4"
+    local -n args=$1
 
-    if (( $nodes > 1 )); then
+    if (( ${args[num_nodes]} > 1 )); then
         >&2 echo "Error: generic systems do not support multi-node execution"
         exit 1
     fi
 
-    case "$_mpi" in 
+    case "${args[mpi]}" in 
         taskset)
-            echo "taskset -c 0-$(( $threads - 1 )) $exe"
+            echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) ${args[exe]}"
             ;;
         none)
-            echo "$exe"
+            echo "${args[exe]}"
             ;;
         OpenMPI)
             oversubscribe=""
@@ -28,10 +25,10 @@ GenerateJobfileEntry() {
                 oversubscribe="-oversubscribe"
                 overload=":overload-allowed"
             fi
-            echo "mpirun -n $mpis $oversubscribe --bind-to core$overload --map-by socket:PE=${threads} $exe"
+            echo "mpirun -n ${args[num_mpis]} $oversubscribe --bind-to core$overload --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
         *)
-            >&2 echo "Error: unsupported MPI $_mpi"
+            >&2 echo "Error: unsupported MPI ${args[mpi]}"
             exit 1
     esac
 }
