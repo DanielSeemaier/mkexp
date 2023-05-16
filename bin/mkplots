@@ -27,7 +27,8 @@ for (algorithm in algorithms) {
   thread_configs <- unique(df$NumThreadsPerMPI)
   for (thread_config in thread_configs) {
     subdf <- df %>%
-      dplyr::filter(NumThreadsPerMPI == thread_config)
+      dplyr::filter(NumThreadsPerMPI == thread_config) 
+
     gmean_running_times <- gmean_running_times |>
       rbind(data.frame(
         Algorithm = factor(paste0(algorithm, "-", thread_config)),
@@ -38,7 +39,41 @@ for (algorithm in algorithms) {
 }
 
 ks <- unique(data[[1]]$K)
+graphs <- unique(data[[1]]$Graph)
 num_unique_graphs <- length(unique(data[[1]]$Graph))
+
+for (i in 1:length(data)) {
+  n_before <- nrow(data[[i]]) 
+  data[[i]] <- data[[i]] %>% 
+    dplyr::filter(K %in% ks) %>%
+    dplyr::filter(Graph %in% graphs) %>%
+    dplyr::arrange(Graph, K)
+  n_after <- nrow(data[[i]]) 
+  cat(paste0("Removed ", n_before - n_after, " rows from ", algorithms[i], "\n"))
+}
+
+exp_nrows <- nrow(data[[1]])
+
+for (i in 1:length(data)) {
+  cat(paste0(algorithms[i], ": ", nrow(data[[i]]), " rows\n"))
+}
+
+for (row in 1:exp_nrows) {
+  first_graph <- data[[1]][row, "Graph"]
+  first_k <- data[[1]][row, "K"]
+
+  for (i in 1:length(data)) {
+    cur_graph <- data[[i]][row, "Graph"]
+    cur_k <- data[[i]][row, "K"]
+    if (first_graph != cur_graph || first_k != cur_k) {
+      cat(paste0("Mismatch in row ", row, " for ", algorithms[i], "\n"))
+      cat(paste0("Expected graph=", first_graph, ", k=", first_k, "\n"))
+      cat(paste0("Got graph=", cur_graph, ", k=", cur_k, "\n"))
+      quit()
+    }
+  }
+}
+
 
 # Performance profile containing all algorithms
 pdf("all_cut.pdf")

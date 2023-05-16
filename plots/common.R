@@ -40,6 +40,9 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
   if (!("Epsilon" %in% colnames(df))) {
     df$Epsilon <- 0.03
   }
+  if (!("Seed" %in% colnames(df))) {
+    df$Seed <- 0
+  }
 
   if (ignore_first_seed) {
     df <- df %>% dplyr::filter(Seed > 0)
