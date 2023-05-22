@@ -21,7 +21,7 @@ InstallDiskDriver() {
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG ${args[build_options]}
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $TBB_FLAG ${args[build_options]}
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
     cp "$src_dir/build/apps/dKaMinPar" "${args[binary_disk]}"
 }
