@@ -21,7 +21,7 @@ InstallDiskDriver() {
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
 
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $TBB_FLAG ${args[build_options]}
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $CUSTOM_CMAKE_FLAGS ${args[build_options]}
     cmake --build "$src_dir/build" --target KaMinPar --parallel
     cp "$src_dir/build/apps/KaMinPar" "${args[binary_disk]}"
 }
@@ -36,7 +36,7 @@ InstallKaGenDriver() {
         git -C "$src_dir" pull 
     fi
         
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_KAMINPAR=On $TBB_FLAG ${args[build_options]}
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_KAMINPAR=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
     cmake --build "$src_dir/build" --parallel
     cp "$src_dir/build/KaMinPar" "${args[binary_kagen]}"
 }

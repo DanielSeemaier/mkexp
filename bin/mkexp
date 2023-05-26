@@ -5,13 +5,12 @@
 # Reads the `Experiment` file in the current working directory and creates    #
 # jobfiles for the experiment.                                                #
 ###############################################################################
-set -o pipefail
+#set -o pipefail
 set -o errtrace
 set -o nounset
 set -o errexit
 
-TBB_FLAG=""
-MISC_FLAG=""
+CUSTOM_CMAKE_FLAGS=""
 
 # Find absolute path to this script
 source=${BASH_SOURCE[0]}
@@ -30,10 +29,6 @@ skip_install=0
 declare -A active_algorithms
 while [[ $# -gt 0 ]]; do 
     case $1 in 
-        --dry-run)
-            mode="dry-run"
-            shift 
-            ;;
         --results)
             mode="results"
             shift
@@ -74,6 +69,10 @@ while [[ $# -gt 0 ]]; do
             mode="init"
             shift 
             ;;
+        --progress)
+            mode="progress"
+            shift 
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -88,7 +87,7 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--init, --dry-run, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--init, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
@@ -369,7 +368,7 @@ GetAlgorithmVersion() {
 }
 
 PrintSummary() {
-    if [[ $mode != "generate" && $mode != "dry-run" ]]; then 
+    if [[ $mode != "generate" ]]; then 
         return 0
     fi
 
@@ -677,6 +676,77 @@ if [[ $mode == "submit" ]]; then
         mkexp
     fi
     bash "$submit_filename"
+fi
+
+if [[ $mode == "progress" ]]; then
+    num_total_logs=$(( \
+        ${#_nodes_x_mpis_x_threads[@]} * \
+        ${#_seeds[@]} * \
+        ${#_epsilons[@]} * \
+        ${#_ks[@]} * \
+        (${#_graphs[@]} + ${#_kagen_graphs[@]}) \
+    ))
+    num_total_logs_per_seed=$((num_total_logs / ${#_seeds[@]}))
+
+    max_len=80
+    name_max_len=20
+
+    name_len=0
+    for algorithm in ${_algorithms[@]}; do
+        if (( ${#algorithm} > $name_len )); then 
+            name_len=${#algorithm}
+        fi
+    done
+    if (( name_len > name_max_len )); then 
+        name_len=$name_max_len
+    fi
+
+    progress_len=$((max_len - name_len - 10))
+
+    OutputProgressLine() {
+        local dir="$1"
+        local name="$2"
+        local filter="$3"
+        local n="$4"
+
+        cur=$(ls -1 "$dir" | grep "$filter" | wc -l)
+        filled=$((cur * progress_len / n))
+        if (( ${#name} > $name_max_len - 4 )); then 
+            printf "%.$((name_len-3))s... " "$name"
+        else 
+            printf "%-${name_len}s " "$name"
+        fi
+        printf "[%-${progress_len}s]" $(printf "%${filled}s" | tr ' ' '#')
+        if (( cur == 0 )); then
+            printf " W 00:00"
+        else 
+            oldest_file=$(find "$dir" -name "*$filter*" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d ' ' -f 2)
+            newest_file=$(find "$dir" -name "*$filter*" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d ' ' -f 2)
+            oldest_file_time=$(date -r "$oldest_file" +%s)
+            newest_file_time=$(date -r "$newest_file" +%s)
+            time_diff=$((newest_file_time - oldest_file_time))
+            hours=$((time_diff / 3600))
+            minutes=$(( (time_diff % 3600) / 60 ))
+            if (( cur == n )); then 
+                printf " D "
+            else 
+                printf " R "
+            fi
+            printf "%02d:%02d" $hours $minutes
+        fi
+        printf "\n"
+    }
+
+    for algorithm in ${_algorithms[@]}; do
+        dir="$log_files_dir/$algorithm"
+
+        OutputProgressLine "$dir" "$algorithm" "" "$num_total_logs"
+        if (( ${#_seeds[@]} > 1 )); then 
+            for seed in ${_seeds[@]}; do
+                OutputProgressLine "$dir" " Seed $seed" "seed$seed" "$num_total_logs_per_seed"
+            done
+        fi
+    done
 fi
 
 exit 0
