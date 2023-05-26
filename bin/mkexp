@@ -700,7 +700,7 @@ if [[ $mode == "progress" ]]; then
         name_len=$name_max_len
     fi
 
-    progress_len=$((max_len - name_len - 11))
+    progress_len=$((max_len - name_len - 18))
 
     OutputProgressLine() {
         local dir="$1"
@@ -717,7 +717,7 @@ if [[ $mode == "progress" ]]; then
         fi
         printf "[%-${progress_len}s]" $(printf "%${filled}s" | tr ' ' '#')
         if (( cur == 0 )); then
-            printf " W 00:00"
+            printf " INACTIVE 00:00"
         else 
             oldest_file=$(find "$dir" -name "*$filter*" -type f -printf '%T+ %p\n' | sort | head -n 1 | cut -d ' ' -f 2)
             newest_file=$(find "$dir" -name "*$filter*" -type f -printf '%T+ %p\n' | sort | tail -n 1 | cut -d ' ' -f 2)
@@ -727,9 +727,9 @@ if [[ $mode == "progress" ]]; then
             hours=$((time_diff / 3600))
             minutes=$(( (time_diff % 3600) / 60 ))
             if (( cur == n )); then 
-                printf " D "
+                printf " DONE     "
             else 
-                printf " R "
+                printf " ACTIVE   "
             fi
             printf "%02d:%02d" $hours $minutes
         fi
