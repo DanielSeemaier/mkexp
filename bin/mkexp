@@ -565,7 +565,6 @@ if [[ $mode == "generate" ]]; then
     echo "Generated at $(date) on $(hostname)" > "$infofile"
 
     declare -a jobfiles
-
     declare -A invoc=( [mpi]=$_mpi [timelimit]=$_timelimit )
 
     for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
@@ -688,7 +687,7 @@ if [[ $mode == "progress" ]]; then
     ))
     num_total_logs_per_seed=$((num_total_logs / ${#_seeds[@]}))
 
-    max_len=80
+    max_len=$(tput cols)
     name_max_len=20
 
     name_len=0
@@ -701,7 +700,7 @@ if [[ $mode == "progress" ]]; then
         name_len=$name_max_len
     fi
 
-    progress_len=$((max_len - name_len - 10))
+    progress_len=$((max_len - name_len - 11))
 
     OutputProgressLine() {
         local dir="$1"
@@ -743,7 +742,11 @@ if [[ $mode == "progress" ]]; then
         OutputProgressLine "$dir" "$algorithm" "" "$num_total_logs"
         if (( ${#_seeds[@]} > 1 )); then 
             for seed in ${_seeds[@]}; do
-                OutputProgressLine "$dir" " Seed $seed" "seed$seed" "$num_total_logs_per_seed"
+                prefix=" |- "
+                if (( seed == ${_seeds[-1]} )); then 
+                    prefix=" \`- "
+                fi
+                OutputProgressLine "$dir" "${prefix}Seed $seed" "seed$seed" "$num_total_logs_per_seed"
             done
         fi
     done
