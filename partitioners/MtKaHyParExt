@@ -1,0 +1,66 @@
+#!/bin/bash
+. "$script_pwd/../partitioners/_KaGenPartitioner"
+
+InstallDiskDriver() {
+    local -n args=$1
+
+    src_dir="$PREFIX/src/${args[algorithm_version]}/MtKaHyParExt"
+
+    if [[ ! -d "$src_dir" ]]; then 
+        mkdir -p "$src_dir"
+        git clone https://github.com/kahypar/mt-kahypar.git "$src_dir"
+        git -C "$src_dir" submodule update --init --recursive
+    else 
+        git -C "$src_dir" fetch origin
+        git -C "$src_dir" submodule update
+    fi
+
+    branch="master"
+    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
+        branch="$version"
+    fi
+    git -C "$src_dir" reset --hard "origin/$branch"
+
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAHYPAR_ENFORCE_MINIMUM_TBB_VERSION=Off $CUSTOM_CMAKE_FLAGS ${args[build_options]}
+    cmake --build "$src_dir/build" --target MtKaHyPar --parallel
+    cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${args[binary_disk]}"
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen]} )); then 
+        echo "Use the MtKaHyPar partitioner instead"
+        exit 1
+    fi
+}
+
+InvokeFromDisk() {
+    local -n args=$1
+    
+    graph="${args[graph]}"
+    format="metis"
+    if [[ -f "$graph.graph" ]]; then
+        graph="$graph.graph"
+        format="metis"
+    elif [[ -f "$graph.metis" ]]; then
+        graph="$graph.metis"
+        format="metis"
+    elif [[ -f "$graph.hgr" ]]; then
+        graph="$graph.hgr"
+        format="hmetis"
+    elif [[ -f "$graph.hmetis" ]]; then
+        graph="$graph.hmetis"
+        format="hmetis"
+    fi
+
+    if [[ -f "$graph" ]]; then
+        echo "${args[binary]} -h $graph --input-file-format=$format --instance-type=graph -o cut -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} ${args[algorithm_arguments]}"
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
