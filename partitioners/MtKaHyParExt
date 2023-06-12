@@ -64,3 +64,6 @@ InvokeFromDisk() {
         return 1
     fi
 }
+
+DefineAlgorithm MtKaHyParExt-Default MtKaHyParExt --preset-type=default
+

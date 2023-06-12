@@ -116,7 +116,7 @@ fi
 
 ###############################################################################
 
-LoadPartitioner() {
+LoadAlgorithm() {
     local name="$1"
     local filename="$script_pwd/../partitioners/$name"
     [[ -f "$filename" ]] || {
@@ -129,19 +129,19 @@ LoadPartitioner() {
 
 InvokePartitionerFromDisk() {
     local -n invoke_partitioner_from_disk_args=$1
-    LoadPartitioner "${invoke_partitioner_from_disk_args[algorithm_base]}"
+    LoadAlgorithm "${invoke_partitioner_from_disk_args[algorithm_base]}"
     InvokeFromDisk invoke_partitioner_from_disk_args
 }
 
 InvokePartitionerFromKaGen() {
     local -n invoke_partitioner_from_kagen_args=$1
-    LoadPartitioner "${invoke_partitioner_from_kagen_args[algorithm_base]}"
+    LoadAlgorithm "${invoke_partitioner_from_kagen_args[algorithm_base]}"
     InvokeFromKaGen invoke_partitioner_from_kagen_args
 }
 
 InstallPartitioner() {
     local -n install_partitioner_args=$1
-    LoadPartitioner "${install_partitioner_args[algorithm_base]}"
+    LoadAlgorithm "${install_partitioner_args[algorithm_base]}"
     Install install_partitioner_args
 }
 
@@ -236,6 +236,22 @@ _mpi="none"
 _oversubscribe_mpi=0
 _scale_ks=0
 
+ResetExperiment() {
+    _algorithms=()
+    _ks=()
+    _seeds=()
+    _graphs=()
+    _epsilons=()
+    _nodes_x_mpis_x_threads=()
+    _kagen_graphs=()
+    _timelimit=""
+    _time_per_instance=""
+    _system="generic"
+    _mpi="none"
+    _oversubscribe_mpi=0
+    _scale_ks=0
+}
+
 BuildOptions() {
     name="$1"
     options="${*:2}"
@@ -251,9 +267,9 @@ DefineAlgorithm() {
     base_algorithm="$2"
     custom_arguments="${*:3}"
 
-    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
-        echo "Warning: overwriting already defined algorithm $name"
-    }
+    #[[ ! -v "_algorithm_definition_names[$name]" ]] || {
+    #    echo "Warning: overwriting already defined algorithm $name"
+    #}
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
@@ -265,13 +281,13 @@ DefineAlgorithmVersion() {
     base_algorithm="$2"
     version="$3"
 
-    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
-        echo "Warning: overwriting already defined algorithm $name"
-    }
+    #[[ ! -v "_algorithm_definition_names[$name]" ]] || {
+    #    echo "Warning: overwriting already defined algorithm $name"
+    #}
 
-    [[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
-        echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
-    }
+    #[[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
+    #    echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
+    #}
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
