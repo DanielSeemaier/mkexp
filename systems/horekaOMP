@@ -1,48 +1,39 @@
 #!/bin/bash 
-HOREKA_OPENMPI_VERSION="4.0"
-TBB_FLAG="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off"
+. "$script_pwd/../systems/horeka"
 
 GenerateJobfileHeader() {
-    param_mpi="$1"
-    param_nodes="$2"
-    param_mpis="$3"
-    param_threads="$4"
-    param_timelimit="$5"
+    local -n args=$1
 
     echo "#!/bin/bash"
-    echo "#SBATCH --nodes=${param_nodes}"
-    echo "#SBATCH --ntasks=$((param_nodes*param_mpis))"
-    echo "#SBATCH --cpus-per-task=${param_threads}"
-    echo "#SBATCH --ntasks-per-node=${param_mpis}"
-    echo "#SBATCH --time=${param_timelimit}"
+    echo "#SBATCH --nodes=${args[num_nodes]}"
+    echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
+    echo "#SBATCH --cpus-per-task=${args[num_threads]}"
+    echo "#SBATCH --ntasks-per-node=${args[num_mpis]}"
+    echo "#SBATCH --time=${args[timelimit]}"
     echo "#SBATCH --export=ALL"
     echo "#SBATCH --mem=230gb"
     echo "#SBATCH --partition=cpuonly"
 
-    if [[ "$param_mpi" == "OpenMPI" ]]; then 
+    if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
         echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
     fi
 
-    echo "export OMP_NUM_THREADS=${param_threads}"
+    echo "export OMP_NUM_THREADS=${args[num_threads]}"
 }
 
 GenerateJobfileEntry() {
-    param_nodes="$1"
-    param_mpis="$2"
-    param_threads="$3"
-    param_exe="$4"
+    local -n args=$1
 
-    case "$_mpi" in
+    case "${args[mpi]}" in
         none)
             >&2 echo "Error: application must be run with MPI"
             exit 1
             ;;
         OpenMPI)
-            #echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} -report-bindings ${param_exe}"
-            echo "mpirun -n $((param_nodes*param_mpis)) --bind-to core --map-by socket:PE=${param_threads} ${param_exe}"
+            echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
         *)
-            >&2 echo "Error: unsupported MPI $_mpi"
+            >&2 echo "Error: unsupported MPI ${args[mpi]}"
             exit 1
     esac
 }

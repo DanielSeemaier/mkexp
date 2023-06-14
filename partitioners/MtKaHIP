@@ -3,5 +3,5 @@
 
 Install() {
     local -n args=$1
-    GenericInstall args -DBUILD_XTRAPULP=On "XtraPuLP"
+    GenericInstall args "-DBUILD_MTKAHYPAR=Off -DBUILD_MTKAHIP=On" "MtKaHIP"
 }

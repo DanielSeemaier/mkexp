@@ -1,185 +1,73 @@
 #!/bin/bash
-IsInstalled() {
-    if [[ ! -x "$GLOBAL_PREFIX/bin/parhip" ]]; then
-        return 1
-    fi
-    if [[ ! -x "$GLOBAL_PREFIX/bin/InMemoryParhip" ]]; then 
-        return 1 
-    fi
+. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-    git -C "$GLOBAL_PREFIX/src/KaHIP" fetch
-    local_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse HEAD)
-    remote_hash=$(git -C "$GLOBAL_PREFIX/src/KaHIP" rev-parse @{u})
-    if [[ "$local_hash" == "$remote_hash" ]]; then 
-        return 0
-    fi
+InstallDiskDriver() {
+    local -n args=$1
 
-    return 1
-}
+    src_dir="$PREFIX/src/${args[algorithm_version]}/ParHIP"
 
-Binary() {
-    echo "$GLOBAL_PREFIX/bin/parhip"
-}
-
-Install() {
-    if [[ "$version" != "latest" ]]; then
-        echo "Error: version support not implemented"
-        exit 1
-    fi 
-
-    if IsInstalled; then 
-        return 0
-    fi
-
-    # Standalone ParHIP
-    if [[ ! -d "$GLOBAL_PREFIX/src/KaHIP" ]]; then 
-        git clone git@github.com:KaHIP/KaHIP.git "$GLOBAL_PREFIX/src/KaHIP"
+    if [[ ! -d "$src_dir" ]]; then 
+        git clone git@github.com:KaHIP/KaHIP.git "$src_dir"
     else 
-        git -C "$GLOBAL_PREFIX/src/KaHIP" pull
+        git -C "$src_dir" pull
     fi
-    
+
+    branch="master"
+    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
+        branch="$version"
+    fi
+    git -C "$src_dir" reset --hard "origin/$branch"
+
     current_pwd="$PWD"
-    cd "$GLOBAL_PREFIX/src/KaHIP"
+    cd "$src_dir"
     CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
     cd "$current_pwd"
 
-    mkdir -p "$GLOBAL_PREFIX/bin"
-    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parhip" "$(Binary)"
-    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/libparhip"* "$GLOBAL_PREFIX/lib/"
-    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parhip_interface.h" "$GLOBAL_PREFIX/include/"
-    cp "$GLOBAL_PREFIX/src/KaHIP/deploy/parallel/libkahip"* "$GLOBAL_PREFIX/lib/"
+    cp "$src_dir/deploy/parhip" "${args[binary_disk]}"
+}
 
-    if [[ ! -x "$GLOBAL_PREFIX/bin/ParHIP_KaGen" ]]; then # Requirement: KaGen
-        src_dir="$GLOBAL_PREFIX/src/KaGen-Partitioner"
-        if [[ ! -d "$src_dir" ]]; then
-            git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-        else 
-            git -C "$src_dir" pull 
-        fi
+InstallKaGenDriver() {
+    local -n args=$1
+
+    src_dir="$PREFIX/src/KaGen-Partitioner"
+    if [[ ! -d "$src_dir" ]]; then
+        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
+    else 
+        git -C "$src_dir" pull 
+    fi
         
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DDKAMINPAR=On -DXTRAPULP=On $TBB_FLAG $2
-        cmake --build "$src_dir/build" --parallel
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_PARHIP=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
+    cmake --build "$src_dir/build" --parallel
+    cp "$src_dir/build/ParHIP" "${args[binary_kagen]}"
+}
+
+Install() {
+    local -n install_args=$1
     
-        cp "$src_dir/build/ParHIP" "$GLOBAL_PREFIX/bin/ParHIP_KaGen"
-        cp "$src_dir/build/ParMETIS" "$GLOBAL_PREFIX/bin/ParMETIS_KaGen"
-        cp "$src_dir/build/dKaMinPar" "$GLOBAL_PREFIX/bin/dKaMinPar_KaGen"
-        cp "$src_dir/build/XtraPuLP" "$GLOBAL_PREFIX/bin/XtraPuLP_KaGen"
-    fi 
+    if (( ${install_args[install_disk]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen]} )); then 
+        InstallKaGenDriver install_args
+    fi
 }
 
 InvokeFromDisk() {
-    version="$1"
-    graph="$2"
-    k="$3"
-    epsilon="$4"
-    seed="$5"
-    arguments="${@:9}"
-  
-    # .bgf > .graph > .metis
+    local -n args=$1
+    
+    graph="${args[graph]}"
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
-
-    # ParHIP expects 3 for 3% etc
     imbalance=$(echo "100*$epsilon/1" | bc)
 
     if [[ -f "$graph" ]]; then
-        echo "$(Binary) --k=$k --imbalance=$imbalance --seed=$seed $graph $arguments"
+        echo "${args[binary]} --k ${args[k]} --imbalance=$imbalance --seed=${args[seed]} $graph ${args[algorithm_arguments]}"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
 }
 
-InvokeFromKaGen() {
-    param_version="$1"
-    param_generator="$2"
-    param_k="$3"
-    param_epsilon="$4"
-    param_seed="$5"
-    param_nodes="$6"
-    param_threads="$8"
-    param_kagen_arguments="$9"
-    param_algo_arguments="${@:10}"
-
-    echo -n "$GLOBAL_PREFIX/bin/ParHIP_KaGen "
-    echo -n "-s $param_seed " # interprete as number of repetitions 
-    echo -n "-k $param_k "
-
-    preconfig="${param_algo_arguments[0]}"
-    if [[ "${param_algo_arguments[@]}" == *"--preconfiguration=ecosocial"* ]]; then 
-        echo -n "-P ecosocial "
-    elif [[ "${param_algo_arguments[@]}" == *"--preconfiguration=fastsocial"* ]]; then 
-        echo -n "-P fastsocial "
-    else
-        >&2 echo "Warning: unsupported argument ${param_algo_arguments[@]}"
-        return 1 
-    fi
-    echo -n "-G\"$param_generator"
-
-    kagen_n=$(ParseKaGenArgument "n" $param_kagen_arguments)
-    kagen_m=$(ParseKaGenArgument "m" $param_kagen_arguments)
-    kagen_p=$(ParseKaGenArgument "p" $param_kagen_arguments)
-    kagen_a=$(ParseKaGenArgument "a" $param_kagen_arguments)
-    kagen_b=$(ParseKaGenArgument "b" $param_kagen_arguments)
-    kagen_c=$(ParseKaGenArgument "c" $param_kagen_arguments)
-    kagen_gamma=$(ParseKaGenArgument "gamma" $param_kagen_arguments)
-
-    kagen_max_grid_x=$(ParseKaGenArgument "max_grid_x" $param_kagen_arguments)
-    kagen_max_grid_y=$(ParseKaGenArgument "max_grid_y" $param_kagen_arguments)
-    kagen_grid_x=$(ParseKaGenArgument "grid_x" $param_kagen_arguments)
-    kagen_grid_y=$(ParseKaGenArgument "grid_y" $param_kagen_arguments)
-    kagen_scaled_grid_y=$(ParseKaGenArgument "scaled_grid_y" $param_kagen_arguments)
-    kagen_scaled_grid_x=$(ParseKaGenArgument "scaled_grid_x" $param_kagen_arguments)
-    kagen_cols_per_pe=$(ParseKaGenArgument "cols_per_pe" $param_kagen_arguments)
-    kagen_rows_per_pe=$(ParseKaGenArgument "rows_per_pe" $param_kagen_arguments)
-    kagen_filename=$(ParseKaGenArgument "filename" $param_kagen_arguments)
-
-    log_nodes=$(printf "%.0f" $(echo "l($param_nodes)/l(2)" | bc -l))
-
-    if [[ ! -z "$kagen_a" ]]; then 
-        echo -n ";rmat_a=$kagen_a;rmat_b=$kagen_b;rmat_c=$kagen_c"
-    fi
-    if [[ ! -z "$kagen_p" ]]; then 
-        echo -n ";prob=$kagen_p"
-    fi
-    if [[ ! -z "$kagen_gamma" ]]; then 
-        echo -n ";gamma=$kagen_gamma"
-    fi
-    if [[ ! -z "$kagen_n" ]]; then 
-        echo -n ";N=$((kagen_n+log_nodes))" # log n
-    fi
-    if [[ ! -z "$kagen_m" ]]; then 
-        echo -n ";M=$((kagen_m+log_nodes))" # log m
-    fi
-    if [[ ! -z "$kagen_max_grid_x" ]]; then 
-        echo -n ";max_grid_x=$kagen_max_grid_x"
-    fi
-    if [[ ! -z "$kagen_max_grid_y" ]]; then 
-        echo -n ";max_grid_y=$kagen_max_grid_y"
-    fi
-    if [[ ! -z "$kagen_grid_x" ]]; then 
-        echo -n ";grid_x=$kagen_grid_x"
-    fi
-    if [[ ! -z "$kagen_grid_y" ]]; then 
-        echo -n ";grid_y=$kagen_grid_y"
-    fi
-    if [[ ! -z "$kagen_cols_per_pe" ]]; then 
-        echo -n ";cols_per_pe=$kagen_cols_per_pe"
-    fi
-    if [[ ! -z "$kagen_rows_per_pe" ]]; then 
-        echo -n ";rows_per_pe=$kagen_rows_per_pe"
-    fi
-    if [[ ! -z "$kagen_filename" ]]; then 
-        echo -n ";filename=$kagen_filename"
-    fi
-    if [[ ! -z "$kagen_scaled_grid_y" ]]; then
-        echo -n ";grid_y=$((kagen_scaled_grid_y*param_nodes))"
-    fi
-    if [[ ! -z "$kagen_scaled_grid_x" ]]; then
-        echo -n ";grid_x=$((kagen_scaled_grid_x*param_nodes))"
-    fi
-
-    echo -n "\""
-    echo ""
-}
+DefineAlgorithm ParHIP-Fast ParHIP --preconfiguration=fastsocial
+DefineAlgorithm ParHIP-Eco  ParHIP --preconfiguration=ecosocial

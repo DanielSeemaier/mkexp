@@ -35,10 +35,14 @@ BEGIN {
     yield()
 }
 
-match($0, /RESULT nprocs=([0-9]+) nmpis=([0-9]+) nthreads=([0-9]+) cut_computed=([0-9]+) time=([0-9\.e\-]+) imbalance_computed=([0-9\.\-e]+)/, m) {
+match($0, /RESULT nprocs=([0-9]+) nmpis=([0-9]+) nthreads=([0-9]+) cut_reported=([0-9]+) cut_computed=([0-9]+) time=([0-9\.e\-]+) imbalance_computed=([0-9\.\-e]+)/, m) {
+    if (m[4] != m[5]) {
+        print "ERROR: cut_reported != cut_computed"
+        exit 1
+    }
     data["Cut"] = m[4]
-    data["Time"] = m[5]
-    data["Balance"] = m[6]
+    data["Time"] = m[6]
+    data["Balance"] = m[7]
 }
 
 END {
