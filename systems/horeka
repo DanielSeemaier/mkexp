@@ -6,6 +6,14 @@ CUSTOM_CMAKE_FLAGS="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2
 GenerateJobfileHeader() {
     local -n args=$1
 
+    if (( $((args[num_mpis] * args[num_threads])) > 78 )); then 
+       >&2 echo "Error: too many MPI processes * threads"
+       exit 1
+    fi
+    if (( ${args[num_threads]} > 39 )); then
+        >&2 echo "Error: cannot use more threads than available on a single socket"
+    fi
+
     echo "#!/bin/bash"
     echo "#SBATCH --nodes=${args[num_nodes]}"
     echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
