@@ -582,6 +582,7 @@ if [[ $mode == "generate" ]]; then
 
     declare -a jobfiles
     declare -A invoc=( [mpi]=$_mpi [timelimit]=$_timelimit )
+    invoc[misc_dir]="$misc_files_dir"
 
     for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
         invoc[num_nodes]=$(ParseNodes "$nodes_x_mpis_x_threads")

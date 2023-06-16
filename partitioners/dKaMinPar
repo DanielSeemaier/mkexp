@@ -72,5 +72,4 @@ InvokeFromDisk() {
 }
 
 DefineAlgorithm dKaMinPar-Default dKaMinPar -P default
-DefineAlgorithm dKaMinPar-Fast    dKaMinPar -P fast
 DefineAlgorithm dKaMinPar-Strong  dKaMinPar -P strong
