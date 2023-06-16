@@ -60,7 +60,9 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
 
-    part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
+    part_output=""
+    #part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
+    
     if [[ -f "$graph" ]]; then
         echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
     else 

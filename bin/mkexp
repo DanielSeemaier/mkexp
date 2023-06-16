@@ -332,7 +332,7 @@ TimelimitPerInstance() {
 }
 
 Graphs() {
-    for filename in ${1%/}/*.graph; do 
+    for filename in ${1%/}/*.*; do 
         _graphs+=("${filename%.*}")
     done
 }
