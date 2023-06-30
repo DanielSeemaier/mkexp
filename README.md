@@ -1,13 +1,13 @@
 # Experiment Framework for (Distributed) Graph Partitioners
 
-0. Add `./bin/` to `$PATH`
-1. Run `mkexp --init` in a fresh directory. This creates a file `Experiment`
+0. Add `bin/` to your `$PATH` variable.
+1. Run `mkexp --init` in a fresh directory. This creates a file `Experiment`.
 2. Edit the file to setup your experiment.
-3. Run `mkexp [--local]` to download and compile the partitioners required to run the experiment and generate the jobfiles.
-   Per default, partitioners are only installed once and shared between experiments. To install them to a unique directory, use the `--local` flag.
-4. Run `mkexp --submit` to start the experiment (submit the jobfiles)
-5. Once the experiment was executed, run `mkexp --results` to generate standardized CSV files containing the results. 
-   Then, run `mkexp --plots` to generate performance profiles based on the results (required `R` with some packages preinstalled).
+3. Run `mkexp` once. This will download and compile the required partitioners and generate the jobfiles.
+4. Run `./submit.sh` to start the experiment. Use `mkexp --progress` to query its progress.
+5. Once the experiment has finished, run `mkexp --results` to generate standardized CSV files containing the results. 
+6. Run `mkexp --plots` to generate performance profiles, running time boxplots as well as per-instance running time and cut plots.
+   This requires `R` with some packages preinstalled.
 
 ## Extending the Framework
 

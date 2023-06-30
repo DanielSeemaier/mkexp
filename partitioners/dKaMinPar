@@ -70,6 +70,3 @@ InvokeFromDisk() {
         return 1
     fi
 }
-
-DefineAlgorithm dKaMinPar-Default dKaMinPar -P default
-DefineAlgorithm dKaMinPar-Strong  dKaMinPar -P strong

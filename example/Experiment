@@ -1,79 +1,98 @@
 #!/bin/bash
 
-# [Optional]
-# Define new algorithms by providing additional CLI arguments to predefined 
-# algorithms.
-#               New name         Based upon  CLI arguments...
-DefineAlgorithm ParHIP-Fast      ParHIP      --preconfiguration=fastsocial
-DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
+# Define new algorithms by providing custom CLI arguments to base algorithms: 
+#
+#                 New name         Based upon  CLI arguments...
+# DefineAlgorithm ParHIP-Fast      ParHIP      --preconfiguration=fastsocial
+# DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
+#
+# Available algorithms are:
+# - ParHIP
+# - KaMinPar
+# - dKaMinPar
+# - MtKaHIP
+# - MtKaHyPar (@todo outdated), MtKaHyParExt
+# - KaHIP (@todo outdated)
+# - ParMETIS (@todo outdated)
+# - XtraPuLP
 
-# [Optional] 
-# System on which this experiment should be run on.
-System generic
 
-# [Optional] 
+# Pick a system for which the jobfiles should be generated:
+#
+# System generic   # any Linux system
+# System i10       # i10 
+# System i10par    # i10 + GNU Parallel (only for sequential experiments)
+# System horeka    # HoreKa with MPI only / MPI+TBB
+# System horekaOMP # HoreKa with MPI only / MPI+OpenMP
+
+
 # MPI implementation that should be used to run this experiment.
-MPI OpenMPI
+MPI OpenMPI   # run with mpirun
+# MPI none    # do not run with mpirun etc.
+# MPI taskset # do not run with mpirun etc., but use taskset to limit CPU affinity
 
-# [Mandatory]
+
 # List of algorithms to be included in this experiment.
-# This list can contain predefined algorithms or names defined with 
-# DefineAlgorithm
-Algorithms ParHIP-Fast ParHIP-Eco XtraPuLP
+# This list can contain base algorithms or names defined with DefineAlgorithm
+Algorithms dKaMinPar
 
-# [Mandatory]
+
 # Values of k.
 Ks 2 4 8
 
-# [Optional]
+
 # <Number of nodes N>x<Number of MPI processes M>x<Number of threads T> to be 
 # used to run the partitioners.
 # The number of nodes can be omitted
 # (== run the experiment on just one node).
 # Additionally, the number of MPI processes can be omitted 
 # (== run the experiment with just a single MPI process).
-#       N M T M T T
-#       V V V V V V
-Threads 8x4x2 4x2 2
+#
+#       N M T  
+#       V V V 
+Threads 1x2x4
+
 
 # Timelimit for the whole experiment
 #Timelimit 1:00:00 
 
-# [Optional]
+
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
 #TimelimitPerInstance 30:00
 
-# [Optional]
+
 # Seeds for RNG; multiple seeds = repeated execution
 Seeds 1 2 3 4 5
 
-# [Optional]
-# Directory containing all graphs to be included in the experiment.
-#Graphs /G/
 
-# [Optional]
+# Directory containing all graphs to be included in the experiment.
+# Graphs /G/
+
+
 # Graph to be included in the experiment, without file extension. This way, the 
 # graph can be provided in multiple formats for different graph partitioners.
-#Graph /G/144
+# Graph /G/144
 
-# [Optional]
 # Generate a graph in-memory using KaGen. Must be supported by the graph 
 # partitioner.
-KaGen rgg2d n=10 m=15
-#KaGen rgg3d n=10 m=15 
-#KaGen rdg2d n=10 
-#KaGen rdg3d n=10 
-#KaGen grid2d p=0.5 n=10 
-#KaGen grid3d p=0.5 n=10 
-#KaGen rhg gamma=3.0 n=10 m=15 
-#KaGen rmat a=0.1 b=0.2 c=0.3 n=10 m=15
+#
+# KaGen rgg2d n=10 m=15
+# KaGen rdg2d n=10 
+# KaGen grid2d p=0.5 n=10 
+# KaGen rhg gamma=3.0 n=10 m=15 
+# KaGen rmat a=0.1 b=0.2 c=0.3 n=10 m=15
+#
+# Parameters can be scaled with the following variables, where $lN = log2($N) etc:
+# - $N, $lN: number of compute nodes 
+# - $M, $lM: number of MPI processes
+# - $T, $lT: number of threads
+# - $P, $lP: number of PEs = $N * $M * $T
+#
+# E.g., to generate a RGG2D graph with 2^26 vertices *per compute node* and 2^29 edges *per compute node*, use:
+# KaGen rgg2d 'N=$((26+$lN))' 'M=$((29+$lN))'
+# It is crucial to surround the variables with upticks ('), as otherwise Bash would attempt to evaluate the expression immediately.
 
-# [Optional]
-# Like KaGen, but the size of the graph is scaled with the number of compute
-# nodes.
-#ScaledKaGen rgg2d n=10 m=15
 
-# [Optional]
-# Print a summary after generating the experiment files.
+# Print a summary of the configuration
 PrintSummary
 

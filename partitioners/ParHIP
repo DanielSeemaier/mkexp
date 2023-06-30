@@ -69,5 +69,3 @@ InvokeFromDisk() {
     fi
 }
 
-DefineAlgorithm ParHIP-Fast ParHIP --preconfiguration=fastsocial
-DefineAlgorithm ParHIP-Eco  ParHIP --preconfiguration=ecosocial

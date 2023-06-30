@@ -5,7 +5,7 @@
 # Reads the `Experiment` file in the current working directory and creates    #
 # jobfiles for the experiment.                                                #
 ###############################################################################
-#set -o pipefail
+set -o pipefail
 set -o errtrace
 set -o nounset
 set -o errexit
@@ -87,20 +87,21 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--init, --install, --submit, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--init, --submit, --skip-install, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
     echo ""
     echo "Options are:"
-    echo "    --install: Install partitioners"
+    echo "    --init: Initialize a new experiment"
     echo "    --submit: Start the experiment"
-    echo "    --results: Parse log files (after executing the experiment) and output CSV files"
+    echo "    --skip-install: Regenerate jobfiles, but do not recompile the partitioners"
+    echo "    --results: Parse log files and output CSV files"
     echo "    --plot:  Generate performance- and running time plots from the CSV files"
-    echo "    --stats: Compute some statistics from the CSV files"
     echo "    --clean: Delete generated experiment files"
     echo "    --purge: --clean, but also delete log and result files"
-    echo "    --init: Initialize a new experiment"
+    echo "    --stats: Compute some statistics from the CSV files"
+    echo "    --help: Print this help message"
     exit 0
 fi
 if [[ $mode == "init" ]]; then 
@@ -267,9 +268,14 @@ DefineAlgorithm() {
     base_algorithm="$2"
     custom_arguments="${*:3}"
 
-    #[[ ! -v "_algorithm_definition_names[$name]" ]] || {
-    #    echo "Warning: overwriting already defined algorithm $name"
-    #}
+    if [[ "$name" == "$base_algorithm" ]]; then 
+        echo "Error: algorithm $name cannot be based on itself"
+        exit 1
+    fi
+
+    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
+        echo "Warning: overwriting already defined algorithm $name"
+    }
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
@@ -281,13 +287,18 @@ DefineAlgorithmVersion() {
     base_algorithm="$2"
     version="$3"
 
-    #[[ ! -v "_algorithm_definition_names[$name]" ]] || {
-    #    echo "Warning: overwriting already defined algorithm $name"
-    #}
+    if [[ "$name" == "$base_algorithm" ]]; then 
+        echo "Error: algorithm $name cannot be based on itself"
+        exit 1
+    fi
 
-    #[[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
-    #    echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
-    #}
+    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
+        echo "Warning: overwriting already defined algorithm $name"
+    }
+
+    [[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
+        echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
+    }
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
