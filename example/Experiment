@@ -1,12 +1,17 @@
 #!/bin/bash
 
+# Provide build options to base algorithms:
+#
+# BuildOptions dKaMinPar -DKAMINPAR_REPOSITORY="git@github.com:DanielSeemaier/KaMinPar.git" -DKAMINPAR_BRANCH="main"
+
+
 # Define new algorithms by providing custom CLI arguments to base algorithms: 
 #
 #                 New name         Based upon  CLI arguments...
 # DefineAlgorithm ParHIP-Fast      ParHIP      --preconfiguration=fastsocial
 # DefineAlgorithm ParHIP-Eco       ParHIP      --preconfiguration=ecosocial
 #
-# Available algorithms are:
+# Predefined algorithms are:
 # - ParHIP
 # - KaMinPar
 # - dKaMinPar
@@ -33,7 +38,8 @@ MPI OpenMPI   # run with mpirun
 
 
 # List of algorithms to be included in this experiment.
-# This list can contain base algorithms or names defined with DefineAlgorithm
+# This list can contain predefined algorithms or names defined with 
+# DefineAlgorithm
 Algorithms dKaMinPar
 
 
@@ -76,7 +82,7 @@ Seeds 1 2 3 4 5
 # Generate a graph in-memory using KaGen. Must be supported by the graph 
 # partitioner.
 #
-# KaGen rgg2d n=10 m=15
+KaGen rgg2d n=10 m=15
 # KaGen rdg2d n=10 
 # KaGen grid2d p=0.5 n=10 
 # KaGen rhg gamma=3.0 n=10 m=15 
