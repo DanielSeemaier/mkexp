@@ -102,6 +102,13 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
+    echo "The standard workflow is as follows:"
+    echo "0. Add the bin/ directory to your PATH variable."
+    echo "1. Create a new directory which will contain everything related to the experiment. In that directory, run \`mkexp --init\` to create the Experiment file."
+    echo "2. Modify the Experiment file to configure your experiment. Once configured, run \`mkexp\` to build dependencies, partitioners and generate the jobfiles."
+    echo "3. Run \`./submit.sh\` to execute the experiment. This will usually happen in the background."
+    echo "4. Once the experiment has finished, parse the log files by running \`mkexp --results\`. On a system with R installed, you can generate some standard plots by running \`mkexp --plots\` afterwards."
+    echo ""
     echo "mkexp [--init, --submit, --fetch, --install-fetched, --skip-install, --results, --plot, --clean, --purge, --stats, --upload, --download, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
