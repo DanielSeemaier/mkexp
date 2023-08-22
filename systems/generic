@@ -1,4 +1,13 @@
 #!/bin/bash 
+
+SetupBuildEnv() {
+    return
+}
+
+UploadExperiment() {
+    echo "Error: unsupported"
+}
+
 GenerateJobfileHeader() {
     return 0
 }

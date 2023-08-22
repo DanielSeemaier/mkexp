@@ -14,6 +14,10 @@ Binary() {
     echo "$GLOBAL_PREFIX/bin/pm_parmetis"
 }
 
+Fetch() {
+    return
+}
+
 Install() {
     if [[ "$version" != "latest" ]]; then
         echo "Error: version support not implemented"

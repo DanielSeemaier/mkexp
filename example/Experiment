@@ -29,10 +29,19 @@
 # System i10par    # i10 + GNU Parallel (only for sequential experiments)
 # System horeka    # HoreKa with MPI only / MPI+TBB
 # System horekaOMP # HoreKa with MPI only / MPI+OpenMP
+# System supermuc  # SuperMUC with MPI only / MPI+TBB
 
+# Specific for SuperMUC:
+# Username <username>   # ssh username for SuperMUC file transfer
+# Project <project>     # SuperMUC project
+# Partition <partition> # *OPTIONAL*, if not set, job partition will be either micro, general or large, depending on the number of nodes
+
+# Load libraries that you need 
+# UseLibrary Sparsehash # Download and compile Sparsehash before building any of the partitioner
 
 # MPI implementation that should be used to run this experiment.
 MPI OpenMPI   # run with mpirun
+# MPI IMPI    # run with Intel MPI (SuperMUC only)
 # MPI none    # do not run with mpirun etc.
 # MPI taskset # do not run with mpirun etc., but use taskset to limit CPU affinity
 

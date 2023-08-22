@@ -1,16 +1,17 @@
 #!/bin/bash
 . "$script_pwd/../partitioners/_KaGenPartitioner"
 
-InstallDiskDriver() {
+DKAMINPAR_USE_KAGEN_DRIVER=0
+
+FetchDiskDriver() {
     local -n args=$1
 
     src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
-
-    if [[ ! -d "$src_dir" ]]; then 
+    if [[ ! -d "$src_dir" ]]; then
         mkdir -p "$src_dir"
         git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
         git -C "$src_dir" submodule update --init --recursive
-    else 
+    else
         git -C "$src_dir" fetch origin
         git -C "$src_dir" submodule update
     fi
@@ -20,25 +21,56 @@ InstallDiskDriver() {
         branch="$version"
     fi
     git -C "$src_dir" reset --hard "origin/$branch"
+}
 
+InstallDiskDriver() {
+    local -n args=$1
+
+    src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
     cp "$src_dir/build/apps/dKaMinPar" "${args[binary_disk]}"
 }
 
+FetchKaGenDriver() {
+    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
+        src_dir="$PREFIX/src/KaGen-Partitioner"
+        if [[ ! -d "$src_dir" ]]; then
+            mkdir -p "$src_dir"
+            git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
+        else 
+            git -C "$src_dir" pull
+        fi
+    else
+        FetchDiskDriver $1
+    fi
+}
+
 InstallKaGenDriver() {
     local -n args=$1
 
-    src_dir="$PREFIX/src/KaGen-Partitioner"
-    if [[ ! -d "$src_dir" ]]; then
-        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-    else 
-        git -C "$src_dir" pull 
+    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
+        src_dir="$PREFIX/src/KaGen-Partitioner"
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_DKAMINPAR=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
+        cmake --build "$src_dir/build" --parallel
+        cp "$src_dir/build/dKaMinPar" "${args[binary_kagen]}"
+    else
+        src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
+        cmake --build "$src_dir/build" --target dKaMinPar --parallel
+        cp "$src_dir/build/apps/dKaMinPar" "${args[binary_kagen]}"
     fi
-        
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_DKAMINPAR=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-    cmake --build "$src_dir/build" --parallel
-    cp "$src_dir/build/dKaMinPar" "${args[binary_kagen]}"
+}
+
+Fetch() {
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+    if (( ${fetch_args[install_kagen]} )); then 
+        FetchKaGenDriver fetch_args
+    fi
 }
 
 Install() {

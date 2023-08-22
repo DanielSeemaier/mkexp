@@ -1,6 +1,10 @@
 #!/bin/bash
 . "$script_pwd/../partitioners/_KaGenPartitioner"
 
+Fetch() {
+    return
+}
+
 Install() {
     local -n args=$1
     GenericInstall args -DBUILD_XTRAPULP=On "XtraPuLP"

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+Fetch() {
+    local -n args=$1
+    
+    src_dir="$PREFIX/src/Sparsehash"
+    git clone https://github.com/sparsehash/sparsehash.git "$src_dir"
+}
+
+Install() {
+    local -n args=$1
+    
+    cur_dir="$(pwd)"
+    src_dir="$PREFIX/src/Sparsehash"
+    
+    cd "$src_dir"
+    ./configure --prefix="$PREFIX" 
+    make install -j 4
+    cd "$cur_dir"
+}

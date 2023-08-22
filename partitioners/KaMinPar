@@ -41,6 +41,10 @@ InstallKaGenDriver() {
     cp "$src_dir/build/KaMinPar" "${args[binary_kagen]}"
 }
 
+Fetch() {
+    return
+}
+
 Install() {
     local -n install_args=$1
     

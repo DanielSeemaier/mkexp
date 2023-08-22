@@ -1,0 +1,136 @@
+#!/bin/bash 
+SUPERMUC_OPENMPI_VERSION="4.1.2-gcc11"
+SUPERMUC_IMPI_VERSION="2021-gcc"
+SUPERMUC_TBB_VERSION="2021.4.0"
+SUPERMUC_GCC_VERSION="11.2.0"
+SUPERMUC_CMAKE_VERSION="3.21.4"
+
+#CUSTOM_CMAKE_FLAGS="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off"
+
+_ExecRsyncCommand() {
+    if command -v sshpass; then
+        if [[ -f "$HOME/keys" ]]; then 
+            . "$HOME/keys"
+            sshpass -p "$SUPERMUC_PASS" $cmd
+        else
+            eval $cmd
+        fi
+    else
+        eval $cmd
+    fi
+}
+
+UploadExperiment() {
+    if [[ "${_username}" == "" ]]; then
+        echo "Error: provide username via the Username command, e.g., Username skx1234"
+        exit 1
+    fi
+
+    dir="$(pwd)"
+    name=${dir##*/}
+
+    cmd='rsync -rutvP --cvs-exclude . '$_username'@skx.supermuc.lrz.de:~/'$name
+    _ExecRsyncCommand "$cmd"
+}
+
+DownloadExperiment() {
+    if [[ "${_username}" == "" ]]; then
+        echo "Error: provide username via the Username command, e.g., Username skx1234"
+        exit 1
+    fi
+
+    dir="$(pwd)"
+    name=${dir##*/}
+
+    cmd='rsync -rutvP --cvs-exclude '$_username'@skx.supermuc.lrz.de:~/'$name'/ .'
+    _ExecRsyncCommand "$cmd"
+}
+
+SetupBuildEnv() {
+    module unload openmpi
+    module load gcc/${SUPERMUC_GCC_VERSION}
+    if [[ "$_mpi" == "OpenMPI" ]]; then 
+        module load openmpi/${SUPERMUC_OPENMPI_VERSION}
+    elif [[ "$_mpi" == "IMPI" ]]; then
+        module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}
+    fi
+    module load intel-oneapi-tbb/${SUPERMUC_TBB_VERSION}
+    module load cmake/${SUPERMUC_CMAKE_VERSION}
+}
+
+GenerateJobfileHeader() {
+    local -n args=$1
+
+    if (( $((args[num_mpis] * args[num_threads])) > 48 )); then 
+        >&2 echo "Error: too many MPI processes * threads"
+        exit 1
+    fi
+    if [[ $_project == "" ]]; then
+        >&2 echo "Error: no project specified"
+        exit 1
+    fi
+
+    echo "#!/bin/bash"
+    echo "#SBATCH --nodes=${args[num_nodes]}"
+    echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
+    echo "#SBATCH --cpus-per-task=${args[num_threads]}"
+    echo "#SBATCH --ntasks-per-node=${args[num_mpis]}"
+    echo "#SBATCH --switches=1"
+    echo "#SBATCH --ear=off"
+    echo "#SBATCH --account=$_project"
+    echo "#SBATCH --time=${args[timelimit]}"
+
+    if [[ "$_partition" == "" ]]; then 
+        if (( ${args[num_nodes]} < 17 )); then
+            partition="micro"
+        elif (( ${args[num_nodes]} < 769 )); then
+            partition="general"
+        else
+            partition="large"
+        fi
+    else 
+        partition="$_partition"
+    fi
+    echo "#SBATCH --partition=$partition"
+
+    echo "module unload openmpi"
+    echo "module load gcc/${SUPERMUC_GCC_VERSION}"
+    if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
+        echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
+    elif [[ "${args[mpi]}" == "IMPI" ]]; then
+        echo "module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}"
+    fi
+    echo "module load intel-oneapi-tbb/${SUPERMUC_TBB_VERSION}"
+    echo "module load cmake/${SUPERMUC_CMAKE_VERSION}"
+
+    echo "unset OMP_NUM_THREADS"
+    echo "unset OMP_PROC_BIND"
+    echo "unset OMP_PLACES"
+}
+
+GenerateJobfileEntry() {
+    local -n args=$1
+
+    case "${args[mpi]}" in
+        none)
+            >&2 echo "Error: application must be run with MPI"
+            exit 1
+            ;;
+        OpenMPI)
+            echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
+            ;;
+        IMPI)
+            echo "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact I_MPI_JOB_TIMEOUT=60 mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_threads]} ${args[exe]}"
+            ;;
+        *)
+            >&2 echo "Error: unsupported MPI ${args[mpi]}"
+            exit 1
+    esac
+}
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do 
+        echo "sbatch $jobfile"
+    done
+}
+

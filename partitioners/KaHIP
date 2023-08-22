@@ -18,6 +18,10 @@ Binary() {
     echo "$GLOBAL_PREFIX/bin/kaffpa"
 }
 
+Fetch() {
+    return
+}
+
 Install() {
     if [[ "$version" != "latest" ]]; then
         echo "Error: version support not implemented"

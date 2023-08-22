@@ -1,6 +1,10 @@
 #!/bin/bash
 . "$script_pwd/../partitioners/_KaGenPartitioner"
 
+Fetch() {
+    return
+}
+
 Install() {
     src_dir="$PREFIX/src/KaGen-Partitioner/"
 

@@ -11,7 +11,6 @@ set -o nounset
 set -o errexit
 
 CUSTOM_CMAKE_FLAGS=""
-
 # Find absolute path to this script
 source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do
@@ -61,8 +60,24 @@ while [[ $# -gt 0 ]]; do
             mode="install"
             shift 
             ;;
+        --install-fetched)
+            mode="install-fetched"
+            shift
+            ;;
         --skip-install)
             skip_install=1
+            shift
+            ;;
+        --fetch)
+            mode="fetch"
+            shift
+            ;;
+        --upload)
+            mode="upload"
+            shift
+            ;;
+        --download)
+            mode="download"
             shift
             ;;
         --init)
@@ -128,6 +143,17 @@ LoadAlgorithm() {
     . "$filename"
 }
 
+LoadLibrary() {
+    local name="$1"
+    local filename="$script_pwd/../libs/$name"
+    [[ -f "$filename" ]] || {
+        echo "Error: invalid library $name"
+        echo "       $filename"
+        exit 1
+    }
+    . "$filename"
+}
+
 InvokePartitionerFromDisk() {
     local -n invoke_partitioner_from_disk_args=$1
     LoadAlgorithm "${invoke_partitioner_from_disk_args[algorithm_base]}"
@@ -140,9 +166,27 @@ InvokePartitionerFromKaGen() {
     InvokeFromKaGen invoke_partitioner_from_kagen_args
 }
 
+FetchPartitioner() {
+    local -n fetch_partitioner_args=$1
+    LoadAlgorithm "${fetch_partitioner_args[algorithm_base]}"
+    Fetch fetch_partitioner_args
+}
+
+FetchLibrary() {
+    local -n fetch_library_args=$1
+    LoadLibrary "${fetch_library_args[library]}"
+    Fetch fetch_partitioner_args
+}
+
 InstallPartitioner() {
     local -n install_partitioner_args=$1
     LoadAlgorithm "${install_partitioner_args[algorithm_base]}"
+    Install install_partitioner_args
+}
+
+InstallLibrary() {
+    local -n install_library_args=$1
+    LoadLibrary "${install_library_args[library]}"
     Install install_partitioner_args
 }
 
@@ -222,6 +266,7 @@ declare -A _algorithm_definition_bases=()
 declare -A _algorithm_definition_arguments=()
 declare -A _algorithm_definition_versions=()
 declare -A _algorithm_build_options=()
+declare -a _libs=()
 declare -a _algorithms=()
 declare -a _ks=()
 declare -a _seeds=()
@@ -236,9 +281,13 @@ _system="generic"
 _mpi="none"
 _oversubscribe_mpi=0
 _scale_ks=0
+_username=""
+_project=""
+_partition=""
 
 ResetExperiment() {
     _algorithms=()
+    _libs=()
     _ks=()
     _seeds=()
     _graphs=()
@@ -261,6 +310,10 @@ BuildOptions() {
 
 Oversubscribe() {
     _oversubscribe_mpi=1
+}
+
+UseLibrary() {
+    _libs+=(${@})
 }
 
 DefineAlgorithm() {
@@ -308,6 +361,18 @@ DefineAlgorithmVersion() {
 
 System() {
     _system="$1"
+}
+
+Username() {
+    _username="$1"
+}
+
+Project() {
+    _project="$1"
+}
+
+Partition() {
+    _partition="$1"
 }
 
 MPI() {
@@ -468,6 +533,7 @@ export C_INCLUDE_PATH="$PREFIX/include:${C_INCLUDE_PATH-""}"
 export CPLUS_INCLUDE_PATH="$PREFIX/include:${CPLUS_INCLUDE_PATH-""}"
 export LIBRARY_PATH="$PREFIX/lib:${LIBRARY_PATH-""}"
 export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH-""}"
+export CMAKE_PREFIX_PATH="$PREFIX/:${CMAKE_PREFIX_PATH-""}"
 
 ExportEnv() {
     echo "export PATH=\"$PATH\""
@@ -488,8 +554,25 @@ GenerateKaGenBinaryName() {
 }
 
 LoadSystem "$_system"
+SetupBuildEnv
 
-if [[ $skip_install == "0" && ($mode == "generate" || $mode == "install") ]]; then
+if [[ $skip_install == "0" && ($mode == "generate" || $mode == "fetch" || $mode == "install" || $mode == "install-fetched" ) ]]; then
+    for lib in ${_libs[@]}; do 
+        declare -A library 
+        library[library]="$lib"
+        #library[build_options]=""
+        #if [[ -v "_algorithm_build_options[${partitioner[algorithm_base]}]" ]]; then 
+        #    partitioner[build_options]="${_algorithm_build_options[${partitioner[algorithm_base]}]}"
+        #fi
+        if [[ $mode == "fetch" ]]; then 
+            FetchLibrary library
+        elif [[ $mode == "install-fetched" ]]; then 
+            InstallLibrary library
+        else
+            FetchLibrary library
+            InstallLibrary library
+        fi
+    done
     for algorithm in ${_algorithms[@]}; do
         declare -A partitioner
         partitioner[algorithm]="$algorithm"
@@ -503,7 +586,14 @@ if [[ $skip_install == "0" && ($mode == "generate" || $mode == "install") ]]; th
         if [[ -v "_algorithm_build_options[${partitioner[algorithm_base]}]" ]]; then 
             partitioner[build_options]="${_algorithm_build_options[${partitioner[algorithm_base]}]}"
         fi
-        InstallPartitioner partitioner
+        if [[ $mode == "fetch" ]]; then 
+            FetchPartitioner partitioner
+        elif [[ $mode == "install-fetched" ]]; then 
+            InstallPartitioner partitioner
+        else
+            FetchPartitioner partitioner
+            InstallPartitioner partitioner
+        fi
     done
 fi
 
@@ -703,6 +793,13 @@ if [[ $mode == "submit" ]]; then
         mkexp
     fi
     bash "$submit_filename"
+fi
+
+if [[ $mode == "upload" ]]; then 
+    UploadExperiment    
+fi
+if [[ $mode == "download" ]]; then
+    DownloadExperiment
 fi
 
 if [[ $mode == "progress" ]]; then

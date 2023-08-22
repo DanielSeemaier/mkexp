@@ -41,6 +41,10 @@ InstallKaGenDriver() {
     cp "$src_dir/build/ParHIP" "${args[binary_kagen]}"
 }
 
+Fetc() {
+    return
+}
+
 Install() {
     local -n install_args=$1
     

@@ -26,6 +26,10 @@ InstallDiskDriver() {
     cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${args[binary_disk]}"
 }
 
+Fetch() {
+    return
+}
+
 Install() {
     local -n install_args=$1
     
