@@ -120,7 +120,7 @@ GenerateJobfileEntry() {
             echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
         IMPI)
-            echo "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact I_MPI_JOB_TIMEOUT=60 mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_threads]} ${args[exe]}"
+            echo "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact I_MPI_JOB_TIMEOUT=60 mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
             ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
