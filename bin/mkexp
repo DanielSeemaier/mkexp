@@ -554,7 +554,9 @@ GenerateKaGenBinaryName() {
 }
 
 LoadSystem "$_system"
-SetupBuildEnv
+if [[ $mode == "install" || $mode == "install-fetched" ]]; then 
+    SetupBuildEnv
+fi
 
 if [[ $skip_install == "0" && ($mode == "generate" || $mode == "fetch" || $mode == "install" || $mode == "install-fetched" ) ]]; then
     for lib in ${_libs[@]}; do 

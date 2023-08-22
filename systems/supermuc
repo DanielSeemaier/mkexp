@@ -9,8 +9,7 @@ SUPERMUC_CMAKE_VERSION="3.21.4"
 
 _ExecRsyncCommand() {
     if command -v sshpass; then
-        if [[ -f "$HOME/keys" ]]; then 
-            . "$HOME/keys"
+        if [[ ${SUPERMUC_PASS:-""} != "" ]]; then 
             sshpass -p "$SUPERMUC_PASS" $cmd
         else
             eval $cmd
