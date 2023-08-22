@@ -102,7 +102,7 @@ done
 if [[ $mode == "help" ]]; then 
     echo "Usage: call from within a directory containing a file named 'Experiment'"
     echo ""
-    echo "mkexp [--init, --submit, --skip-install, --results, --plot, --clean, --purge, --stats, --help] [algorithms...]"
+    echo "mkexp [--init, --submit, --fetch, --install-fetched, --skip-install, --results, --plot, --clean, --purge, --stats, --upload, --download, --help] [algorithms...]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
@@ -110,13 +110,22 @@ if [[ $mode == "help" ]]; then
     echo "Options are:"
     echo "    --init: Initialize a new experiment"
     echo "    --submit: Start the experiment"
+    echo "    --fetch: Download libraries and partitioners, but do not build them yet"
+    echo "    --install-fetched: Build and install libraries and partitioners that were already fetched, i.e., run this after running --fetched"
     echo "    --skip-install: Regenerate jobfiles, but do not recompile the partitioners"
     echo "    --results: Parse log files and output CSV files"
     echo "    --plot:  Generate performance- and running time plots from the CSV files"
     echo "    --clean: Delete generated experiment files"
     echo "    --purge: --clean, but also delete log and result files"
     echo "    --stats: Compute some statistics from the CSV files"
+    echo "    --upload: Upload the experiments to a remote machine"
+    echo "    --download: Download results from a remove machine"
     echo "    --help: Print this help message"
+    echo ""
+    echo "This framework supports running experiments on a machine without internet access."
+    echo "To do so, configure the experiment on a machine with internet access, then run \`mkexp --fetch\`."
+    echo "Afterwards, upload everything to the remote machine using \`mkexp --upload\`, and compile it there by running \`mkexp --install-fetched\`."
+    echo "Once the experiments has finished, download the log files using \`mkexp --download\` and proceed as normal."
     exit 0
 fi
 if [[ $mode == "init" ]]; then 
