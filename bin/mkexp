@@ -726,6 +726,7 @@ if [[ $mode == "generate" ]]; then
                     invoc[algorithm_arguments]=$(GetAlgorithmArguments "$algorithm")
                     invoc[binary_disk]="$(GenerateBinaryName invoc)"
                     invoc[binary_kagen]="$(GenerateKaGenBinaryName invoc)"
+                    invoc[timeout]=$(ParseTimelimit "$_timelimit_per_instance")
 
                     for k in ${_ks[@]}; do
                         if [[ "$_scale_ks" == "1" ]]; then 
