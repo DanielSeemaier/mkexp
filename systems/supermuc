@@ -47,6 +47,7 @@ DownloadExperiment() {
 
 SetupBuildEnv() {
     module unload openmpi
+    module unload intel-mpi
     module load gcc/${SUPERMUC_GCC_VERSION}
     if [[ "$_mpi" == "OpenMPI" ]]; then 
         module load openmpi/${SUPERMUC_OPENMPI_VERSION}
@@ -93,6 +94,7 @@ GenerateJobfileHeader() {
     echo "#SBATCH --partition=$partition"
 
     echo "module unload openmpi"
+    echo "module unload intel-mpi"
     echo "module load gcc/${SUPERMUC_GCC_VERSION}"
     if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
         echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
