@@ -1,0 +1,138 @@
+# -*-awk-*-
+BEGIN {
+    header()
+    reset()
+}
+
+/__BEGIN_FILE__/ {
+    sub(/__BEGIN_FILE__ /, "", $0)
+    split($0, parts, "___")
+
+    data["Graph"] = parts[1]
+    data["NumNodes"] = -1
+    data["NumMPIsPerNode"] = -1
+    data["NumThreadsPerMPI"] = -1
+    data["Seed"] = -1
+    data["Epsilon"] = 0.03
+
+    split(parts[2], parts, "_")
+    for (i in parts) {
+        if (match(parts[i], /k([0-9]+)/, m)) {
+            data["K"] = m[1]
+        } else if (match(parts[i], /P([0-9]+)x([0-9]+)x([0-9]+)/, m)) {
+            data["NumNodes"] = m[1]
+            data["NumMPIsPerNode"] = m[2]
+            data["NumThreadsPerMPI"] = m[3]
+        } else if (match(parts[i], /seed([0-9]+)/, m)) {
+            data["Seed"] = m[1]
+        } else if (match(parts[i], /eps([0-9\.\-e]+)/, m)) {
+            data["Epsilon"] = m[1]
+        }
+    }
+}
+
+/__END_FILE__/ {
+    yield()
+}
+
+match($0, /`-- Partitioning: \.* *([0-9\.e\-]+) s/, m) {
+    data["Time"] = m[1]
+}
+
+match($0, /  Imbalance: *([0-9\.e\-]+)/, m) {
+    data["Balance"] = m[1]
+}
+
+match($0, /  Edge cut: *([0-9]+)/, m) {
+    data["Cut"] = m[1]
+}
+
+match($0, /\[STATS:FM:BATCHES\]/, m) {
+    resetBatches()
+}
+
+match($0, /Max distance: *([0-9]+) *\[STATS:FM:BATCHES:[0-9]+\]/, m) {
+    if (m[1] > batchesMaxDistance) {
+        batchesMaxDistance = m[1]
+    }
+}
+
+match($0, /Size by distance: *([0-9]+(,[0-9]+)*) *\[STATS:FM:BATCHES:[0-9]+\]/, m) {
+    split(m[1], values, ",")
+    for (i in values) {
+        batchesSizes[i] += values[i]
+    }
+}
+match($0, /Gain by distance: *([0-9]+(,[0-9]+)*) *\[STATS:FM:BATCHES:[0-9]+\]/, m) {
+    split(m[1], values, ",")
+    for (i in values) {
+        batchesGains[i] += values[i]
+    }
+}
+
+END {
+    yield()
+}
+
+function header() {
+    printf "Graph,"
+    printf "K,"
+    printf "Seed,"
+    printf "Cut,"
+    printf "Epsilon,"
+    printf "Balance,"
+    printf "Time,"
+    printf "NumNodes,"
+    printf "NumMPIsPerNode,"
+    printf "NumThreadsPerMPI,"
+    printf "BatchesMaxDistance,"
+    printf "BatchesSizes,"
+    printf "BatchesGains,"
+    printf "Failed\n"
+}
+
+function yield() {
+    if (length(data) == 0) { return }
+
+    printf "%s,", data["Graph"]
+    printf "%d,", data["K"]
+    printf "%d,", data["Seed"]
+    printf "%d,", data["Cut"]
+    printf "%f,", data["Epsilon"]
+    printf "%f,", data["Balance"]
+    printf "%f,", data["Time"]
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d,", batchesMaxDistance
+    printf "%s,", implode(batchesSizes, ";")
+    printf "%s,", implode(batchesGains, ";")
+    printf "%d\n", (data["Time"] == "")
+
+    reset()
+}
+
+function implode(array, char) {
+    if (length(array) == 0) {
+        return ""
+    }
+
+    ans = array[1]
+    for (i in array) {
+        if (i > 1) {
+            ans = ans char array[i]
+        }
+    }
+    return ans
+}
+
+function reset() {
+    split("", data)
+    resetBatches()
+}
+
+function resetBatches() {
+    batchesMaxDistance = -1
+    split("", batchesSizes)
+    split("", batchesGains)
+}
