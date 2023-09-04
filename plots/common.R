@@ -1,7 +1,7 @@
 # options(show.error.locations = TRUE)
 # options(error = traceback)
 
-DEPS <- c("ggplot2", "plyr", "dplyr", "RColorBrewer", "gridExtra", "egg", "stringr")
+DEPS <- c("ggplot2", "plyr", "dplyr", "RColorBrewer", "gridExtra", "egg")
 for (dep in DEPS) {
   if (!require(dep, character.only = TRUE, warn.conflicts = FALSE)) {
     install.packages(dep)

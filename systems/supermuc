@@ -47,6 +47,7 @@ DownloadExperiment() {
 
 SetupBuildEnv() {
     module unload openmpi
+    module unload intel-mpi
     module load gcc/${SUPERMUC_GCC_VERSION}
     if [[ "$_mpi" == "OpenMPI" ]]; then 
         module load openmpi/${SUPERMUC_OPENMPI_VERSION}
@@ -93,6 +94,7 @@ GenerateJobfileHeader() {
     echo "#SBATCH --partition=$partition"
 
     echo "module unload openmpi"
+    echo "module unload intel-mpi"
     echo "module load gcc/${SUPERMUC_GCC_VERSION}"
     if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
         echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
@@ -119,7 +121,11 @@ GenerateJobfileEntry() {
             echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
         IMPI)
-            echo "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact I_MPI_JOB_TIMEOUT=60 mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
+            echo -n "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact "
+            if [[ "${args[timeout]}" != "0" ]]; then 
+                echo -n "I_MPI_JOB_TIMEOUT=${args[timeout]} "
+            fi
+            echo "mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
             ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
