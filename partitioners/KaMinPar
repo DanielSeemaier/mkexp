@@ -17,9 +17,9 @@ InstallDiskDriver() {
 
     branch="main"
     if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        branch="$version"
+        branch="${args[algorithm_version]}"
     fi
-    git -C "$src_dir" reset --hard "origin/$branch"
+    git -C "$src_dir" reset --hard "$branch"
 
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $CUSTOM_CMAKE_FLAGS ${args[build_options]}
     cmake --build "$src_dir/build" --target KaMinPar --parallel

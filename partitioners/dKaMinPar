@@ -18,9 +18,9 @@ FetchDiskDriver() {
 
     branch="main"
     if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        branch="$version"
+        branch="${args[algorithm_version]}"
     fi
-    git -C "$src_dir" reset --hard "origin/$branch"
+    git -C "$src_dir" reset --hard "$branch"
 }
 
 InstallDiskDriver() {

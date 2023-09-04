@@ -1,0 +1,57 @@
+#!/bin/bash
+. "$script_pwd/../partitioners/_KaGenPartitioner"
+
+InstallDiskDriver() {
+    local -n args=$1
+
+    src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinParESA21/"
+
+    if [[ ! -d "$src_dir" ]]; then 
+        mkdir -p "$src_dir"
+        current_dir="$(pwd)"
+        cd "$src_dir"
+        wget https://algo2.iti.kit.edu/seemaier/deep_mgp/KaMinPar_release.tar.gz
+        tar -xzf KaMinPar_release.tar.gz
+        mv kaminpar_copy/* .
+        rmdir kaminpar_copy
+        cd "$current_dir"
+    fi
+
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $CUSTOM_CMAKE_FLAGS ${args[build_options]}
+    cmake --build "$src_dir/build" --target KaMinPar --parallel
+    cp "$src_dir/build/apps/KaMinPar" "${args[binary_disk]}"
+}
+
+InstallKaGenDriver() {
+    return
+}
+
+Fetch() {
+    return
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen]} )); then 
+        InstallKaGenDriver install_args
+    fi
+}
+
+InvokeFromDisk() {
+    local -n args=$1
+    
+    graph="${args[graph]}"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ -f "$graph" ]]; then
+        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} "
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}

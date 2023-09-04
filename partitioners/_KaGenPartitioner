@@ -5,12 +5,18 @@ GenericInstall() {
     local cmake_option=$2
     local built_binary_name=$3
 
-    src_dir="$PREFIX/src/KaGen-Partitioner/"
+    src_dir="$PREFIX/src/${args[algorithm_version]}/KaGen-Partitioner/"
     if [[ ! -d "$src_dir" ]]; then 
         git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
     else 
         git -C "$src_dir" pull
     fi
+
+    branch="main"
+    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
+        branch="${args[algorithm_version]}"
+    fi
+    git -C "$src_dir" reset --hard "$branch"
     
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $cmake_option
     cmake --build "$src_dir/build" --parallel
