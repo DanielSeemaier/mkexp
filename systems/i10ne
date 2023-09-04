@@ -1,0 +1,14 @@
+#!/bin/bash 
+. "$script_pwd/../systems/generic"
+
+GenerateJobfileSubmission() {
+    all_jobs_file="$PWD/all_jobs.sh"
+    rm -rf "$all_jobs_file"
+    touch "$all_jobs_file"
+    chmod +x "$all_jobs_file"
+    for file in ${@}; do 
+        echo "bash $file" >> "$PWD/all_jobs.sh"
+    done
+    echo "nohup bash -- $all_jobs_file &"
+    echo "disown"
+}
