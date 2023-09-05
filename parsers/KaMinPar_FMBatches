@@ -77,10 +77,10 @@ match($0, /Size by distance: *([0-9]+(,[0-9]+)*) *\[STATS:FM:BATCHES:[0-9]+\]/, 
 match($0, /Gain by distance: *([0-9]+(,[0-9]+)*) *\[STATS:FM:BATCHES:[0-9]+\]/, m) {
     split(m[1], values, ",")
     for (i in values) {
-        batchesSizesA[i] += values[i]
-        batchesSizesF[i] += values[i]
+        batchesGainsA[i] += values[i]
+        batchesGainsF[i] += values[i]
         if (level == 0) {
-            batchesSizesC[i] += values[i]
+            batchesGainsC[i] += values[i]
         }
     }
 }
@@ -103,6 +103,7 @@ function header() {
 
     printf "Phase,"
     printf "BatchesMaxDistance,"
+    printf "Distance,"
     printf "BatchesSize,"
     printf "BatchesGain,"
 
@@ -125,6 +126,7 @@ function yield() {
         printf "%d,", data["NumThreadsPerMPI"]
         printf "All,"
         printf "%d,", batchesMaxDistanceA
+        printf "%d,", i - 1
         printf "%s,", batchesSizesA[i]
         printf "%s,", batchesGainsA[i]
         printf "%d\n", (data["Time"] == "")
@@ -143,6 +145,7 @@ function yield() {
         printf "%d,", data["NumThreadsPerMPI"]
         printf "Coarsest,"
         printf "%d,", batchesMaxDistanceC
+        printf "%d,", i - 1
         printf "%s,", batchesSizesC[i]
         printf "%s,", batchesGainsC[i]
         printf "%d\n", (data["Time"] == "")
@@ -161,6 +164,7 @@ function yield() {
         printf "%d,", data["NumThreadsPerMPI"]
         printf "Finest,"
         printf "%d,", batchesMaxDistanceF
+        printf "%d,", i - 1
         printf "%s,", batchesSizesF[i]
         printf "%s,", batchesGainsF[i]
         printf "%d\n", (data["Time"] == "")
