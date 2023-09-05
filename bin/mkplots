@@ -197,7 +197,7 @@ if (generate_per_instance_cut) {
         dplyr::mutate(AvgCutToBest = AvgCut / min(AvgCut) - 0.9) |>
         dplyr::mutate(AvgCutToBest0 = AvgCut / min(AvgCut) - 1) |>
         dplyr::ungroup() |>
-        dplyr::mutate(Title = paste0(Graph, ", MaxDeg=", MaxDeg)) |>
+        dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg)) |>
         dplyr::mutate(MaxDegToM = MaxDeg / M.y)
     normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
 
@@ -223,10 +223,10 @@ if (generate_per_instance_cut) {
 if (generate_maxdeg_to_m) {
     pdf("maxdeg_to_m.pdf")
     p <- ggplot(normalized_data, aes(x = MaxDegToM, y = AvgCutToBest, color = Algorithm)) +
-        ggtitle("Rel. to Best over MaxDeg (log10 scales, lower is better, 1.0 is best)") +
+        ggtitle("Rel. to Best over D (log10 scales, lower is better, 1.0 is best)") +
         geom_point() +
         ylab("Cut rel. to Best") +
-        xlab("MaxDeg / M") +
+        xlab("D / m") +
         theme_bw() +
         scale_y_continuous(trans = "log10", labels = function(x) x + 0.9) +
         scale_x_continuous(trans = "log10") +
