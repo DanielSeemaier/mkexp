@@ -246,8 +246,8 @@ if (generate_fm_batches) {
             dplyr::filter(Phase == phase) |>
             dplyr::group_by(Graph, Algorithm, K) |>
             dplyr::arrange(Distance) |>
-            dplyr::mutate(TotalGain = cumsum(BatchesGain)) |>
-            dplyr::mutate(TotalSize = cumsum(BatchesSize)) |>
+            dplyr::mutate(TotalGain = cumsum(BatchesGain) / sum(BatchesGain)) |>
+            dplyr::mutate(TotalSize = cumsum(BatchesSize) / sum(BatchesSize)) |>
             dplyr::ungroup() |>
             dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg))
         df$Title <- factor(df$Title, levels = unique(df$Title[order(df$MaxDeg, decreasing = TRUE)]))
