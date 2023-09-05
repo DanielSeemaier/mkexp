@@ -10,7 +10,7 @@ script.basename <- dirname(script.name)
 source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
 source(file.path(script.basename, "../plots/running_time_box_plot.R"), chdir = TRUE)
 
-graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header = TRUE, sep = ",")
+graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header = TRUE, sep = ",") |> dplyr::distinct()
 
 # CLI arguments == algorithms to look at
 generate_all_cut <- FALSE
@@ -19,35 +19,35 @@ generate_all_time <- FALSE
 generate_per_instance_time <- FALSE 
 generate_pairwise_cut <- FALSE
 generate_maxdeg_to_m <- FALSE
+generate_fm_batches <- FALSE
 
 picked_plot <- FALSE
 
 algorithms <- commandArgs(trailingOnly = TRUE)
 if (length(algorithms) > 0) {
     mode <- algorithms[1]
+    picked_plot <- TRUE
+
     if (mode == "--basic") {
         generate_all_cut <- TRUE
         generate_all_time <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--all-cut") {
         generate_all_cut <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--per-instance-cut") {
         generate_per_instance_cut <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--pairwise-cut") {
         generate_pairwise_cut <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--all-time") {
         generate_all_time <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--per-instance-time") {
         generate_per_instance_time <- TRUE
-        picked_plot <- TRUE
     } else if (mode == "--maxdeg-to-m") {
         generate_maxdeg_to_m <- TRUE
-        picked_plot <- TRUE
-    } 
+    } else if (mode == "--fm-batches") {
+        generate_fm_batches <- TRUE
+    } else {
+        picked_plot <- FALSE
+    }
 
     if (picked_plot) {
         algorithms <- algorithms[-1]
@@ -66,11 +66,14 @@ if (!picked_plot) {
 # Load result file for each algorithm
 data <- list()
 gmean_running_times <- data.frame(Algorithm = factor(), Time = numeric())
+
 for (algorithm in algorithms) {
   df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
   df <- df %>%
     dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+
   df <- merge(df, graphs_db, by = "Graph", all.x = TRUE)
+
   thread_configs <- unique(df$NumThreadsPerMPI)
   for (thread_config in thread_configs) {
     subdf <- df %>%
@@ -232,5 +235,33 @@ if (generate_maxdeg_to_m) {
         create_theme_facet() +
         theme(legend.position = "right")
     print(p)
+    dev.off()
+}
+
+if (generate_fm_batches) {
+    side_len <- round(sqrt(length(unique(all_data$Graph))))
+    pdf("fm_batches.pdf", width = side_len * 4, height = side_len * 3)
+    for (phase in c("All", "Coarsest", "Finest")) {
+        df <- all_data |>
+            dplyr::filter(Phase == phase) |>
+            dplyr::group_by(Graph, Algorithm, K) |>
+            dplyr::arrange(Distance) |>
+            dplyr::mutate(TotalGain = cumsum(BatchesGain)) |>
+            dplyr::mutate(TotalSize = cumsum(BatchesSize)) |>
+            dplyr::ungroup() |>
+            dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg))
+        df$Title <- factor(df$Title, levels = unique(df$Title[order(df$MaxDeg, decreasing = TRUE)]))
+
+        p <- ggplot(df, aes(x = Distance, y = TotalGain, color = Algorithm, linetype = K)) +
+            ggtitle(paste0("Total Gain over Distance (", phase, ")")) +
+            geom_step() +
+            ylab("Total Gain") +
+            xlab("Distance") +
+            theme_bw() +
+            facet_wrap(~Title, ncol = side_len, scales = "free") +
+            create_theme_facet() +
+            theme(legend.position = "right")
+        print(p)
+    }
     dev.off()
 }
