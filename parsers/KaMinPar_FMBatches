@@ -38,6 +38,9 @@ BEGIN {
 match($0, /`-- Partitioning: \.* *([0-9\.e\-]+) s/, m) {
     data["Time"] = m[1]
 }
+match($0, /\|-- Partitioning: \.* *([0-9\.e\-]+) s/, m) {
+    data["Time"] = m[1]
+}
 
 match($0, /  Imbalance: *([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1]
