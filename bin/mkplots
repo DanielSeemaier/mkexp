@@ -241,6 +241,8 @@ if (generate_maxdeg_to_m) {
 if (generate_fm_batches) {
     side_len <- round(sqrt(length(unique(all_data$Graph))))
     pdf("fm_batches.pdf", width = side_len * 4, height = side_len * 3)
+
+    df$Distance <- factor(df$Distance)
     for (phase in c("All", "Coarsest", "Finest")) {
         df <- all_data |>
             dplyr::filter(Phase == phase) |>
@@ -252,7 +254,13 @@ if (generate_fm_batches) {
             dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg))
         df$Title <- factor(df$Title, levels = unique(df$Title[order(df$MaxDeg, decreasing = TRUE)]))
 
-        p <- ggplot(df, aes(x = Distance, y = TotalGain, color = Algorithm, linetype = K)) +
+        p <- if (length(unique(df$Algorithm)) == 1) {
+            ggplot(df, aes(x = Distance, y = TotalGain, color = K))  
+        } else {
+            ggplot(df, aes(x = Distance, y = TotalGain, color = K, linetype = Algorithm)) 
+        }
+
+        p <- p +
             ggtitle(paste0("Total Gain over Distance (", phase, ")")) +
             geom_step() +
             ylab("Total Gain") +
@@ -260,7 +268,7 @@ if (generate_fm_batches) {
             theme_bw() +
             facet_wrap(~Title, ncol = side_len, scales = "free") +
             create_theme_facet() +
-            theme(legend.position = "right")
+            theme(legend.position = "bottom")
         print(p)
     }
     dev.off()
