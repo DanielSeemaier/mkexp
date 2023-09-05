@@ -1,4 +1,7 @@
 #!/bin/bash 
+
+# i10*: runs the experiment through `exclusive`
+
 . "$script_pwd/../systems/generic"
 
 GenerateJobfileSubmission() {

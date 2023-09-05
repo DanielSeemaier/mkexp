@@ -8,6 +8,10 @@ UploadExperiment() {
     echo "Error: unsupported"
 }
 
+DownloadExperiment() {
+    echo "Error: unsupported"
+}
+
 GenerateJobfileHeader() {
     return 0
 }
