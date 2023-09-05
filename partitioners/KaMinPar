@@ -15,11 +15,11 @@ InstallDiskDriver() {
         git -C "$src_dir" submodule update
     fi
 
-    branch="main"
     if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        branch="${args[algorithm_version]}"
+        git -C "$src_dir" reset --hard "${args[algorithm_version]}"
+    else
+        git -C "$src_dir" pull origin
     fi
-    git -C "$src_dir" reset --hard "$branch"
 
     cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $CUSTOM_CMAKE_FLAGS ${args[build_options]}
     cmake --build "$src_dir/build" --target KaMinPar --parallel
@@ -63,7 +63,8 @@ InvokeFromDisk() {
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
+    #part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
+    part_output=""
     if [[ -f "$graph" ]]; then
         echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
     else 
