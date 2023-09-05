@@ -10,11 +10,58 @@ script.basename <- dirname(script.name)
 source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
 source(file.path(script.basename, "../plots/running_time_box_plot.R"), chdir = TRUE)
 
-graphs_db_filename <- file.path(script.basename, "../data/graphs.csv")
-graphs_db <- read.csv(graphs_db_filename, header = TRUE, sep = ",")
+graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header = TRUE, sep = ",")
 
 # CLI arguments == algorithms to look at
+generate_all_cut <- FALSE
+generate_per_instance_cut <- FALSE
+generate_all_time <- FALSE
+generate_per_instance_time <- FALSE 
+generate_pairwise_cut <- FALSE
+generate_maxdeg_to_m <- FALSE
+
+picked_plot <- FALSE
+
 algorithms <- commandArgs(trailingOnly = TRUE)
+if (length(algorithms) > 0) {
+    mode <- algorithms[1]
+    if (mode == "--basic") {
+        generate_all_cut <- TRUE
+        generate_all_time <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--all-cut") {
+        generate_all_cut <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--per-instance-cut") {
+        generate_per_instance_cut <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--pairwise-cut") {
+        generate_pairwise_cut <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--all-time") {
+        generate_all_time <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--per-instance-time") {
+        generate_per_instance_time <- TRUE
+        picked_plot <- TRUE
+    } else if (mode == "--maxdeg-to-m") {
+        generate_maxdeg_to_m <- TRUE
+        picked_plot <- TRUE
+    } 
+
+    if (picked_plot) {
+        algorithms <- algorithms[-1]
+    }
+} 
+
+if (!picked_plot) {
+    generate_all_cut <- TRUE
+    generate_per_instance_cut <- TRUE
+    generate_all_time <- TRUE
+    generate_per_instance_time <- TRUE
+    generate_pairwise_cut <- TRUE
+    generate_maxdeg_to_m <- TRUE
+}
 
 # Load result file for each algorithm
 data <- list()
@@ -76,35 +123,41 @@ for (row in 1:exp_nrows) {
 
 
 # Performance profile containing all algorithms
-pdf("all_cut.pdf")
-all_pp <- do.call(create_performance_profile, data) +
-  theme_bw() +
-  create_theme() +
-  ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
-print(all_pp)
-dev.off()
+if (generate_all_cut) {
+    pdf("all_cut.pdf")
+    all_pp <- do.call(create_performance_profile, data) +
+        theme_bw() +
+        create_theme() +
+        ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
+    print(all_pp)
+    dev.off()
+}
 
 # Pairwise performance profiles
-pdf("pairwise_cut.pdf")
-algorithm_indices <- 1:(length(algorithms) - 1)
-for (i in 1:(length(algorithms) - 1)) {
-  for (j in (i + 1):length(algorithms)) {
-    pp <- create_performance_profile(data[[i]], data[[j]]) +
-      theme_bw() +
-      create_theme() +
-      ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
-    print(pp)
-  }
+if (generate_pairwise_cut) {
+    pdf("pairwise_cut.pdf")
+    algorithm_indices <- 1:(length(algorithms) - 1)
+    for (i in 1:(length(algorithms) - 1)) {
+        for (j in (i + 1):length(algorithms)) {
+            pp <- create_performance_profile(data[[i]], data[[j]]) +
+                theme_bw() +
+                create_theme() +
+                ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
+            print(pp)
+        }
+    }
+    dev.off()
 }
-dev.off()
 
 # Running time boxplots
-pdf("all_time.pdf")
-args <- data
-args[["annotation"]] <- gmean_running_times
-all_bp <- do.call(create_running_time_boxplot, args) + theme_bw() + create_theme()
-print(all_bp)
-dev.off()
+if (generate_all_time) {
+    pdf("all_time.pdf")
+    args <- data
+    args[["annotation"]] <- gmean_running_times
+    all_bp <- do.call(create_running_time_boxplot, args) + theme_bw() + create_theme()
+    print(all_bp)
+    dev.off()
+}
 
 # Running time per instance plots
 all_data <- data.frame()
@@ -112,67 +165,72 @@ for (df in data) {
   all_data <- rbind(all_data, df)
 }
 all_data$K <- factor(all_data$K)
-# all_data$TimePerEdge <- 1000 * 1000 * (all_data$AvgTime / all_data$M)
 graphs <- unique(all_data$Graph)
 
-pdf("per_instance_time.pdf")
-for (graph in graphs) {
-  subset_data <- all_data |>
-    dplyr::filter(Graph == graph)
-  p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
-    geom_bar(
-      stat = "identity",
-      position = position_dodge()
-    ) +
-    ggtitle(graph) +
-    ylab("Time [s]") +
-    xlab("Number of Blocks") +
-    theme_bw() +
-    create_theme()
-  print(p)
+if (generate_per_instance_time) {
+    pdf("per_instance_time.pdf")
+    for (graph in graphs) {
+        subset_data <- all_data |>
+            dplyr::filter(Graph == graph)
+        p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
+            geom_bar(
+                stat = "identity",
+                position = position_dodge()
+            ) +
+            ggtitle(graph) +
+            ylab("Time [s]") +
+            xlab("Number of Blocks") +
+            theme_bw() +
+            create_theme()
+        print(p)
+    }
+    dev.off()
 }
-dev.off()
 
-side_len <- round(sqrt(length(unique(all_data$Graph))))
-normalized_data <- all_data |>
-  dplyr::group_by(Graph, K) |>
-  dplyr::mutate(AvgCutToBest = AvgCut / min(AvgCut) - 0.9) |>
-  dplyr::mutate(AvgCutToBest0 = AvgCut / min(AvgCut) - 1) |>
-  dplyr::ungroup() |>
-  dplyr::mutate(Title = paste0(Graph, ", MaxDeg=", MaxDeg)) |>
-  dplyr::mutate(MaxDegToM = MaxDeg / M.y)
-normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
+if (generate_per_instance_cut) {
+    side_len <- round(sqrt(length(unique(all_data$Graph))))
+    normalized_data <- all_data |>
+        dplyr::group_by(Graph, K) |>
+        dplyr::mutate(AvgCutToBest = AvgCut / min(AvgCut) - 0.9) |>
+        dplyr::mutate(AvgCutToBest0 = AvgCut / min(AvgCut) - 1) |>
+        dplyr::ungroup() |>
+        dplyr::mutate(Title = paste0(Graph, ", MaxDeg=", MaxDeg)) |>
+        dplyr::mutate(MaxDegToM = MaxDeg / M.y)
+    normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
 
-pdf("per_instance_cut.pdf", width = side_len * 4, height = side_len * 3)
-p <- ggplot(normalized_data, aes(x = K, y = AvgCutToBest, fill = Algorithm)) +
-  ggtitle("Per Instance Cuts (rel to best, lower is better, 1.0 is best)") +
-  geom_bar(
-    stat = "identity",
-    position = position_dodge()
-  ) +
-  ylab("Cut rel. to Best") +
-  xlab("Number of Blocks") +
-  theme_bw() +
-  facet_wrap(~Title, ncol = side_len, scales = "free") +
-  scale_y_continuous(labels = function(x) x + 0.9) +
-  geom_hline(yintercept = 0.1) +
-  create_theme_facet() +
-  theme(legend.position = "right")
-print(p)
-dev.off()
+    pdf("per_instance_cut.pdf", width = side_len * 4, height = side_len * 3)
+    p <- ggplot(normalized_data, aes(x = K, y = AvgCutToBest, fill = Algorithm)) +
+        ggtitle("Per Instance Cuts (rel to best, lower is better, 1.0 is best)") +
+        geom_bar(
+            stat = "identity",
+            position = position_dodge()
+        ) +
+        ylab("Cut rel. to Best") +
+        xlab("Number of Blocks") +
+        theme_bw() +
+        facet_wrap(~Title, ncol = side_len, scales = "free") +
+        scale_y_continuous(labels = function(x) x + 0.9) +
+        geom_hline(yintercept = 0.1) +
+        create_theme_facet() +
+        theme(legend.position = "right")
+    print(p)
+    dev.off()
+}
 
-pdf("maxdeg_to_m.pdf")
-p <- ggplot(normalized_data, aes(x = MaxDegToM, y = AvgCutToBest, color = Algorithm)) +
-  ggtitle("Rel. to Best over MaxDeg (log10 scales, lower is better, 1.0 is best)") +
-  geom_point() +
-  ylab("Cut rel. to Best") +
-  xlab("MaxDeg / M") +
-  theme_bw() +
-  scale_y_continuous(trans = "log10", labels = function(x) x + 0.9) +
-  scale_x_continuous(trans = "log10") +
-  geom_hline(yintercept = 0.1) +
-  geom_smooth(method = "lm") +
-  create_theme_facet() +
-  theme(legend.position = "right")
-print(p)
-dev.off()
+if (generate_maxdeg_to_m) {
+    pdf("maxdeg_to_m.pdf")
+    p <- ggplot(normalized_data, aes(x = MaxDegToM, y = AvgCutToBest, color = Algorithm)) +
+        ggtitle("Rel. to Best over MaxDeg (log10 scales, lower is better, 1.0 is best)") +
+        geom_point() +
+        ylab("Cut rel. to Best") +
+        xlab("MaxDeg / M") +
+        theme_bw() +
+        scale_y_continuous(trans = "log10", labels = function(x) x + 0.9) +
+        scale_x_continuous(trans = "log10") +
+        geom_hline(yintercept = 0.1) +
+        geom_smooth(method = "lm") +
+        create_theme_facet() +
+        theme(legend.position = "right")
+    print(p)
+    dev.off()
+}
