@@ -1,4 +1,8 @@
 #!/bin/bash 
+
+# i10*: runs the experiment *without* `exclusive`
+# (e.g., for running on the login node or when already holding an exclusive token)
+
 . "$script_pwd/../systems/generic"
 
 GenerateJobfileSubmission() {

@@ -1,4 +1,10 @@
 #!/bin/bash 
+
+# i10*: run the experiment through `exclusive` *IN PARALLEL*,
+# i.e., use one core per instance. 
+# Only useful for sequential codes and experiments that do not need 
+# accurate measurements of running times.
+
 . "$script_pwd/../systems/generic"
 
 GenerateJobfileSubmission() {

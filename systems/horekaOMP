@@ -1,4 +1,7 @@
 #!/bin/bash 
+
+# HoreKa with OpenMP: sets OMP_NUM_THREADS
+
 . "$script_pwd/../systems/horeka"
 
 GenerateJobfileHeader() {
