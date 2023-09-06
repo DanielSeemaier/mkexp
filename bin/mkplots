@@ -19,6 +19,7 @@ generate_all_time <- FALSE
 generate_per_instance_time <- FALSE 
 generate_pairwise_cut <- FALSE
 generate_maxdeg_to_m <- FALSE
+generate_per_instance_fm_batches <- FALSE
 generate_fm_batches <- FALSE
 
 picked_plot <- FALSE
@@ -43,6 +44,8 @@ if (length(algorithms) > 0) {
         generate_per_instance_time <- TRUE
     } else if (mode == "--maxdeg-to-m") {
         generate_maxdeg_to_m <- TRUE
+    } else if (mode == "--per-instance-fm-batches") {
+        generate_per_instance_fm_batches <- TRUE
     } else if (mode == "--fm-batches") {
         generate_fm_batches <- TRUE
     } else {
@@ -92,7 +95,7 @@ ks <- unique(data[[1]]$K)
 graphs <- unique(data[[1]]$Graph)
 num_unique_graphs <- length(unique(data[[1]]$Graph))
 
-if (!generate_fm_batches) {
+if (!generate_per_instance_fm_batches && !generate_fm_batches) {
     for (i in 1:length(data)) {
         n_before <- nrow(data[[i]]) 
         data[[i]] <- data[[i]] %>% 
@@ -240,9 +243,9 @@ if (generate_maxdeg_to_m) {
     dev.off()
 }
 
-if (generate_fm_batches) {
+if (generate_per_instance_fm_batches) {
     side_len <- round(sqrt(length(unique(all_data$Graph))))
-    pdf("fm_batches.pdf", width = side_len * 4, height = side_len * 3)
+    pdf("per_instance_fm_batches.pdf", width = side_len * 4, height = side_len * 3)
 
     df$Distance <- factor(df$Distance)
     for (phase in c("All", "Coarsest", "Finest")) {
@@ -270,6 +273,49 @@ if (generate_fm_batches) {
             theme_bw() +
             facet_wrap(~Title, ncol = side_len, scales = "free") +
             create_theme_facet() +
+            theme(legend.position = "bottom")
+        print(p)
+    }
+    dev.off()
+}
+
+if (generate_fm_batches) {
+    pdf("fm_batches.pdf", width = 7)
+
+    cutoff_distance <- 16
+    num_graphs <- length(unique(all_data$Graph))
+
+    for (phase in c("All", "Coarsest", "Finest")) {
+        df <- all_data |>
+            dplyr::filter(Phase == phase) |>
+            dplyr::group_by(Graph, Algorithm, K) |>
+            dplyr::arrange(Distance) |>
+            dplyr::mutate(TotalGain = cumsum(BatchesGain) / sum(BatchesGain)) |>
+            dplyr::mutate(TotalSize = cumsum(BatchesSize) / sum(BatchesSize)) |>
+            dplyr::ungroup() |>
+            dplyr::mutate(Distance = Distance + 1) |>
+            dplyr::group_by(Algorithm, K, Distance) |>
+            dplyr::summarise(
+                TotalGainSum = (sum(TotalGain) + num_graphs - n()) / num_graphs, 
+                TotalSizeSum = (sum(TotalSize) + num_graphs - n()) / num_graphs, 
+                .groups = "drop"
+            ) |>
+            dplyr::filter(Distance < cutoff_distance)
+
+        p <- if (length(unique(df$Algorithm)) == 1) {
+            ggplot(df, aes(x = Distance, y = TotalGainSum, linetype = K))  
+        } else {
+            ggplot(df, aes(x = Distance, y = TotalGainSum, linetype = K, color = Algorithm)) 
+        }
+
+        p <- p +
+            ggtitle(paste0("Total Gain over Distance (", phase, "); Distance < ", cutoff_distance)) +
+            geom_step() +
+            ylab("Total Gain") +
+            xlab("Distance") +
+            theme_bw() +
+            create_theme() +
+            scale_x_continuous(breaks = 0:cutoff_distance) +
             theme(legend.position = "bottom")
         print(p)
     }
