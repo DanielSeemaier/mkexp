@@ -16,11 +16,11 @@ FetchDiskDriver() {
         git -C "$src_dir" submodule update
     fi
 
-    branch="main"
     if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        branch="${args[algorithm_version]}"
+        git -C "$src_dir" reset --hard "${args[algorithm_version]}"
+    else
+        git -C "$src_dir" pull origin
     fi
-    git -C "$src_dir" reset --hard "$branch"
 }
 
 InstallDiskDriver() {
