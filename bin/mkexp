@@ -64,14 +64,14 @@ all_jobs.sh
 misc/
 EOT
 
-    echo "#!/usr/bin/env bash" > "$submit_filename"
-    chmod +x "$submit_filename"
-    echo "#!/usr/bin/env bash" > "$submit_impl_filename"
-    chmod +x "$submit_impl_filename"
-
     mkdir -p "$job_files_dir"
     mkdir -p "$log_files_dir"
     mkdir -p "$misc_files_dir"
+
+    echo "#!/usr/bin/env bash" > "$submit_filename"
+    echo "#!/usr/bin/env bash" > "$submit_impl_filename"
+    chmod +x "$submit_filename"
+    chmod +x "$submit_impl_filename"
 fi
 
 if [[ $mode == "parse" ]]; then
