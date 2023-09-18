@@ -4,7 +4,7 @@
 InstallDiskDriver() {
     local -n args=$1
 
-    src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
+    src_dir="${args[install_dir]}"
 
     if [[ ! -d "$src_dir" ]]; then 
         mkdir -p "$src_dir"

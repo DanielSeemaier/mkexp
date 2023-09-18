@@ -139,6 +139,12 @@ GenerateKaGenIdentifier() {
     echo "${args[kagen_stringified]}___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
 }
 
+GenerateInstallDir() {
+    local -n args=$1
+    version=$(echo ${args[algorithm_version]} | tr '/' '_')
+    echo "${args[algorithm_base]}-$version"
+}
+
 ScaleKaGenGraph() {
     local -n args=$1
     local kagen="$2"
@@ -154,5 +160,17 @@ ScaleKaGenGraph() {
 
     sub=$(echo "$kagen" | N=$num_nodes M=$num_mpis T=$num_threads P=$num_pes lN=$log_nodes lM=$log_mpis lT=$log_threads lP=$log_pes envsubst)
     eval "echo $sub"
+}
+
+GenerateBinaryName() {
+    local -n args=$1
+    version=$(echo ${args[algorithm_version]} | tr '/' '_')
+    echo "$PREFIX/bin/${args[algorithm_base]}-$version"
+}
+
+GenerateKaGenBinaryName() {
+    local -n args=$1
+    version=$(echo ${args[algorithm_version]} | tr '/' '_')
+    echo "$PREFIX/bin/KaGen_${args[algorithm_base]}-$version"
 }
 

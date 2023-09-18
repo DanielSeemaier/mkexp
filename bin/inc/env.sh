@@ -15,13 +15,3 @@ ExportEnv() {
     echo "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\""
 }
 
-GenerateBinaryName() {
-    local -n args=$1
-    echo "$PREFIX/bin/${args[algorithm_base]}-${args[algorithm_version]}"
-}
-
-GenerateKaGenBinaryName() {
-    local -n args=$1
-    echo "$PREFIX/bin/KaGen_${args[algorithm_base]}"
-}
-
