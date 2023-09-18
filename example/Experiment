@@ -4,6 +4,12 @@
 #
 # BuildOptions dKaMinPar -DKAMINPAR_REPOSITORY="git@github.com:DanielSeemaier/KaMinPar.git" -DKAMINPAR_BRANCH="main"
 
+# Define new algorithms by providing arguments for version control. The exact meaning depends on the algorithm.
+#
+#                        New name            Based upon  Version...
+# DefineAlgorithmVersion KaMinPar-someBranch KaMinPar    origin/some/branch
+# DefineAlgorithmVersion KaMinPar-someCommit KaMinPar    abcd01234
+
 
 # Define new algorithms by providing custom CLI arguments to base algorithms: 
 #
@@ -26,6 +32,7 @@
 #
 # System generic   # any Linux system
 # System i10       # i10 
+# System i10ne     # i10, but run the experiment without CSS
 # System i10par    # i10 + GNU Parallel (only for sequential experiments)
 # System horeka    # HoreKa with MPI only / MPI+TBB
 # System horekaOMP # HoreKa with MPI only / MPI+OpenMP
@@ -45,16 +52,13 @@ MPI OpenMPI   # run with mpirun
 # MPI none    # do not run with mpirun etc.
 # MPI taskset # do not run with mpirun etc., but use taskset to limit CPU affinity
 
-
 # List of algorithms to be included in this experiment.
 # This list can contain predefined algorithms or names defined with 
 # DefineAlgorithm
 Algorithms dKaMinPar
 
-
 # Values of k.
 Ks 2 4 8
-
 
 # <Number of nodes N>x<Number of MPI processes M>x<Number of threads T> to be 
 # used to run the partitioners.
@@ -67,22 +71,17 @@ Ks 2 4 8
 #       V V V 
 Threads 1x2x4
 
-
 # Timelimit for the whole experiment
 #Timelimit 1:00:00 
-
 
 # Timelimit for each instance in format [[[Days:]Hours:]Minutes:]Seconds.
 #TimelimitPerInstance 30:00
 
-
 # Seeds for RNG; multiple seeds = repeated execution
 Seeds 1 2 3 4 5
 
-
 # Directory containing all graphs to be included in the experiment.
 # Graphs /G/
-
 
 # Graph to be included in the experiment, without file extension. This way, the 
 # graph can be provided in multiple formats for different graph partitioners.
@@ -107,7 +106,30 @@ KaGen rgg2d n=10 m=15
 # KaGen rgg2d 'N=$((26+$lN))' 'M=$((29+$lN))'
 # It is crucial to surround the variables with upticks ('), as otherwise Bash would attempt to evaluate the expression immediately.
 
-
 # Print a summary of the configuration
 PrintSummary
 
+#--------------------------------------------------------------------------------
+# Defining multiple experiments
+#--------------------------------------------------------------------------------
+
+# You can define multiple experiments by using the following syntax:
+#
+# Experiment0() {
+#   ... setup your first experiment ...
+# }
+#
+# Experiment1() {
+#   ... setup your second experiment ...
+# }
+#
+# Experiment2() {
+#   ... setup your third experiment ...
+# }
+#
+# Note that the numbers *must be consecutive* and start with 0.
+#
+# `mkexp` will then generate jobfiles for each experiment and call them one after the other when 
+# submitting the experiment. Properties that are shared for all experiments (e.g., the system, seeds, ...)
+# can be defined outside any Experiment*() block. 
+# `PrintSummary` must be called withing the Experiment*() blocks.
