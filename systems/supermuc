@@ -1,4 +1,6 @@
 #!/bin/bash 
+. "$script_pwd/../systems/generic"
+
 SUPERMUC_OPENMPI_VERSION="4.1.2-gcc11"
 SUPERMUC_IMPI_VERSION="2021-gcc"
 SUPERMUC_TBB_VERSION="2021.4.0"

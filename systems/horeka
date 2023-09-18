@@ -1,4 +1,5 @@
 #!/bin/bash 
+. "$script_pwd/../systems/generic"
 
 # HoreKa without OpenMP: unsets all OMP_* env variables
 # This is really important when using TBB

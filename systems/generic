@@ -51,3 +51,7 @@ GenerateJobfileSubmission() {
         echo "bash $jobfile"
     done
 }
+
+GenerateJobfileWrapper() {
+    echo "bash $submit_impl_filename"
+}

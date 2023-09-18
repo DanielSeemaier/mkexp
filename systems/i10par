@@ -1,20 +1,18 @@
 #!/bin/bash 
+. "$script_pwd/../systems/generic"
 
 # i10*: run the experiment through `exclusive` *IN PARALLEL*,
 # i.e., use one core per instance. 
 # Only useful for sequential codes and experiments that do not need 
 # accurate measurements of running times.
 
-. "$script_pwd/../systems/generic"
-
 GenerateJobfileSubmission() {
-    all_jobs_file="$PWD/all_jobs.sh"
-    rm -rf "$all_jobs_file"
-    touch "$all_jobs_file"
-    chmod +x "$all_jobs_file"
     for file in ${@}; do 
-        echo "parallel < $file" >> "$PWD/all_jobs.sh"
+        echo "parallel < $file" >> "$submit_impl_filename"
     done
-    echo "nohup exclusive bash -- $all_jobs_file &"
+}
+
+GenerateJobfileWrapper() {
+    echo "nohup exclusive bash -- $submit_impl_filename &"
     echo "disown"
 }

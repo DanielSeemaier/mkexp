@@ -1,18 +1,16 @@
 #!/bin/bash 
+. "$script_pwd/../systems/generic"
 
 # i10*: runs the experiment *without* `exclusive`
 # (e.g., for running on the login node or when already holding an exclusive token)
 
-. "$script_pwd/../systems/generic"
-
 GenerateJobfileSubmission() {
-    all_jobs_file="$PWD/all_jobs.sh"
-    rm -rf "$all_jobs_file"
-    touch "$all_jobs_file"
-    chmod +x "$all_jobs_file"
     for file in ${@}; do 
-        echo "bash $file" >> "$PWD/all_jobs.sh"
+        echo "bash $file" >> "$submit_impl_filename"
     done
-    echo "nohup bash -- $all_jobs_file &"
+}
+
+GenerateJobfileWrapper() {
+    echo "nohup bash -- $submit_impl_filename &"
     echo "disown"
 }
