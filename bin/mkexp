@@ -38,7 +38,7 @@ ROOT="$(realpath "$script_pwd/../")"
 . "$ROOT/bin/inc/env.sh"
 
 gitignore_filename="$PWD/.gitignore"
-submit_impl_filename="$PWD/submit_impl.sh"
+submit_impl_filename="$PWD/jobs/starter.sh"
 submit_filename="$PWD/submit.sh"
 job_files_dir="$PWD/jobs"
 log_files_dir="$PWD/logs"
@@ -51,7 +51,6 @@ mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
 if [[ $mode == "generate" ]]; then 
     cat <<EOT > "$gitignore_filename"
 submit.sh
-submit_impl.sh
 parse.sh
 nohup.out
 logs/
@@ -117,12 +116,13 @@ HandleExperiment() {
 experiment_counter=0
 while :; do 
     name="Experiment$experiment_counter"
-    type -t "$name" > /dev/null 2>&1 
-    if [[ $? != 0 ]]; then 
+    if [[ $(type -t "$name") != function ]]; then 
         break
     fi
     
-    echo "Calling $name ..."
+    echo "#######################################################################"
+    echo "### Generating experiment no. $experiment_counter ..."
+    echo "#######################################################################"
     experiment_name="exp$experiment_counter"
 
     ResetExperiment
