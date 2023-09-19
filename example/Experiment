@@ -127,7 +127,7 @@ PrintSummary
 #   ... setup your third experiment ...
 # }
 #
-# Note that the numbers *must be consecutive* and start with 0.
+# Note that the names can be arbitrary, as long as they start with "Experiment"
 #
 # `mkexp` will then generate jobfiles for each experiment and call them one after the other when 
 # submitting the experiment. Properties that are shared for all experiments (e.g., the system, seeds, ...)

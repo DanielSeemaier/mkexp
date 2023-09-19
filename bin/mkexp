@@ -114,20 +114,16 @@ HandleExperiment() {
 }
 
 experiment_counter=0
-while :; do 
-    function_name="Experiment$experiment_counter"
-    if [[ $(type -t "$function_name") != function ]]; then 
-        break
-    fi
-    
+funcs=$(declare -F | awk '{print $3}' | grep '^Experiment')
+for function_name in $funcs; do 
     echo "#######################################################################"
-    echo "### Generating experiment no. $experiment_counter ..."
+    echo "### Generating experiment $function_name"
     echo "#######################################################################"
-    experiment_name="exp$experiment_counter"
 
     ResetExperiment
     . Experiment # Re-source file to keep global variables
     $function_name
+    experiment_name="exp$experiment_counter"
     HandleExperiment
     experiment_counter=$((experiment_counter + 1))
 done
