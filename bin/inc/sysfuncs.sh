@@ -174,3 +174,25 @@ GenerateKaGenBinaryName() {
     echo "$PREFIX/bin/KaGen_${args[algorithm_base]}-$version"
 }
 
+ResetExperiment() {
+    _algorithm_definition_names=()
+    _algorithm_definition_bases=()
+    _algorithm_definition_arguments=()
+    _algorithm_definition_versions=()
+    _algorithm_build_options=()
+    _algorithms=()
+    _libs=()
+    _ks=()
+    _seeds=()
+    _graphs=()
+    _epsilons=()
+    _nodes_x_mpis_x_threads=()
+    _kagen_graphs=()
+    _timelimit=""
+    _time_per_instance=""
+    _system="generic"
+    _mpi="none"
+    _oversubscribe_mpi=0
+    _scale_ks=0
+}
+

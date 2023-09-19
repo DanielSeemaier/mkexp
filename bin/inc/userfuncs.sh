@@ -1,4 +1,3 @@
-# Functions to be called from the Experiment file
 declare -A _algorithm_definition_names=()
 declare -A _algorithm_definition_bases=()
 declare -A _algorithm_definition_arguments=()
@@ -23,42 +22,33 @@ _username=""
 _project=""
 _partition=""
 
-ResetExperiment() {
-    _algorithm_definition_names=()
-    _algorithm_definition_bases=()
-    _algorithm_definition_arguments=()
-    _algorithm_definition_versions=()
-    _algorithm_build_options=()
-    _algorithms=()
-    _libs=()
-    _ks=()
-    _seeds=()
-    _graphs=()
-    _epsilons=()
-    _nodes_x_mpis_x_threads=()
-    _kagen_graphs=()
-    _timelimit=""
-    _time_per_instance=""
-    _system="generic"
-    _mpi="none"
-    _oversubscribe_mpi=0
-    _scale_ks=0
-}
-
+# Specifies additional build options for an algorithm.
+# The exact semantics depends on the Install*() functions of the underlying 
+# partitioner.
+#
+# BuildOptions <algorithm> <parameters ...>
 BuildOptions() {
     name="$1"
     options="${*:2}"
     _algorithm_build_options[$name]="$options"
 }
 
+# Enable the -oversubscribe flag for MPI.
 Oversubscribe() {
     _oversubscribe_mpi=1
 }
 
+# Install a library; the parameter must be a filename in libs/
+#
+# UseLibrary <name>
 UseLibrary() {
     _libs+=(${@})
 }
 
+# Define a new algorithm by providing additional CLI arguments to some base
+# partitioner (a filename in partitioners/).
+#
+# DefineAlgorithm <new name> <base partitioner> <additional arguments ...>
 DefineAlgorithm() {
     name="$1"
     base_algorithm="$2"
@@ -78,6 +68,13 @@ DefineAlgorithm() {
     _algorithm_definition_arguments[$name]="$custom_arguments"
 }
 
+# Define a custom algorithm, which is a specific version of some base 
+# partitioner (a filename in partitioners/). The exact semantics depend on the 
+# Install*() functions of the base partitioner, but are usually git branches 
+# or commits.
+#
+# DefineAlgorithmVersion <new name> <base partitioner> <origin/dev>
+# DefineAlgorithmVersion <new name> <base partitioner> <abcd1234>
 DefineAlgorithmVersion() {
     name="$1"
     base_algorithm="$2"
@@ -102,54 +99,97 @@ DefineAlgorithmVersion() {
     _algorithm_definition_versions[$name]="$version"
 }
 
+# Specifies the system on which the experiment will be run on. This is a 
+# filename in systems/
+#
+# System i10
 System() {
     _system="$1"
 }
 
+# Specify a username for a HPC system (if the system requires it).
+#
+# Username <username>
 Username() {
     _username="$1"
 }
 
+# Specify a project for a HPC system (if the system requires it).
+#
+# Project <project>
 Project() {
     _project="$1"
 }
 
+# Specify a partition for a HPC system (if the system requires it).
+#
+# Partition <mikro|default|fat>
 Partition() {
     _partition="$1"
 }
 
+# Specify the MPI library that should be used, e.g., OpenMPI, IMPI or 
+# other runners, e.g., none or taskset.
+#
+# MPI <OpenMPI|IMPI|none|taskset>
 MPI() {
     _mpi="$1"
 }
 
+# Specify which algorithms to run, can be base partitioners or names defined by
+# BuildOptions, DefineAlgorithmVersion, DefineAlgorithm.
+#
+# Algorithms <names ...>
 Algorithms() {
     _algorithms+=(${@})
 }
 
+# Specify the number of nodes, MPI processes and threads to be used for 
+# execution. Can provide multiple values for scaling experiments etc.
+#
+# Threads <<nodes>x<mpis>x<threads> ...>
 Threads() {
     _nodes_x_mpis_x_threads+=(${@})
 }
 
+# Specify seeds for PRNG. Can provide multiple values for repeated execution.
+#
+# Seeds <seed ...>
 Seeds() {
     _seeds+=(${@})
 }
 
+# Specify number of blocks. Can provide multiple values.
+#
+# Ks <k ...>
 Ks() {
     _ks+=(${@})
 }
 
+# If set, scale K with the number of compute nodes.
+#
+# ScaleKs
 ScaleKs() {
     _scale_ks=1
 }
 
+# Provide a timelimit in hh:mm:ss format for the whole experiment.
+#
+# Timelimit <hh:mm:ss>
 Timelimit() {
     _timelimit="$1"
 }
 
+# Provide a per-instance time limit in hh:mm:ss format.
+#
+# TimelimitPerInstance <hh:mm:ss>
 TimelimitPerInstance() {
     _timelimit_per_instance="$1"
 }
 
+# Specify a directory containing graphs. 
+#
+# Graphs <dirs ...>
 Graphs() {
     for filename in ${1%/}/*.*; do 
         _graphs+=("${filename%.*}")
@@ -202,6 +242,7 @@ GetAlgorithmVersion() {
     fi
 }
 
+# Print a summary for the whole experiment
 PrintSummary() {
     if [[ $mode != "generate" ]]; then 
         return 0

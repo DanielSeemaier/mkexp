@@ -33,8 +33,8 @@ ROOT="$(realpath "$script_pwd/../")"
 
 ################################################################################
 
-. "$ROOT/bin/inc/sysfuncs.sh"
 . "$ROOT/bin/inc/userfuncs.sh"
+. "$ROOT/bin/inc/sysfuncs.sh"
 . "$ROOT/bin/inc/env.sh"
 
 gitignore_filename="$PWD/.gitignore"
