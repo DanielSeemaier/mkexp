@@ -23,7 +23,9 @@ if [[ $skip_install == "0" && ($mode == "generate" || $mode == "fetch" || $mode 
         partitioner[binary_kagen]="$(GenerateKaGenBinaryName partitioner)"
         partitioner[install_disk]=$((${#_graphs[@]}))
         partitioner[install_kagen]=$((${#_kagen_graphs[@]}))
-        partitioner[install_dir]="$PREFIX/src/$(GenerateInstallDir partitioner)"
+        partitioner[install_dir_disk]="$PREFIX/src/$(GenerateInstallDir partitioner)/disk"
+        partitioner[install_dir_kagen]="$PREFIX/src/$(GenerateInstallDir partitioner)/kagen"
+        partitioner[install_dir_generic]="$PREFIX/src/$(GenerateInstallDirGeneric partitioner)"
         partitioner[build_options]=""
         if [[ -v "_algorithm_build_options[${partitioner[algorithm_base]}]" ]]; then 
             partitioner[build_options]="${_algorithm_build_options[${partitioner[algorithm_base]}]}"

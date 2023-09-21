@@ -1,47 +1,10 @@
 #!/bin/bash
-. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-InstallDiskDriver() {
-    local -n args=$1
+. "$script_pwd/../partitioners/inc/git.sh"
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-    src_dir="$PREFIX/src/${args[algorithm_version]}/ParHIP"
-
-    if [[ ! -d "$src_dir" ]]; then 
-        git clone git@github.com:KaHIP/KaHIP.git "$src_dir"
-    else 
-        git -C "$src_dir" pull
-    fi
-
-    branch="master"
-    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        branch="$version"
-    fi
-    git -C "$src_dir" reset --hard "origin/$branch"
-
-    current_pwd="$PWD"
-    cd "$src_dir"
-    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
-    cd "$current_pwd"
-
-    cp "$src_dir/deploy/parhip" "${args[binary_disk]}"
-}
-
-InstallKaGenDriver() {
-    local -n args=$1
-
-    src_dir="$PREFIX/src/KaGen-Partitioner"
-    if [[ ! -d "$src_dir" ]]; then
-        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-    else 
-        git -C "$src_dir" pull 
-    fi
-        
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_PARHIP=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-    cmake --build "$src_dir/build" --parallel
-    cp "$src_dir/build/ParHIP" "${args[binary_kagen]}"
-}
-
-Fetc() {
+# Separate fetch phase not supported
+Fetch() {
     return
 }
 
@@ -54,6 +17,25 @@ Install() {
     if (( ${install_args[install_kagen]} )); then 
         InstallKaGenDriver install_args
     fi
+}
+
+InstallDiskDriver() {
+    local -n args=$1
+
+    GenericGitFetch args "git@github.com:KaHIP/KaHIP.git" "install_dir_disk"
+
+    current_pwd="$PWD"
+    cd "$src_dir"
+    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
+    cd "$current_pwd"
+
+    cp "$src_dir/deploy/parhip" "${args[binary_disk]}"
+}
+
+InstallKaGenDriver() {
+    local -n args=$1
+    GenericKaGenPartitionerFetch args
+    GenericKaGenPartitionerInstall args -DBUILD_PARHIP=On "ParHIP"
 }
 
 InvokeFromDisk() {
@@ -71,5 +53,10 @@ InvokeFromDisk() {
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
     fi
+}
+
+InvokeFromKaGen() {
+    local -n args
+    GenericKaGenPartitionerInvokeFromKaGen args
 }
 

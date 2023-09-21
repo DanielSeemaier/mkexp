@@ -145,6 +145,12 @@ GenerateInstallDir() {
     echo "${args[algorithm_base]}-$version"
 }
 
+GenerateInstallDirGeneric() {
+    local -n args=$1
+    version=$(echo ${args[algorithm_version]} | tr '/' '_')
+    echo "generic-$version"
+}
+
 ScaleKaGenGraph() {
     local -n args=$1
     local kagen="$2"

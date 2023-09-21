@@ -1,66 +1,20 @@
 #!/bin/bash
-. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-DKAMINPAR_USE_KAGEN_DRIVER=0
+. "$script_pwd/../partitioners/inc/git.sh"
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-FetchDiskDriver() {
-    local -n args=$1
+# Controls how we partition KaGen graphs:
+#
+# - set to 0: use dKaMinPar binary + KaGen library
+# - set to 1: use KaGen-Partitioner binary + KaGen library + dKaMinPar library
+#
+# The second option takes longer to build, but makes the process more inline 
+# with the other partitioners.
+# On SuperMUC, set to 0, since KaGen-Partitioner needs internet access (@todo).
+DKAMINPAR_USE_KAGEN_DRIVER=1
 
-    src_dir="${args[install_dir]}"
-    if [[ ! -d "$src_dir" ]]; then
-        mkdir -p "$src_dir"
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
-        git -C "$src_dir" submodule update --init --recursive
-    else
-        git -C "$src_dir" fetch origin
-        git -C "$src_dir" submodule update
-    fi
-
-    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        git -C "$src_dir" reset --hard "${args[algorithm_version]}"
-    else
-        git -C "$src_dir" pull origin
-    fi
-}
-
-InstallDiskDriver() {
-    local -n args=$1
-
-    src_dir="${args[install_dir]}"
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-    cmake --build "$src_dir/build" --target dKaMinPar --parallel
-    cp "$src_dir/build/apps/dKaMinPar" "${args[binary_disk]}"
-}
-
-FetchKaGenDriver() {
-    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
-        src_dir="$PREFIX/src/KaGen-Partitioner"
-        if [[ ! -d "$src_dir" ]]; then
-            mkdir -p "$src_dir"
-            git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-        else 
-            git -C "$src_dir" pull
-        fi
-    else
-        FetchDiskDriver $1
-    fi
-}
-
-InstallKaGenDriver() {
-    local -n args=$1
-
-    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
-        src_dir="$PREFIX/src/KaGen-Partitioner"
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_DKAMINPAR=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-        cmake --build "$src_dir/build" --parallel
-        cp "$src_dir/build/dKaMinPar" "${args[binary_kagen]}"
-    else
-        src_dir="$PREFIX/src/${args[algorithm_version]}/KaMinPar"
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-        cmake --build "$src_dir/build" --target dKaMinPar --parallel
-        cp "$src_dir/build/apps/dKaMinPar" "${args[binary_kagen]}"
-    fi
-}
+# Controls whether we fetch the public version or the private fork
+DKAMINPAR_USE_PUBLIC_REPOSITORY=0
 
 Fetch() {
     local -n fetch_args=$1
@@ -70,6 +24,26 @@ Fetch() {
     fi
     if (( ${fetch_args[install_kagen]} )); then 
         FetchKaGenDriver fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    local -n fetch_disk_driver_args=$1
+
+    if [[ $DKAMINPAR_USE_PUBLIC_REPOSITORY == 1 ]]; then
+        GenericGitFetch fetch_disk_driver_args "git@github.com:KaHIP/KaMinPar.git" "install_dir_disk"
+    else 
+        GenericGitFetch fetch_disk_driver_args "git@github.com:DanielSeemaier/KaMinPar.git" "install_dir_disk"
+    fi
+}
+
+FetchKaGenDriver() {
+    local -n fetch_kagen_driver_args=$1
+
+    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
+        GenericKaGenPartitionerFetch fetch_kagen_driver_args
+    else
+        FetchDiskDriver fetch_kagen_driver_args
     fi
 }
 
@@ -84,6 +58,28 @@ Install() {
     fi
 }
 
+InstallDiskDriver() {
+    local -n install_disk_driver_args=$1
+
+    src_dir="${install_disk_driver_args[install_dir_disk]}"
+    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${install_disk_driver_args[build_options]}
+    cmake --build "$src_dir/build" --target dKaMinPar --parallel
+    cp "$src_dir/build/apps/dKaMinPar" "${install_disk_driver_args[binary_disk]}"
+}
+
+InstallKaGenDriver() {
+    local -n install_kagen_driver_args=$1
+
+    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
+        GenericKaGenPartitionerInstall install_kagen_driver_args -DBUILD_DKAMINPAR=On "dKaMinPar"
+    else
+        src_dir="${install_kagen_driver_args[install_dir_kagen]}"
+        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${install_kagen_driver_args[build_options]}
+        cmake --build "$src_dir/build" --target dKaMinPar --parallel
+        cp "$src_dir/build/apps/dKaMinPar" "${install_kagen_driver_args[binary_kagen]}"
+    fi
+}
+
 InvokeFromDisk() {
     local -n args=$1
     
@@ -92,11 +88,8 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
 
-    part_output=""
-    #part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
-    
     if [[ -f "$graph" ]]; then
-        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
+        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]}"
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
@@ -113,3 +106,4 @@ InvokeFromKaGen() {
     echo -n "-G\"${args[kagen_arguments_stringified]}\""
     echo ""
 }
+
