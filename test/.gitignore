@@ -10,5 +10,4 @@ slurm-*
 logs*/
 all_jobs.sh
 misc/
-results/
 INFO

@@ -10,8 +10,9 @@
 #
 # The second option takes longer to build, but makes the process more inline 
 # with the other partitioners.
-# On SuperMUC, set to 0, since KaGen-Partitioner needs internet access (@todo).
-DKAMINPAR_USE_KAGEN_DRIVER=1
+#
+# On SuperMUC: must be set to 0, since KaGen-Partitioner needs internet access (@todo).
+DKAMINPAR_USE_KAGEN_DRIVER=0
 
 # Controls whether we fetch the public version or the private fork
 DKAMINPAR_USE_PUBLIC_REPOSITORY=0
@@ -19,10 +20,10 @@ DKAMINPAR_USE_PUBLIC_REPOSITORY=0
 Fetch() {
     local -n fetch_args=$1
 
-    if (( ${fetch_args[install_disk]} )); then 
+    if (( ${fetch_args[install_disk_driver]} )); then 
         FetchDiskDriver fetch_args
     fi
-    if (( ${fetch_args[install_kagen]} )); then 
+    if (( ${fetch_args[install_kagen_driver]} )); then 
         FetchKaGenDriver fetch_args
     fi
 }
@@ -31,9 +32,9 @@ FetchDiskDriver() {
     local -n fetch_disk_driver_args=$1
 
     if [[ $DKAMINPAR_USE_PUBLIC_REPOSITORY == 1 ]]; then
-        GenericGitFetch fetch_disk_driver_args "git@github.com:KaHIP/KaMinPar.git" "install_dir_disk"
+        GenericGitFetch fetch_disk_driver_args "git@github.com:KaHIP/KaMinPar.git" "disk_driver_src"
     else 
-        GenericGitFetch fetch_disk_driver_args "git@github.com:DanielSeemaier/KaMinPar.git" "install_dir_disk"
+        GenericGitFetch fetch_disk_driver_args "git@github.com:DanielSeemaier/KaMinPar.git" "disk_driver_src"
     fi
 }
 
@@ -50,10 +51,10 @@ FetchKaGenDriver() {
 Install() {
     local -n install_args=$1
     
-    if (( ${install_args[install_disk]} )); then 
+    if (( ${install_args[install_disk_driver]} )); then 
         InstallDiskDriver install_args
     fi
-    if (( ${install_args[install_kagen]} )); then 
+    if (( ${install_args[install_kagen_driver]} )); then 
         InstallKaGenDriver install_args
     fi
 }
@@ -61,10 +62,17 @@ Install() {
 InstallDiskDriver() {
     local -n install_disk_driver_args=$1
 
-    src_dir="${install_disk_driver_args[install_dir_disk]}"
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${install_disk_driver_args[build_options]}
+    src_dir="${install_disk_driver_args[disk_driver_src]}"
+
+    cmake -S "$src_dir" \
+        -B "$src_dir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DKAMINPAR_BUILD_DISTRIBUTED=On \
+        $CUSTOM_CMAKE_FLAGS \
+        ${install_disk_driver_args[algorithm_build_options]}
     cmake --build "$src_dir/build" --target dKaMinPar --parallel
-    cp "$src_dir/build/apps/dKaMinPar" "${install_disk_driver_args[binary_disk]}"
+
+    cp "$src_dir/build/apps/dKaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
 InstallKaGenDriver() {
@@ -73,37 +81,58 @@ InstallKaGenDriver() {
     if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
         GenericKaGenPartitionerInstall install_kagen_driver_args -DBUILD_DKAMINPAR=On "dKaMinPar"
     else
-        src_dir="${install_kagen_driver_args[install_dir_kagen]}"
-        cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DKAMINPAR_BUILD_DISTRIBUTED=On $CUSTOM_CMAKE_FLAGS ${install_kagen_driver_args[build_options]}
-        cmake --build "$src_dir/build" --target dKaMinPar --parallel
-        cp "$src_dir/build/apps/dKaMinPar" "${install_kagen_driver_args[binary_kagen]}"
+        InstallDiskDriver install_kagen_driver_args
+        cp "${install_kagen_driver_args[disk_driver_bin]}" "${install_kagen_driver_args[kagen_driver_bin]}"
     fi
 }
 
 InvokeFromDisk() {
-    local -n args=$1
+    local -n invoke_from_disk_args=$1
     
-    graph="${args[graph]}"
+    graph="${invoke_from_disk_args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
+    [[ -f "$graph.parhip" ]] && graph="$graph.parhip"
 
     if [[ -f "$graph" ]]; then
-        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]}"
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "-G $graph "
+        echo -n "-k ${invoke_from_disk_args[k]} "
+        echo -n "-e ${invoke_from_disk_args[epsilon]} "
+        echo -n "--seed=${invoke_from_disk_args[seed]} "
+        echo -n "-t ${invoke_from_disk_args[num_threads]} "
+        echo -n "-T "
+        echo -n "${invoke_from_disk_args[algorithm_arguments]}"
+        echo ""
     else 
-        >&2 echo "Warning: Graph $graph does not exist"
+        >&2 echo "Warning: Graph $graph does not exist; skipping instance"
         return 1
     fi
 }
 
 InvokeFromKaGen() {
-    local -n args=$1
-    echo -n "${args[binary]} "
-    echo -n "--seed ${args[seed]} " 
-    echo -n "-k ${args[k]} "
-    echo -n "-t ${args[num_threads]} "
-    echo -n "-e ${args[epsilon]} -T ${args[algorithm_arguments]} "
-    echo -n "-G\"${args[kagen_arguments_stringified]}\""
-    echo ""
+    local -n invoke_from_kagen_args=$1
+
+    if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
+        echo -n "${invoke_from_kagen_args[bin]} "
+        echo -n "-s ${invoke_from_kagen_args[seed]} " 
+        echo -n "-k ${invoke_from_kagen_args[k]} "
+        echo -n "-t ${invoke_from_kagen_args[num_threads]} "
+        echo -n "-e ${invoke_from_kagen_args[epsilon]} "
+        echo -n "${invoke_from_kagen_args[algorithm_arguments]} "
+        echo -n "-G\"${invoke_from_kagen_args[kagen_arguments_stringified]}\""
+        echo ""
+    else
+        echo -n "${invoke_from_kagen_args[bin]} "
+        echo -n "--seed ${invoke_from_kagen_args[seed]} " 
+        echo -n "-k ${invoke_from_kagen_args[k]} "
+        echo -n "-t ${invoke_from_kagen_args[num_threads]} "
+        echo -n "-e ${invoke_from_kagen_args[epsilon]} "
+        echo -n "-T "
+        echo -n "${invoke_from_kagen_args[algorithm_arguments]} "
+        echo -n "-G\"${invoke_from_kagen_args[kagen_arguments_stringified]}\""
+        echo ""
+    fi
 }
 

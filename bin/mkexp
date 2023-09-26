@@ -8,7 +8,7 @@ set -o errexit
 # flags to any CMake invocation
 CUSTOM_CMAKE_FLAGS=""
 
-# Find absolute path to this script
+# Find the absolute path to this script
 source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do
   script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
@@ -36,6 +36,8 @@ ROOT="$(realpath "$script_pwd/../")"
 . "$ROOT/bin/inc/userfuncs.sh"
 . "$ROOT/bin/inc/sysfuncs.sh"
 . "$ROOT/bin/inc/env.sh"
+. "$ROOT/bin/inc/install.sh"
+. "$ROOT/bin/inc/generate.sh"
 
 gitignore_filename="$PWD/.gitignore"
 submit_impl_filename="$PWD/jobs/starter.sh"
@@ -93,8 +95,26 @@ HandleExperiment() {
     [[ -v "_epsilons" ]] || _epsilons+=("0.03")
     [[ -v "_seeds" ]] || _seeds+=("0")
 
-    . "$ROOT/bin/inc/install.sh"
-    . "$ROOT/bin/inc/generate.sh"
+    fetch_everything=0
+    install_everything=0
+    if [[ $skip_install == "0" ]]; then
+        if [[ $mode == "generate" || $mode == "install" || $mode == "fetch" ]]; then
+            fetch_everything=1
+        fi
+        if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
+            install_everything=1
+        fi
+    fi
+
+    if [[ $fetch_everything == "1" || $install_everything == "1" ]]; then
+        InstallLibraries "$fetch_everything" "$install_everything"
+        InstallPartitioners "$fetch_everything" "$install_everything"
+    fi
+
+    if [[ $mode == "generate" ]]; then
+        GenerateInfoFile
+        Generate
+    fi
 
     if [[ $mode == "results" ]]; then
         mkdir -p "$results_dir"
@@ -113,22 +133,20 @@ HandleExperiment() {
     fi
 }
 
-experiment_counter=0
-funcs=$(declare -F | awk '{print $3}' | grep '^Experiment')
-for function_name in $funcs; do 
-    echo "#######################################################################"
-    echo "### Generating experiment $function_name"
-    echo "#######################################################################"
+fallback_global_experiment=1
+for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do 
+    fallback_global_experiment=0
+    echo "### $function_name"
 
     ResetExperiment
-    . Experiment # Re-source file to keep global variables
+    . Experiment 
     $function_name
-    experiment_name="exp$experiment_counter"
+
+    experiment_name="$function_name"
     HandleExperiment
-    experiment_counter=$((experiment_counter + 1))
 done
 
-if [[ $experiment_counter == 0 ]]; then 
+if [[ $fallback_global_experiment == "1" ]]; then 
     experiment_name="base"
     HandleExperiment
 fi

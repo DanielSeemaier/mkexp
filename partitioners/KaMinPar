@@ -1,74 +1,82 @@
 #!/bin/bash
-. "$script_pwd/../partitioners/_KaGenPartitioner"
 
-InstallDiskDriver() {
-    local -n args=$1
+. "$script_pwd/../partitioners/inc/git.sh"
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-    src_dir="${args[install_dir]}"
-
-    if [[ ! -d "$src_dir" ]]; then 
-        mkdir -p "$src_dir"
-        git clone git@github.com:DanielSeemaier/KaMinPar.git "$src_dir"
-        git -C "$src_dir" submodule update --init --recursive
-    else 
-        git -C "$src_dir" fetch origin
-        git -C "$src_dir" submodule update
-    fi
-
-    if [[ "${args[algorithm_version]}" != "latest" ]]; then 
-        git -C "$src_dir" reset --hard "${args[algorithm_version]}"
-    else
-        git -C "$src_dir" pull origin
-    fi
-
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-    cmake --build "$src_dir/build" --target KaMinPar --parallel
-    cp "$src_dir/build/apps/KaMinPar" "${args[binary_disk]}"
-}
-
-InstallKaGenDriver() {
-    local -n args=$1
-
-    src_dir="$PREFIX/src/KaGen-Partitioner"
-    if [[ ! -d "$src_dir" ]]; then
-        git clone git@github.com:KaHIP/KaGen-Partitioner.git "$src_dir"
-    else 
-        git -C "$src_dir" pull 
-    fi
-        
-    cmake -S "$src_dir" -B "$src_dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_KAMINPAR=On $CUSTOM_CMAKE_FLAGS ${args[build_options]}
-    cmake --build "$src_dir/build" --parallel
-    cp "$src_dir/build/KaMinPar" "${args[binary_kagen]}"
-}
+KAMINPAR_USE_PUBLIC_REPOSITORY=0
 
 Fetch() {
-    return
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk_driver]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+    if (( ${fetch_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerFetch fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    local -n fetch_disk_driver_args=$1
+
+    if [[ $KAMINPAR_USE_PUBLIC_REPOSITORY == 1 ]]; then
+        GenericGitFetch fetch_disk_driver_args "git@github.com:KaHIP/KaMinPar.git" "disk_driver_src"
+    else 
+        GenericGitFetch fetch_disk_driver_args "git@github.com:DanielSeemaier/KaMinPar.git" "disk_driver_src"
+    fi
 }
 
 Install() {
     local -n install_args=$1
     
-    if (( ${install_args[install_disk]} )); then 
+    if (( ${install_args[install_disk_driver]} )); then 
         InstallDiskDriver install_args
     fi
-    if (( ${install_args[install_kagen]} )); then 
-        InstallKaGenDriver install_args
+    if (( ${install_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerInstall install_args -DBUILD_KAMINPAR=On "KaMinPar"
     fi
+}
+
+InstallDiskDriver() {
+    local -n install_disk_driver_args=$1
+
+    src_dir="${install_disk_driver_args[disk_driver_src]}"
+
+    cmake -S "$src_dir" \
+        -B "$src_dir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DKAMINPAR_BUILD_DISTRIBUTED=Off \
+        $CUSTOM_CMAKE_FLAGS \
+        ${install_disk_driver_args[algorithm_build_options]}
+    cmake --build "$src_dir/build" --target KaMinPar --parallel
+
+    cp "$src_dir/build/apps/KaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
 InvokeFromDisk() {
-    local -n args=$1
+    local -n invoke_from_disk_args=$1
     
-    graph="${args[graph]}"
+    graph="${invoke_from_disk_args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    #part_output="-o $misc_files_dir/${args[algorithm]}/${args[id]}.part"
-    part_output=""
     if [[ -f "$graph" ]]; then
-        echo "${args[binary]} -G $graph -k ${args[k]} -e ${args[epsilon]} --seed=${args[seed]} -t ${args[num_threads]} -T ${args[algorithm_arguments]} $part_output"
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "-G $graph "
+        echo -n "-k ${invoke_from_disk_args[k]} "
+        echo -n "-e ${invoke_from_disk_args[epsilon]} "
+        echo -n "--seed=${invoke_from_disk_args[seed]} "
+        echo -n "-t ${invoke_from_disk_args[num_threads]} "
+        echo -n "-T "
+        echo -n "${invoke_from_disk_args[algorithm_arguments]}"
+        echo ""
     else 
-        >&2 echo "Warning: Graph $graph does not exist"
+        >&2 echo "Warning: Graph $graph does not exist; skipping instance"
         return 1
     fi
 }
+
+InvokeFromKaGen() {
+    GenericKaGenPartitionerInvokeFromKaGen $1
+}
+

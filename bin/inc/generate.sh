@@ -1,7 +1,49 @@
-if [[ $mode == "generate" ]]; then 
-    infofile="INFO"
-    echo "Generated at $(date) on $(hostname)" > "$infofile"
+GenerateInfoFile() {
+    echo "Generated at $(date) on $(hostname)" > INFO
+}
 
+GenerateCrossProduct() {
+    local -n prepared_invoc=$1
+    local seed="$2"
+    local epsilon="$3"
+    local algorithm="$4"
+    local k="$5"
+
+    prepared_invoc[bin]="${prepared_invoc[disk_driver_bin]}"
+    for graph in ${_graphs[@]}; do
+        prepared_invoc[graph]="$graph"
+        prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"
+        prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
+        prepared_invoc[exe]="$(InvokePartitionerFromDisk prepared_invoc)"
+        prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
+        if [[ "$_timelimit_per_instance" != "" ]]; then 
+            prepared_invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${prepared_invoc[exe]}"
+        fi
+        echo "${prepared_invoc[exe]} >> ${prepared_invoc[log]} 2>&1" >> "${prepared_invoc[job]}"
+    done 
+
+    # KaGen graphs
+    prepared_invoc[bin]="${prepared_invoc[kagen_driver_bin]}"
+    for i in ${!_kagen_graphs[@]}; do
+        kagen="$(ScaleKaGenGraph prepared_invoc "${_kagen_graphs[$i]}")"
+        kagen_arguments_arr=($kagen)
+        prepared_invoc[kagen_stringified]="$(echo "$kagen" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/' | tr ' ' '-')"
+        prepared_invoc[kagen_arguments_stringified]="$(echo "$kagen" | tr ' ' ';')"
+        prepared_invoc[kagen_generator]="${kagen_arguments_arr[0]}"
+        prepared_invoc[kagen_arguments]="${kagen_arguments_arr[@]:1}"
+        prepared_invoc[id]="$(GenerateKaGenIdentifier prepared_invoc)"
+        prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
+        prepared_invoc[exe]="$(InvokePartitionerFromKaGen prepared_invoc)"
+        prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
+        if [[ "$_timelimit_per_instance" != "" ]]; then 
+            prepared_invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${prepared_invoc[exe]}"
+        fi
+
+        echo "${prepared_invoc[exe]} >> ${prepared_invoc[log]} 2>&1" >> "${prepared_invoc[job]}"
+    done # generator
+}
+
+Generate() {
     for algorithm in ${_algorithms[@]}; do 
         mkdir -p "$log_files_dir/$algorithm"
         mkdir -p "$misc_files_dir/$algorithm"
@@ -33,8 +75,12 @@ if [[ $mode == "generate" ]]; then
                     invoc[algorithm_base]=$(GetAlgorithmBase "$algorithm")
                     invoc[algorithm_version]=$(GetAlgorithmVersion "$algorithm")
                     invoc[algorithm_arguments]=$(GetAlgorithmArguments "$algorithm")
-                    invoc[binary_disk]="$(GenerateBinaryName invoc)"
-                    invoc[binary_kagen]="$(GenerateKaGenBinaryName invoc)"
+                    invoc[algorithm_build_options]=$(GetAlgorithmBuildOptions "$algorithm")
+
+                    build_id=$(GenerateBuildIdentifier invoc)
+                    invoc[disk_driver_bin]="$PREFIX/bin/disk-$build_id"
+                    invoc[kagen_driver_bin]="$PREFIX/bin/kagen-$build_id"
+
                     invoc[timeout]=$(ParseTimelimit "$_timelimit_per_instance")
 
                     for k in ${_ks[@]}; do
@@ -43,39 +89,7 @@ if [[ $mode == "generate" ]]; then
                         fi
                         invoc[k]=$k
 
-                        # Graphs from disk
-                        invoc[binary]="${invoc[binary_disk]}"
-                        for graph in ${_graphs[@]}; do
-                            invoc[graph]="$graph"
-                            invoc[id]="$(GenerateInvocIdentifier invoc)"
-                            invoc[log]="$log_files_dir/${invoc[algorithm]}/${invoc[id]}.log"
-                            invoc[exe]="$(InvokePartitionerFromDisk invoc)"
-                            invoc[exe]="$(GenerateJobfileEntry invoc)"
-                            if [[ "$_timelimit_per_instance" != "" ]]; then 
-                                invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${invoc[exe]}"
-                            fi
-                            echo "${invoc[exe]} >> ${invoc[log]} 2>&1" >> "${invoc[job]}"
-                        done 
-
-                        # KaGen graphs
-                        invoc[binary]="${invoc[binary_kagen]}"
-                        for i in ${!_kagen_graphs[@]}; do
-                            kagen="$(ScaleKaGenGraph invoc "${_kagen_graphs[$i]}")"
-                            kagen_arguments_arr=($kagen)
-                            invoc[kagen_stringified]="$(echo "$kagen" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/' | tr ' ' '-')"
-                            invoc[kagen_arguments_stringified]="$(echo "$kagen" | tr ' ' ';')"
-                            invoc[kagen_generator]="${kagen_arguments_arr[0]}"
-                            invoc[kagen_arguments]="${kagen_arguments_arr[@]:1}"
-                            invoc[id]="$(GenerateKaGenIdentifier invoc)"
-                            invoc[log]="$log_files_dir/${invoc[algorithm]}/${invoc[id]}.log"
-                            invoc[exe]="$(InvokePartitionerFromKaGen invoc)"
-                            invoc[exe]="$(GenerateJobfileEntry invoc)"
-                            if [[ "$_timelimit_per_instance" != "" ]]; then 
-                                invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${invoc[exe]}"
-                            fi
-
-                            echo "${invoc[exe]} >> ${invoc[log]} 2>&1" >> "${invoc[job]}"
-                        done # generator
+                        GenerateCrossProduct invoc "$seed" "$epsilon" "$algorithm" "$k"
                     done # k
                 done # algorithm
             done # epsilon
@@ -83,5 +97,5 @@ if [[ $mode == "generate" ]]; then
     done
 
     GenerateJobfileSubmission ${jobfiles[@]} >> $submit_impl_filename
-fi # $mode == "generate"
+}
 

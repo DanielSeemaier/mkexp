@@ -3,22 +3,18 @@
 . "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
 Fetch() {
-    local -n args=$1
-    GenericKaGenPartitionerFetch args
+    GenericKaGenPartitionerFetch $1
 }
 
 Install() {
-    local -n args=$1
-    GenericKaGenPartitionerInstall args -DBUILD_XTRAPULP=On "XtraPuLP"
+    GenericKaGenPartitionerInstall $1 -DBUILD_XTRAPULP=On "XtraPuLP"
 }
 
 InvokeFromDisk() {
-    local -n args
-    GenericKaGenPartitionerInvokeFromDisk args
+    GenericKaGenPartitionerInvokeFromDisk $1
 }
 
 InvokeFromKaGen() {
-    local -n args
-    GenericKaGenPartitionerInvokeFromKaGen args
+    GenericKaGenPartitionerInvokeFromKaGen $1
 }
 

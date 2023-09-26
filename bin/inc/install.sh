@@ -1,43 +1,52 @@
-if [[ $skip_install == "0" && ($mode == "generate" || $mode == "fetch" || $mode == "install" || $mode == "install-fetched" ) ]]; then
-    SetupBuildEnv
+InstallLibraries() {
+    local fetch=$1
+    local install=$2
 
     for lib in ${_libs[@]}; do 
-        declare -A library 
-        library[library]="$lib"
-        if [[ $mode == "fetch" ]]; then 
-            FetchLibrary library
-        elif [[ $mode == "install-fetched" ]]; then 
-            InstallLibrary library
-        else
-            FetchLibrary library
-            InstallLibrary library
-        fi
-    done
+        declare -A install_libraries_args
+        install_libraries_args[library] = "$lib"
 
-    for algorithm in ${_algorithms[@]}; do
-        declare -A partitioner
-        partitioner[algorithm]="$algorithm"
-        partitioner[algorithm_base]=$(GetAlgorithmBase "$algorithm")
-        partitioner[algorithm_version]=$(GetAlgorithmVersion "$algorithm")
-        partitioner[binary_disk]="$(GenerateBinaryName partitioner)"
-        partitioner[binary_kagen]="$(GenerateKaGenBinaryName partitioner)"
-        partitioner[install_disk]=$((${#_graphs[@]}))
-        partitioner[install_kagen]=$((${#_kagen_graphs[@]}))
-        partitioner[install_dir_disk]="$PREFIX/src/$(GenerateInstallDir partitioner)/disk"
-        partitioner[install_dir_kagen]="$PREFIX/src/$(GenerateInstallDir partitioner)/kagen"
-        partitioner[install_dir_generic]="$PREFIX/src/$(GenerateInstallDirGeneric partitioner)"
-        partitioner[build_options]=""
-        if [[ -v "_algorithm_build_options[${partitioner[algorithm_base]}]" ]]; then 
-            partitioner[build_options]="${_algorithm_build_options[${partitioner[algorithm_base]}]}"
+        if [[ $fetch == "1" ]]; then
+            FetchLibrary install_libraries_args
         fi
-        if [[ $mode == "fetch" ]]; then 
-            FetchPartitioner partitioner
-        elif [[ $mode == "install-fetched" ]]; then 
-            InstallPartitioner partitioner
-        else
-            FetchPartitioner partitioner
-            InstallPartitioner partitioner
+        if [[ $install == "1" ]]; then 
+            InstallLibrary install_libraries_args
         fi
     done
-fi
+}
+
+InstallPartitioners() {
+    local fetch=$1
+    local install=$2
+
+    for partitioner in ${_algorithms[@]}; do 
+        declare -A install_partitioners_args
+
+        install_partitioners_args[algorithm]="$partitioner"
+        install_partitioners_args[algorithm_base]=$(GetAlgorithmBase "$partitioner")
+        install_partitioners_args[algorithm_build_options]=$(GetAlgorithmBuildOptions "$partitioner")
+        install_partitioners_args[algorithm_version]=$(GetAlgorithmVersion "$partitioner")
+
+        install_partitioners_args[install_disk_driver]=$((${#_graphs[@]}))
+        install_partitioners_args[install_kagen_driver]=$((${#_kagen_graphs[@]}))
+
+        build_id=$(GenerateBuildIdentifier install_partitioners_args)
+        generic_build_id=$(GenerateGenericBuildIdentifier install_partitioners_args)
+
+        install_partitioners_args[disk_driver_bin]="$PREFIX/bin/disk-$build_id"
+        install_partitioners_args[kagen_driver_bin]="$PREFIX/bin/kagen-$build_id"
+        install_partitioners_args[disk_driver_src]="$PREFIX/src/disk-$build_id/"
+        install_partitioners_args[kagen_driver_src]="$PREFIX/src/kagen-$build_id/"
+        install_partitioners_args[generic_kagen_driver_src]="$PREFIX/src/generic-$generic_build_id/"
+
+        if [[ $fetch == "1" ]]; then
+            echo "... fetching $partitioner"
+            FetchPartitioner install_partitioners_args
+        fi    
+        if [[ $install == "1" ]]; then 
+            echo "... installing $partitioner"
+            InstallPartitioner install_partitioners_args
+        fi
+    done
+}
 

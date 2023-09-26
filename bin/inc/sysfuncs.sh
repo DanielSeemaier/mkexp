@@ -202,3 +202,73 @@ ResetExperiment() {
     _scale_ks=0
 }
 
+GenerateBuildIdentifier() {
+    local -n generate_build_identifier_args=$1
+
+    version=$(echo ${generate_build_identifier_args[algorithm_version]} | \
+        tr '/' '_' \
+    )
+    build=$(echo ${generate_build_identifier_args[algorithm_build_options]} | \
+        tr '/' '_' | \
+        tr ' ' '_' \
+    )
+
+    echo "${generate_build_identifier_args[algorithm_base]}-$version-$build"
+}
+
+GenerateGenericBuildIdentifier() {
+    local -n generate_build_identifier_args=$1
+
+    version=$(echo ${generate_build_identifier_args[algorithm_version]} | \
+        tr '/' '_' \
+    )
+    build=$(echo ${generate_build_identifier_args[algorithm_build_options]} | \
+        tr '/' '_' | \
+        tr ' ' '_' \
+    )
+
+    echo "$version-$build"
+}
+
+GetAlgorithmBase() {
+    local algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        GetAlgorithmBase "${_algorithm_definition_bases[$algorithm]}"
+    else 
+        echo "$algorithm"
+    fi
+}
+
+GetAlgorithmArguments() {
+    local algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        additional_arguments=$(GetAlgorithmArguments "${_algorithm_definition_bases[$algorithm]}")
+        echo "${_algorithm_definition_arguments[$algorithm]} $additional_arguments"
+    else 
+        echo ""
+    fi
+}
+
+GetAlgorithmVersion() {
+    local algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+       if [[ -v "_algorithm_definition_versions[$algorithm]" && ${_algorithm_definition_versions[$algorithm]} != "" ]]; then 
+           echo "${_algorithm_definition_versions[$algorithm]}"
+       else 
+           GetAlgorithmVersion "${_algorithm_definition_bases[$algorithm]}"
+       fi
+    else 
+        echo "latest"
+    fi
+}
+
+GetAlgorithmBuildOptions() {
+    local algorithm="$1"
+    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
+        additional_build_options=$(GetAlgorithmBuildOptions "${_algorithm_definition_bases[$algorithm]}")
+        echo "${_algorithm_definition_build_options[$algorithm]} $additional_build_options"
+    else 
+        echo ""
+    fi
+}
+

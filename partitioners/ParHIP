@@ -3,52 +3,64 @@
 . "$script_pwd/../partitioners/inc/git.sh"
 . "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-# Separate fetch phase not supported
 Fetch() {
-    return
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk_driver]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+    if (( ${fetch_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerFetch fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    GenericGitFetch $1 "git@github.com:KaHIP/KaHIP.git" "disk_driver_src"
 }
 
 Install() {
     local -n install_args=$1
     
-    if (( ${install_args[install_disk]} )); then 
+    if (( ${install_args[install_disk_driver]} )); then 
         InstallDiskDriver install_args
     fi
-    if (( ${install_args[install_kagen]} )); then 
-        InstallKaGenDriver install_args
+    if (( ${install_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerInstall install_args -DBUILD_PARHIP=On "ParHIP"
     fi
 }
 
 InstallDiskDriver() {
-    local -n args=$1
+    local -n install_disk_driver_args=$1
 
-    GenericGitFetch args "git@github.com:KaHIP/KaHIP.git" "install_dir_disk"
+    src_dir="${install_disk_driver_args[disk_driver_src]}"
 
     current_pwd="$PWD"
     cd "$src_dir"
-    CMAKE_GENERATOR="Unix Makefiles" ./compile_withcmake.sh
+    CMAKE_GENERATOR="Unix Makefiles" \
+        ./compile_withcmake.sh \
+        ${install_disk_driver_args[algorithm_build_options]}
     cd "$current_pwd"
 
-    cp "$src_dir/deploy/parhip" "${args[binary_disk]}"
-}
-
-InstallKaGenDriver() {
-    local -n args=$1
-    GenericKaGenPartitionerFetch args
-    GenericKaGenPartitionerInstall args -DBUILD_PARHIP=On "ParHIP"
+    cp "$src_dir/deploy/parhip" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
 InvokeFromDisk() {
-    local -n args=$1
+    local -n invoke_from_disk_args=$1
     
-    graph="${args[graph]}"
+    graph="${invoke_from_disk_args[graph]}"
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
-    imbalance=$(echo "100*$epsilon/1" | bc)
+    imbalance=$(echo "100*${invoke_from_disk_args[epsilon]}/1" | bc)
 
     if [[ -f "$graph" ]]; then
-        echo "${args[binary]} --k ${args[k]} --imbalance=$imbalance --seed=${args[seed]} $graph ${args[algorithm_arguments]}"
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "--k ${invoke_from_disk_args[k]} "
+        echo -n "--imbalance=$imbalance "
+        echo -n "--seed=${invoke_from_disk_args[seed]} "
+        echo -n "$graph "
+        echo -n "${invoke_from_disk_args[algorithm_arguments]}"
+        echo ""
     else 
         >&2 echo "Warning: Graph $graph does not exist"
         return 1
@@ -56,7 +68,6 @@ InvokeFromDisk() {
 }
 
 InvokeFromKaGen() {
-    local -n args
-    GenericKaGenPartitionerInvokeFromKaGen args
+    GenericKaGenPartitionerInvokeFromKaGen $1
 }
 

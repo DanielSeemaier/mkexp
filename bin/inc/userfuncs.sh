@@ -2,7 +2,8 @@ declare -A _algorithm_definition_names=()
 declare -A _algorithm_definition_bases=()
 declare -A _algorithm_definition_arguments=()
 declare -A _algorithm_definition_versions=()
-declare -A _algorithm_build_options=()
+declare -A _algorithm_definition_build_options=()
+
 declare -a _libs=()
 declare -a _algorithms=()
 declare -a _ks=()
@@ -22,17 +23,6 @@ _username=""
 _project=""
 _partition=""
 
-# Specifies additional build options for an algorithm.
-# The exact semantics depends on the Install*() functions of the underlying 
-# partitioner.
-#
-# BuildOptions <algorithm> <parameters ...>
-BuildOptions() {
-    name="$1"
-    options="${*:2}"
-    _algorithm_build_options[$name]="$options"
-}
-
 # Enable the -oversubscribe flag for MPI.
 Oversubscribe() {
     _oversubscribe_mpi=1
@@ -45,58 +35,67 @@ UseLibrary() {
     _libs+=(${@})
 }
 
-# Define a new algorithm by providing additional CLI arguments to some base
-# partitioner (a filename in partitioners/).
-#
-# DefineAlgorithm <new name> <base partitioner> <additional arguments ...>
-DefineAlgorithm() {
-    name="$1"
-    base_algorithm="$2"
-    custom_arguments="${*:3}"
+DefineAlgorithmBuild() {
+    local name="$1"
+    local base_algorithm="$2"
+    local options="${*:3}"
 
-    if [[ "$name" == "$base_algorithm" ]]; then 
+    if [[ "$name" == "$base_algorithm" ]]; then
         echo "Error: algorithm $name cannot be based on itself"
         exit 1
     fi
-
-    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
-        echo "Warning: overwriting already defined algorithm $name"
-    }
+    if [[ -v "_algorithm_definition_names[$name]" ]]; then 
+        echo "Error: algorithm $name already defined"
+        exit 1
+    fi
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
-    _algorithm_definition_arguments[$name]="$custom_arguments"
+    _algorithm_definition_arguments[$name]=""
+    _algorithm_definition_versions[$name]="latest"
+    _algorithm_definition_build_options[$name]="$options"
 }
 
-# Define a custom algorithm, which is a specific version of some base 
-# partitioner (a filename in partitioners/). The exact semantics depend on the 
-# Install*() functions of the base partitioner, but are usually git branches 
-# or commits.
-#
-# DefineAlgorithmVersion <new name> <base partitioner> <origin/dev>
-# DefineAlgorithmVersion <new name> <base partitioner> <abcd1234>
 DefineAlgorithmVersion() {
-    name="$1"
-    base_algorithm="$2"
-    version="$3"
+    local name="$1"
+    local base_algorithm="$2"
+    local version="$3"
 
     if [[ "$name" == "$base_algorithm" ]]; then 
         echo "Error: algorithm $name cannot be based on itself"
         exit 1
     fi
-
-    [[ ! -v "_algorithm_definition_names[$name]" ]] || {
-        echo "Warning: overwriting already defined algorithm $name"
-    }
-
-    [[ "$(GetAlgorithmVersion "$base_algorithm")" == "latest" ]] || {
-        echo "Warning: base algorithm $base_algorithm of version definition $name is already a version definition with version $(GetAlgorithmVersion "$base_algorithm")"
-    }
+    if [[ -v "_algorithm_definition_names[$name]" ]]; then 
+        echo "Error: algorithm $name already defined"
+        exit 1
+    fi
 
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
     _algorithm_definition_arguments[$name]=""
     _algorithm_definition_versions[$name]="$version"
+    _algorithm_definition_build_options[$name]=""
+}
+
+DefineAlgorithm() {
+    local name="$1"
+    local base_algorithm="$2"
+    local custom_arguments="${*:3}"
+
+    if [[ "$name" == "$base_algorithm" ]]; then 
+        echo "Error: algorithm $name cannot be based on itself"
+        exit 1
+    fi
+    if [[ -v "_algorithm_definition_names[$name]" ]]; then 
+        echo "Error: algorithm $name already defined"
+        exit 1
+    fi
+
+    _algorithm_definition_names[$name]=1
+    _algorithm_definition_bases[$name]="$base_algorithm"
+    _algorithm_definition_arguments[$name]="$custom_arguments"
+    _algorithm_definition_versions[$name]=""
+    _algorithm_definition_build_options[$name]=""
 }
 
 # Specifies the system on which the experiment will be run on. This is a 
@@ -210,38 +209,6 @@ KaGen() {
     _kagen_graphs+=("$generator $arguments")
 }
 
-GetAlgorithmBase() {
-    algorithm="$1"
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
-        GetAlgorithmBase "${_algorithm_definition_bases[$algorithm]}"
-    else 
-        echo "$algorithm"
-    fi
-}
-
-GetAlgorithmArguments() {
-    algorithm="$1"
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
-        additional_arguments=$(GetAlgorithmArguments "${_algorithm_definition_bases[$algorithm]}")
-        echo "${_algorithm_definition_arguments[$algorithm]} $additional_arguments"
-    else 
-        echo ""
-    fi
-}
-
-GetAlgorithmVersion() {
-    algorithm="$1"
-    if [[ -v "_algorithm_definition_names[$algorithm]" ]]; then 
-       if [[ -v "_algorithm_definition_versions[$algorithm]" ]]; then 
-           echo "${_algorithm_definition_versions[$algorithm]}"
-       else 
-           GetAlgorithmVersion "${_algorithm_definition_bases[$algorithm]}"
-       fi
-    else 
-        echo "latest"
-    fi
-}
-
 # Print a summary for the whole experiment
 PrintSummary() {
     if [[ $mode != "generate" ]]; then 
@@ -252,6 +219,7 @@ PrintSummary() {
     for algorithm in ${!_algorithm_definition_names[@]}; do 
         echo "- $algorithm <- $(GetAlgorithmBase "$algorithm")"
         echo "  Version: $(GetAlgorithmVersion "$algorithm")"
+        echo "  Build options: $(GetAlgorithmBuildOptions "$algorithm")"
         echo "  Arguments: $(GetAlgorithmArguments "$algorithm")"
     done
     echo ""
