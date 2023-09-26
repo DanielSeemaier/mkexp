@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# --- Test experiment
+# Try to fetch, compile and run every supported partitioner on a small graph 
+# stored in a file + using the KaGen driver
+
+System generic
+
+Graphs graphs/
+KaGen rgg2d n=10 m=15
+
+Seeds 1 
+Ks 2
+
+Experiment_dKaMinPar() {
+    MPI OpenMPI
+    Threads 1x1x1
+
+    DefineAlgorithm dKaMinPar-FM dKaMinPar -P fm
+    Algorithms dKaMinPar-FM
+}
+
+_Experiment_ParHIP() {
+    MPI OpenMPI
+    Threads 1x1x1
+
+    DefineAlgorithm ParHIP-Fast ParHIP --preconfiguration=fastsocial
+    Algorithms ParHIP-Fast
+}
+

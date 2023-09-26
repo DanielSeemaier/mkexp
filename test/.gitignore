@@ -1,0 +1,14 @@
+submit.sh
+parse.sh
+nohup.out
+logs/
+jobs/
+usr/
+.Rhistory
+slurm/
+slurm-*
+logs*/
+all_jobs.sh
+misc/
+results/
+INFO
