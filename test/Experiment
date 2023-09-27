@@ -43,10 +43,16 @@ _Experiment_KaMinPar() {
     Algorithms KaMinPar-FM
 }
 
-_Experiment_MtKaHIP() {
+Experiment_MtKaHyPar() {
+    # The MtKaHyPar integration does not support KaGen graphs
+    # While the KaGen-Driver implements it, the library call sometimes 
+    # crashes, while partitioning the same graph read from disk does not 
+    # Hence, we disable the integration
+    ClearKaGenGraphs
+
     MPI taskset
     Threads 1x1x1
 
-    DefineAlgorithm MtKaHIP-Fast MtKaHIP --preconfiguration=fastsocialparallel
-    Algorithms MtKaHIP-Fast
+    DefineAlgorithm MtKaHyPar-Default MtKaHyPar --preset-type=default
+    Algorithms MtKaHyPar-Default
 }

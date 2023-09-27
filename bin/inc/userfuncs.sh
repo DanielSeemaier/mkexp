@@ -209,6 +209,14 @@ KaGen() {
     _kagen_graphs+=("$generator $arguments")
 }
 
+ClearGraphs() {
+    _graphs=()
+}
+
+ClearKaGenGraphs() {
+    _kagen_graphs=()
+}
+
 # Print a summary for the whole experiment
 PrintSummary() {
     if [[ $mode != "generate" ]]; then 
