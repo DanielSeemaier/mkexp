@@ -20,18 +20,6 @@ LoadLibrary() {
     . "$filename"
 }
 
-InvokePartitionerFromDisk() {
-    local -n invoke_partitioner_from_disk_args=$1
-    LoadAlgorithm "${invoke_partitioner_from_disk_args[algorithm_base]}"
-    InvokeFromDisk invoke_partitioner_from_disk_args
-}
-
-InvokePartitionerFromKaGen() {
-    local -n invoke_partitioner_from_kagen_args=$1
-    LoadAlgorithm "${invoke_partitioner_from_kagen_args[algorithm_base]}"
-    InvokeFromKaGen invoke_partitioner_from_kagen_args
-}
-
 FetchPartitioner() {
     local -n fetch_partitioner_args=$1
     LoadAlgorithm "${fetch_partitioner_args[algorithm_base]}"

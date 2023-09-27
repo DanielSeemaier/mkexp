@@ -80,8 +80,6 @@ InstallKaGenDriver() {
     fi
 }
 
-dkaminpar_disk_last_algorithm_name=""
-
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
     
@@ -91,7 +89,7 @@ InvokeFromDisk() {
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
     [[ -f "$graph.parhip" ]] && graph="$graph.parhip"
 
-    if [[ $dkaminpar_disk_last_algorithm_name != ${invoke_from_disk_args[algorithm]} ]]; then 
+    if [[ "${invoke_from_disk_args[first]}" == "1" ]]; then
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
         >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
         >&2 echo "  - Generated arguments: "
@@ -102,7 +100,7 @@ InvokeFromDisk() {
         >&2 echo "      -t {${invoke_from_disk_args[num_threads]}}"
         >&2 echo "      -T"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
-        dkaminpar_disk_last_algorithm_name="${invoke_from_disk_args[algorithm]}"
+        >&2 echo ""
     fi
 
     if [[ -f "$graph" ]]; then
@@ -121,13 +119,11 @@ InvokeFromDisk() {
     fi
 }
 
-dkaminpar_kagen_last_algorithm_name=""
-
 InvokeFromKaGen() {
     local -n invoke_from_kagen_args=$1
 
     if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
-        if [[ $dkaminpar_kagen_last_algorithm_name != ${invoke_from_kagen_args[algorithm]} ]]; then 
+        if [[ "${invoke_from_kagen_args[first]}" == "1" ]]; then 
             >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_kagen_args[algorithm]}$NO_COLOR', from KaGen, via the library:"
             >&2 echo "  - Binary: ${invoke_from_kagen_args[bin]}"
             >&2 echo "  - Generated arguments: "
@@ -138,7 +134,6 @@ InvokeFromKaGen() {
             >&2 echo "      -G\"{${invoke_from_kagen_args[kagen_arguments_stringified]}}\""
             >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_kagen_args[algorithm_arguments]}$NO_COLOR"
             >&2 echo ""
-            dkaminpar_kagen_last_algorithm_name="${invoke_from_kagen_args[algorithm]}"
         fi
 
         echo -n "${invoke_from_kagen_args[bin]} "
@@ -150,7 +145,7 @@ InvokeFromKaGen() {
         echo -n "-G\"${invoke_from_kagen_args[kagen_arguments_stringified]}\""
         echo ""
     else
-        if [[ $dkaminpar_kagen_last_algorithm_name != ${invoke_from_kagen_args[algorithm]} ]]; then 
+        if [[ "${invoke_from_kagen_args[first]}" == "1" ]]; then 
             >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_kagen_args[algorithm]}$NO_COLOR', from KaGen, via the binary:"
             >&2 echo "  - Binary: ${invoke_from_kagen_args[bin]}"
             >&2 echo "  - Generated arguments: "
@@ -162,7 +157,6 @@ InvokeFromKaGen() {
             >&2 echo "      -G\"{${invoke_from_kagen_args[kagen_arguments_stringified]}}\""
             >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_kagen_args[algorithm_arguments]}$NO_COLOR"
             >&2 echo ""
-            dkaminpar_kagen_last_algorithm_name="${invoke_from_kagen_args[algorithm]}"
         fi
 
         echo -n "${invoke_from_kagen_args[bin]} "

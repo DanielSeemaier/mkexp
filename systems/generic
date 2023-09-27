@@ -16,8 +16,6 @@ GenerateJobfileHeader() {
     return 0
 }
 
-generic_last_algorithm_name=""
-
 GenerateJobfileEntry() {
     local -n args=$1
 
@@ -26,23 +24,20 @@ GenerateJobfileEntry() {
         exit 1
     fi
 
-    output_info=0
-    if [[ "$generic_last_algorithm_name" != "${args[algorithm]}" ]]; then
+    if [[ "${args[first]}" == "1" ]]; then
         >&2 echo -e "Wrapping calls for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR':"
         >&2 echo "  - Wrapper: ${args[mpi]}"
-        output_info=1
-        generic_last_algorithm_name="${args[algorithm]}"
     fi
 
     case "${args[mpi]}" in 
         taskset)
-            if [[ $output_info == 1 ]]; then
+            if [[ "${args[first]}" == "1" ]]; then
                 >&2 echo "      taskset -c 0-{$(( ${args[num_threads]} - 1 ))} <call>"
             fi
             echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) ${args[exe]}"
             ;;
         none)
-            if [[ $output_info == 1 ]]; then
+            if [[ "${args[first]}" == "1" ]]; then
                 >&2 echo "      <call>"
             fi
             echo "${args[exe]}"
@@ -54,7 +49,7 @@ GenerateJobfileEntry() {
                 oversubscribe="-oversubscribe"
                 overload=":overload-allowed"
             fi
-            if [[ $output_info == 1 ]]; then
+            if [[ "${args[first]}" == "1" ]]; then
                 >&2 echo "      mpirun -n {${args[num_mpis]}} {$oversubscribe} --bind-to {core$overload} --map-by socket:PE={${args[num_threads]}} <call>"
             fi
             echo "mpirun -n ${args[num_mpis]} $oversubscribe --bind-to core$overload --map-by socket:PE=${args[num_threads]} ${args[exe]}"
@@ -64,7 +59,7 @@ GenerateJobfileEntry() {
             exit 1
     esac
 
-    if [[ $output_info == 1 ]]; then
+    if [[ "${args[first]}" == "1" ]]; then
         >&2 echo ""
     fi
 }

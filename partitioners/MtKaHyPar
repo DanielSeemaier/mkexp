@@ -52,8 +52,6 @@ f       ${install_disk_driver_args[algorithm_build_options]}
     Prefixed cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
-mtkahypar_last_algorithm_name=""
-
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
 
@@ -73,8 +71,8 @@ InvokeFromDisk() {
         format="hmetis"
     fi
 
-    if [[ $mtkahypar_last_algorithm_name != ${invoke_from_disk_args[algorithm]} ]]; then 
-        >&2 echo "Generating calls for algorithm '${invoke_from_disk_args[algorithm]}', from disk, via the binary:"
+    if [[ "${invoke_from_disk_args[first]}" == "1" ]]; then 
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
         >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
         >&2 echo "  - Generated arguments: "
         >&2 echo "      -h {$graph}"
@@ -85,9 +83,8 @@ InvokeFromDisk() {
         >&2 echo "      -e {${invoke_from_disk_args[epsilon]}}"
         >&2 echo "      --seed={${invoke_from_disk_args[seed]}}"
         >&2 echo "      -t {${invoke_from_disk_args[num_threads]}}"
-        >&2 echo "  - Specified arguments: ${invoke_from_disk_args[algorithm_arguments]}"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
         >&2 echo ""
-        mtkahypar_last_algorithm_name="${invoke_from_disk_args[algorithm]}"
     fi
 
     if [[ -f "$graph" ]]; then

@@ -57,8 +57,6 @@ InstallDiskDriver() {
     Prefixed cp "$src_dir/build/apps/KaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
-kaminpar_last_algorithm_name=""
-
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
     
@@ -66,7 +64,7 @@ InvokeFromDisk() {
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    if [[ $kaminpar_last_algorithm_name != ${invoke_from_disk_args[algorithm]} ]]; then 
+    if [[ "${invoke_from_disk_args[first]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
         >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
         >&2 echo "  - Generated arguments: "
@@ -78,7 +76,6 @@ InvokeFromDisk() {
         >&2 echo "      -T"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
         >&2 echo ""
-        kaminpar_last_algorithm_name="${invoke_from_disk_args[algorithm]}"
     fi
 
     if [[ -f "$graph" ]]; then

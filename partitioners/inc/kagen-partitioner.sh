@@ -29,8 +29,6 @@ GenericKaGenPartitionerInstall() {
     Prefixed cp "$src_dir/build/$binary_name" "${generic_kagen_partitioner_install_args[kagen_driver_bin]}"
 }
 
-generic_disk_last_algorithm_name=""
-
 GenericKaGenPartitionerInvokeFromDisk() {
     local -n generic_kagen_partitioner_invoke_from_disk_args=$1
 
@@ -40,7 +38,7 @@ GenericKaGenPartitionerInvokeFromDisk() {
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    if [[ $generic_disk_last_algorithm_name != ${generic_kagen_partitioner_invoke_from_disk_args[algorithm]} ]]; then 
+    if [[ "${generic_kagen_partitioner_invoke_from_disk_args[first]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_disk_args[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "
@@ -49,7 +47,6 @@ GenericKaGenPartitionerInvokeFromDisk() {
         >&2 echo "      -G\"file;filename={$graph}\""
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
         >&2 echo ""
-        generic_disk_last_algorithm_name="${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}"
     fi
 
     echo -n "${generic_kagen_partitioner_invoke_from_disk_args[kagen_driver_bin]} "
@@ -60,12 +57,10 @@ GenericKaGenPartitionerInvokeFromDisk() {
     echo ""
 }
 
-generic_kagen_last_algorithm_name=""
-
 GenericKaGenPartitionerInvokeFromKaGen() {
     local -n generic_kagen_partitioner_invoke_from_kagen=$1
 
-    if [[ $generic_kagen_last_algorithm_name != ${generic_kagen_partitioner_invoke_from_kagen[algorithm]} ]]; then 
+    if [[ "${generic_kagen_partitioner_invoke_from_kagen[first]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm]}$NO_COLOR', from KaGen, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_kagen[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "
@@ -74,7 +69,6 @@ GenericKaGenPartitionerInvokeFromKaGen() {
         >&2 echo "      -G\"{${generic_kagen_partitioner_invoke_from_kagen[kagen_arguments_stringified]}}\""
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm_arguments]}$NO_COLOR"
         >&2 echo ""
-        generic_kagen_last_algorithm_name="${generic_kagen_partitioner_invoke_from_kagen[algorithm]}"
     fi
 
     echo -n "${generic_kagen_partitioner_invoke_from_kagen[kagen_driver_bin]} "
