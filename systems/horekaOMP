@@ -7,6 +7,16 @@
 GenerateJobfileHeader() {
     local -n args=$1
 
+    >&2 echo -e "Generating jobfile header for parallel execution mode $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    >&2 echo -e "  --nodes=$ARGS_COLOR${args[num_nodes]}$NO_COLOR"
+    >&2 echo -e "  --ntasks=$ARGS_COLOR$((args[num_nodes]*args[num_mpis]))$NO_COLOR"
+    >&2 echo -e "  --cpus-per-task=$ARGS_COLOR${args[num_threads]}$NO_COLOR"
+    >&2 echo -e "  --ntasks-per-node=$ARGS_COLOR${args[num_mpis]}$NO_COLOR"
+    >&2 echo -e "  --time=$ARGS_COLOR${args[timelimit]}$NO_COLOR"
+    >&2 echo "  --export=ALL"
+    >&2 echo "  --mem=230gb"
+    >&2 echo "  --partition=cpuonly"
+
     echo "#!/bin/bash"
     echo "#SBATCH --nodes=${args[num_nodes]}"
     echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
@@ -18,32 +28,13 @@ GenerateJobfileHeader() {
     echo "#SBATCH --partition=cpuonly"
 
     if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
+        >&2 echo "Running jobs with OpenMPI version ${HOREKA_OPENMPI_VERSION}"
         echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
     fi
 
+    >&2 echo -e "Setting OMP_NUM_THREADS=$ARGS_COLOR${args[num_threads]}$NO_COLOR"
     echo "export OMP_NUM_THREADS=${args[num_threads]}"
-}
 
-GenerateJobfileEntry() {
-    local -n args=$1
-
-    case "${args[mpi]}" in
-        none)
-            >&2 echo "Error: application must be run with MPI"
-            exit 1
-            ;;
-        OpenMPI)
-            echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
-            ;;
-        *)
-            >&2 echo "Error: unsupported MPI ${args[mpi]}"
-            exit 1
-    esac
-}
-
-GenerateJobfileSubmission() {
-    for jobfile in ${@}; do 
-        echo "sbatch $jobfile"
-    done
+    >&2 echo ""
 }
 

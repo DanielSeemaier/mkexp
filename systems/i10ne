@@ -11,6 +11,9 @@ GenerateJobfileSubmission() {
 }
 
 GenerateJobfileWrapper() {
+    >&2 echo -e "Running experiment without CSS"
+    >&2 echo ""
+
     echo "nohup bash -- $submit_impl_filename &"
     echo "disown"
 }

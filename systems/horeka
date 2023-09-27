@@ -30,6 +30,16 @@ GenerateJobfileHeader() {
         >&2 echo "Error: cannot use more threads than available on a single socket"
     fi
 
+    >&2 echo -e "Generating jobfile header for parallel execution mode $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    >&2 echo -e "  --nodes=$ARGS_COLOR${args[num_nodes]}$NO_COLOR"
+    >&2 echo -e "  --ntasks=$ARGS_COLOR$((args[num_nodes]*args[num_mpis]))$NO_COLOR"
+    >&2 echo -e "  --cpus-per-task=$ARGS_COLOR${args[num_threads]}$NO_COLOR"
+    >&2 echo -e "  --ntasks-per-node=$ARGS_COLOR${args[num_mpis]}$NO_COLOR"
+    >&2 echo -e "  --time=$ARGS_COLOR${args[timelimit]}$NO_COLOR"
+    >&2 echo "  --export=ALL"
+    >&2 echo "  --mem=230gb"
+    >&2 echo "  --partition=cpuonly"
+
     echo "#!/bin/bash"
     echo "#SBATCH --nodes=${args[num_nodes]}"
     echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
@@ -41,16 +51,24 @@ GenerateJobfileHeader() {
     echo "#SBATCH --partition=cpuonly"
 
     if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
+        >&2 echo "Running jobs with OpenMPI version ${HOREKA_OPENMPI_VERSION}"
         echo "module load mpi/openmpi/${HOREKA_OPENMPI_VERSION}"
     fi
 
+    >&2 echo "Unsetting OpenMP environment variables OMP_*"
     echo "unset OMP_NUM_THREADS"
     echo "unset OMP_PROC_BIND"
     echo "unset OMP_PLACES"
+
+    >&2 echo ""
 }
 
 GenerateJobfileEntry() {
     local -n args=$1
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    fi
 
     case "${args[mpi]}" in
         none)
@@ -58,12 +76,19 @@ GenerateJobfileEntry() {
             exit 1
             ;;
         OpenMPI)
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo "  - mpirun -n {$((args[num_nodes]*args[num_mpis]))} --bind-to core --map-by socket:PE={${args[num_threads]}} <call>"
+            fi
             echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
             exit 1
     esac
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo ""
+    fi
 }
 
 GenerateJobfileSubmission() {

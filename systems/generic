@@ -25,7 +25,7 @@ GenerateJobfileEntry() {
     fi
 
     if [[ "${args[print_wrapper]}" == "1" ]]; then
-        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', ${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}:"
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
     fi
 
     case "${args[mpi]}" in 

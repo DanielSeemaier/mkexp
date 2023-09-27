@@ -10,6 +10,9 @@ GenerateJobfileSubmission() {
 }
 
 GenerateJobfileWrapper() {
+    >&2 echo -e "Running experiment using ${ARGS_COLOR}exclusive$NO_COLOR"
+    >&2 echo ""
+
     echo "nohup exclusive bash -- $submit_impl_filename &"
     echo "disown"
 }
