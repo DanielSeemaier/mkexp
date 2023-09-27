@@ -36,7 +36,7 @@ InstallDiskDriver() {
 
     current_pwd="$PWD"
     cd "$src_dir"
-    CMAKE_GENERATOR="Unix Makefiles" \
+    Prefixed CMAKE_GENERATOR="Unix Makefiles" \
         ./compile_withcmake.sh \
         ${install_disk_driver_args[algorithm_build_options]}
     cd "$current_pwd"

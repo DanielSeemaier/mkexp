@@ -28,7 +28,7 @@ GenerateJobfileEntry() {
 
     output_info=0
     if [[ "$generic_last_algorithm_name" != "${args[algorithm]}" ]]; then
-        >&2 echo "Wrapping calls for algorithm '${args[algorithm]}':"
+        >&2 echo -e "Wrapping calls for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR':"
         >&2 echo "  - Wrapper: ${args[mpi]}"
         output_info=1
         generic_last_algorithm_name="${args[algorithm]}"
@@ -63,6 +63,10 @@ GenerateJobfileEntry() {
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
             exit 1
     esac
+
+    if [[ $output_info == 1 ]]; then
+        >&2 echo ""
+    fi
 }
 
 GenerateJobfileSubmission() {

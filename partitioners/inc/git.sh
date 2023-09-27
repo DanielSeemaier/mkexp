@@ -7,23 +7,28 @@ GenericGitFetch() {
     src_dir="${generic_git_fetch_args[$src_dir_key]}"
     if [[ ! -d "$src_dir" ]]; then
         mkdir -p "$src_dir"
-        echo "Directory '$src_dir' for algorithm '${generic_git_fetch_args[algorithm]}' does not exist: initialize from a remote Git repository"
+        echo -e "Directory '$src_dir' for algorithm '$ALGO_COLOR${generic_git_fetch_args[algorithm]}$NO_COLOR' does not exist: initialize from a remote Git repository"
         echo "Cloning Git repository '$url' to directory '$src_dir'"
+        echo ""
 
         Prefixed git clone "$url" "$src_dir"
         Prefixed git -C "$src_dir" submodule update --init --recursive
     else
-        echo "Directory '$src_dir' for algorithm '${generic_git_fetch_args[algorithm]}' does already exist: update from a remote Git repository"
+        echo -e "Directory '$src_dir' for algorithm '$ALGO_COLOR${generic_git_fetch_args[algorithm]}$NO_COLOR' does already exist: update from a remote Git repository"
+        echo ""
 
         Prefixed git -C "$src_dir" fetch origin
         Prefixed git -C "$src_dir" submodule update
     fi
 
     if [[ "${generic_git_fetch_args[algorithm_version]}" != "latest" ]]; then 
-        echo "Specific version specified for algorithm '${generic_git_fetch_args[algorithm]}': checkout '${generic_git_fetch_args[algorithm_version]}'"
-        Prefiex git -C "$src_dir" reset --hard "${generic_git_fetch_args[algorithm_version]}"
+        echo -e "Specific version specified for algorithm '$ALGO_COLOR${generic_git_fetch_args[algorithm]}$NO_COLOR': checkout '$ARGS_COLOR${generic_git_fetch_args[algorithm_version]}$NO_COLOR'"
+        echo ""
+
+        Prefixed git -C "$src_dir" reset --hard "${generic_git_fetch_args[algorithm_version]}"
     else
-        echo "No version specified for algorithm '${generic_git_fetch_args[algorithm]}': update to latest commit"
+        echo -e "No version specified for algorithm '$ALGO_COLOR${generic_git_fetch_args[algorithm]}$NO_COLOR': update to latest commit"
+        echo ""
 
         Prefixed git -C "$src_dir" pull origin
     fi

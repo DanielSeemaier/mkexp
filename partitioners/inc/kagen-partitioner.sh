@@ -12,11 +12,12 @@ GenericKaGenPartitionerInstall() {
 
     src_dir="${generic_kagen_partitioner_install_args[generic_kagen_driver_src]}"
 
-    echo "Build KaGen-Driver for algorithm '${generic_kagen_partitioner_install_args[algorithm]}' in directory '$src_dir'"
+    echo -e "Build KaGen-Driver for algorithm '$ALGO_COLOR${generic_kagen_partitioner_install_args[algorithm]}$NO_COLOR' in directory '$src_dir'"
     echo "  - System-specific CMake options: $CUSTOM_CMAKE_FLAGS"
     echo "  - Partitioner-specific CMake options: $cmake_option"
-    echo "  - Algorithm-specific CMake options: ${generic_kagen_partitioner_install_args[algorithm_build_options]}"
+    echo -e "  - Algorithm-specific CMake options: $ARGS_COLOR${generic_kagen_partitioner_install_args[algorithm_build_options]}$NO_COLOR"
     echo "Note: all of these options are passed to the KaGen-Driver CMake command."
+    echo ""
 
     Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
@@ -40,13 +41,14 @@ GenericKaGenPartitionerInvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
     if [[ $generic_disk_last_algorithm_name != ${generic_kagen_partitioner_invoke_from_disk_args[algorithm]} ]]; then 
-        >&2 echo "Generating calls for algorithm '${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}', from disk, via the library:"
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_disk_args[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "
         >&2 echo "      -s {${generic_kagen_partitioner_invoke_from_disk_args[seed]}}"
         >&2 echo "      -k {${generic_kagen_partitioner_invoke_from_disk_args[k]}}"
         >&2 echo "      -G\"file;filename={$graph}\""
-        >&2 echo "  - Specified arguments: ${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]}"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo ""
         generic_disk_last_algorithm_name="${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}"
     fi
 
@@ -64,13 +66,14 @@ GenericKaGenPartitionerInvokeFromKaGen() {
     local -n generic_kagen_partitioner_invoke_from_kagen=$1
 
     if [[ $generic_kagen_last_algorithm_name != ${generic_kagen_partitioner_invoke_from_kagen[algorithm]} ]]; then 
-        >&2 echo "Generating calls for algorithm '${generic_kagen_partitioner_invoke_from_kagen[algorithm]}', from KaGen, via the library:"
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm]}$NO_COLOR', from KaGen, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_kagen[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "
         >&2 echo "      -s {${generic_kagen_partitioner_invoke_from_kagen[seed]}}"
         >&2 echo "      -k {${generic_kagen_partitioner_invoke_from_kagen[k]}}"
         >&2 echo "      -G\"{${generic_kagen_partitioner_invoke_from_kagen[kagen_arguments_stringified]}}\""
-        >&2 echo "  - Specified arguments: ${generic_kagen_partitioner_invoke_from_kagen[algorithm_arguments]}"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm_arguments]}$NO_COLOR"
+        >&2 echo ""
         generic_kagen_last_algorithm_name="${generic_kagen_partitioner_invoke_from_kagen[algorithm]}"
     fi
 
