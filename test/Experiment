@@ -12,7 +12,7 @@ KaGen rgg2d n=10 m=15
 Seeds 1 
 Ks 2
 
-Experiment_dKaMinPar() {
+_Experiment_dKaMinPar() {
     MPI OpenMPI
     Threads 1x1x1
 
@@ -35,10 +35,18 @@ _Experiment_ParHIP() {
     Algorithms ParHIP-Fast
 }
 
-Experiment_KaMinPar() {
+_Experiment_KaMinPar() {
     MPI taskset
     Threads 1x1x1
 
     DefineAlgorithm KaMinPar-FM KaMinPar -P fm
     Algorithms KaMinPar-FM
+}
+
+_Experiment_MtKaHIP() {
+    MPI taskset
+    Threads 1x1x1
+
+    DefineAlgorithm MtKaHIP-Fast MtKaHIP --preconfiguration=fastsocialparallel
+    Algorithms MtKaHIP-Fast
 }

@@ -10,4 +10,3 @@ slurm-*
 logs*/
 all_jobs.sh
 misc/
-INFO

@@ -3,7 +3,7 @@
 . "$script_pwd/../partitioners/inc/git.sh"
 . "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-DKAMINPAR_USE_KAGEN_DRIVER=1
-DKAMINPAR_USE_PUBLIC_REPOSITORY=1
+DKAMINPAR_USE_KAGEN_DRIVER=0
+DKAMINPAR_USE_PUBLIC_REPOSITORY=0
 
 . "$script_pwd/../partitioners/inc/dkaminpar.sh"
