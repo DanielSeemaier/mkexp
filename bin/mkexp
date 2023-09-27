@@ -136,7 +136,7 @@ HandleExperiment() {
 fallback_global_experiment=1
 for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do 
     fallback_global_experiment=0
-    echo "### $function_name"
+    PrintExperiment $function_name
 
     ResetExperiment
     . Experiment 

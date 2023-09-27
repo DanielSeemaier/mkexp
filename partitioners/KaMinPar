@@ -42,16 +42,21 @@ InstallDiskDriver() {
 
     src_dir="${install_disk_driver_args[disk_driver_src]}"
 
-    cmake -S "$src_dir" \
+    echo "Build algorithm '${install_disk_driver_args[algorithm]}' in directory '$src_dir'"
+    echo "  - System-specific CMake options: $CUSTOM_CMAKE_FLAGS"
+    echo "  - Algorithm-specific CMake options: ${install_disk_driver_args[algorithm_build_options]}"
+
+    Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
         -DCMAKE_BUILD_TYPE=Release \
         -DKAMINPAR_BUILD_DISTRIBUTED=Off \
         $CUSTOM_CMAKE_FLAGS \
         ${install_disk_driver_args[algorithm_build_options]}
-    cmake --build "$src_dir/build" --target KaMinPar --parallel
-
-    cp "$src_dir/build/apps/KaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
+    Prefixed cmake --build "$src_dir/build" --target KaMinPar --parallel
+    Prefixed cp "$src_dir/build/apps/KaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
+
+kaminpar_last_algorithm_name=""
 
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
@@ -59,6 +64,20 @@ InvokeFromDisk() {
     graph="${invoke_from_disk_args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ $kaminpar_last_algorithm_name != ${invoke_from_disk_args[algorithm]} ]]; then 
+        >&2 echo "Generating calls for algorithm '${invoke_from_disk_args[algorithm]}', from disk, via the binary:"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo "      -G {$graph}"
+        >&2 echo "      -k {${invoke_from_disk_args[k]}}"
+        >&2 echo "      -e {${invoke_from_disk_args[epsilon]}}"
+        >&2 echo "      --seed={${invoke_from_disk_args[seed]}}"
+        >&2 echo "      -t {${invoke_from_disk_args[num_threads]}}"
+        >&2 echo "      -T"
+        >&2 echo "  - Specified arguments: ${invoke_from_disk_args[algorithm_arguments]}"
+        kaminpar_last_algorithm_name="${invoke_from_disk_args[algorithm]}"
+    fi
 
     if [[ -f "$graph" ]]; then
         echo -n "${invoke_from_disk_args[bin]} "

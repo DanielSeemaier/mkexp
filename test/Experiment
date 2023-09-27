@@ -20,7 +20,7 @@ _Experiment_dKaMinPar() {
     Algorithms dKaMinPar-FM
 }
 
-_Experiment_XtraPuLP() {
+Experiment_XtraPuLP() {
     MPI OpenMPI
     Threads 1x1x1
 
@@ -35,7 +35,7 @@ _Experiment_ParHIP() {
     Algorithms ParHIP-Fast
 }
 
-_Experiment_KaMinPar() {
+Experiment_KaMinPar() {
     MPI taskset
     Threads 1x1x1
 

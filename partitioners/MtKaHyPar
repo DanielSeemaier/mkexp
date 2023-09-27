@@ -36,21 +36,25 @@ InstallDiskDriver() {
 
     current_pwd="$PWD"
 
-    cmake -S "$src_dir" \
+    echo "Build algorithm '${install_disk_driver_args[algorithm]}' in directory '$src_dir'"
+    echo "  - System-specific CMake options: $CUSTOM_CMAKE_FLAGS"
+    echo "  - Algorithm-specific CMake options: ${install_disk_driver_args[algorithm_build_options]}"
+    Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
         -DCMAKE_BUILD_TYPE=Release \
         -DKAHYPAR_ENFORCE_MINIMUM_TBB_VERSION=Off \
         $CUSTOM_CMAKE_FLAGS \
 f       ${install_disk_driver_args[algorithm_build_options]}
+    Prefixed cmake --build "$src_dir/build" --target MtKaHyPar --parallel
 
-    cmake --build "$src_dir/build" --target MtKaHyPar --parallel
-
-    cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${install_disk_driver_args[disk_driver_bin]}"
+    Prefixed cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
+
+mtkahypar_last_algorithm_name=""
 
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
-    
+
     graph="${invoke_from_disk_args[graph]}"
     format="metis"
     if [[ -f "$graph.graph" ]]; then
@@ -65,6 +69,22 @@ InvokeFromDisk() {
     elif [[ -f "$graph.hmetis" ]]; then
         graph="$graph.hmetis"
         format="hmetis"
+    fi
+
+    if [[ $mtkahypar_last_algorithm_name != ${invoke_from_disk_args[algorithm]} ]]; then 
+        >&2 echo "Generating calls for algorithm '${invoke_from_disk_args[algorithm]}', from disk, via the binary:"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo "      -h {$graph}"
+        >&2 echo "      --input-file-format={$format}"
+        >&2 echo "      --instance-type=graph"
+        >&2 echo "      -o cut"
+        >&2 echo "      -k {${invoke_from_disk_args[k]}}"
+        >&2 echo "      -e {${invoke_from_disk_args[epsilon]}}"
+        >&2 echo "      --seed={${invoke_from_disk_args[seed]}}"
+        >&2 echo "      -t {${invoke_from_disk_args[num_threads]}}"
+        >&2 echo "  - Specified arguments: ${invoke_from_disk_args[algorithm_arguments]}"
+        mtkahypar_last_algorithm_name="${invoke_from_disk_args[algorithm]}"
     fi
 
     if [[ -f "$graph" ]]; then
