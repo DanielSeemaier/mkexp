@@ -71,7 +71,7 @@ InvokeFromDisk() {
         format="hmetis"
     fi
 
-    if [[ "${invoke_from_disk_args[first]}" == "1" ]]; then 
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
         >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
         >&2 echo "  - Generated arguments: "

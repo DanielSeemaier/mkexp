@@ -38,7 +38,7 @@ GenericKaGenPartitionerInvokeFromDisk() {
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
 
-    if [[ "${generic_kagen_partitioner_invoke_from_disk_args[first]}" == "1" ]]; then 
+    if [[ "${generic_kagen_partitioner_invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_disk_args[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "
@@ -60,7 +60,7 @@ GenericKaGenPartitionerInvokeFromDisk() {
 GenericKaGenPartitionerInvokeFromKaGen() {
     local -n generic_kagen_partitioner_invoke_from_kagen=$1
 
-    if [[ "${generic_kagen_partitioner_invoke_from_kagen[first]}" == "1" ]]; then 
+    if [[ "${generic_kagen_partitioner_invoke_from_kagen[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm]}$NO_COLOR', from KaGen, via the library:"
         >&2 echo "  - Binary: ${generic_kagen_partitioner_invoke_from_kagen[kagen_driver_bin]}"
         >&2 echo "  - Generated arguments: "

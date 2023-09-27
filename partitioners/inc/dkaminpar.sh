@@ -89,7 +89,7 @@ InvokeFromDisk() {
     [[ -f "$graph.bgf" ]] && graph="$graph.bgf"
     [[ -f "$graph.parhip" ]] && graph="$graph.parhip"
 
-    if [[ "${invoke_from_disk_args[first]}" == "1" ]]; then
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
         >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
         >&2 echo "  - Generated arguments: "
@@ -123,7 +123,7 @@ InvokeFromKaGen() {
     local -n invoke_from_kagen_args=$1
 
     if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
-        if [[ "${invoke_from_kagen_args[first]}" == "1" ]]; then 
+        if [[ "${invoke_from_kagen_args[print_partitioner]}" == "1" ]]; then 
             >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_kagen_args[algorithm]}$NO_COLOR', from KaGen, via the library:"
             >&2 echo "  - Binary: ${invoke_from_kagen_args[bin]}"
             >&2 echo "  - Generated arguments: "
@@ -145,7 +145,7 @@ InvokeFromKaGen() {
         echo -n "-G\"${invoke_from_kagen_args[kagen_arguments_stringified]}\""
         echo ""
     else
-        if [[ "${invoke_from_kagen_args[first]}" == "1" ]]; then 
+        if [[ "${invoke_from_kagen_args[print_partitioner]}" == "1" ]]; then 
             >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_kagen_args[algorithm]}$NO_COLOR', from KaGen, via the binary:"
             >&2 echo "  - Binary: ${invoke_from_kagen_args[bin]}"
             >&2 echo "  - Generated arguments: "

@@ -10,7 +10,8 @@ GenerateCrossProduct() {
     local k="$5"
 
     prepared_invoc[bin]="${prepared_invoc[disk_driver_bin]}"
-    prepared_invoc[first]=${prepared_invoc[first_algorithm_call]}
+    prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
+    prepared_invoc[print_wrapper]=${prepared_invoc[first_parallelism_call]}
     for graph in ${_graphs[@]}; do
         prepared_invoc[graph]="$graph"
         prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"
@@ -21,12 +22,13 @@ GenerateCrossProduct() {
             prepared_invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${prepared_invoc[exe]}"
         fi
         echo "${prepared_invoc[exe]} >> ${prepared_invoc[log]} 2>&1" >> "${prepared_invoc[job]}"
-        prepared_invoc[first]=0
+        prepared_invoc[print_partitioner]=0
+        prepared_invoc[print_wrapper]=0
     done 
 
     # KaGen graphs
     prepared_invoc[bin]="${prepared_invoc[kagen_driver_bin]}"
-    prepared_invoc[first]=${prepared_invoc[first_algorithm_call]}
+    prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
     for i in ${!_kagen_graphs[@]}; do
         kagen="$(ScaleKaGenGraph prepared_invoc "${_kagen_graphs[$i]}")"
         kagen_arguments_arr=($kagen)
@@ -43,7 +45,7 @@ GenerateCrossProduct() {
         fi
 
         echo "${prepared_invoc[exe]} >> ${prepared_invoc[log]} 2>&1" >> "${prepared_invoc[job]}"
-        prepared_invoc[first]=0
+        prepared_invoc[print_partitioner]=0
     done # generator
 }
 
@@ -84,6 +86,7 @@ Generate() {
             invoc[num_mpis]=$(ParseMPIs "$nodes_x_mpis_x_threads")
             invoc[num_threads]=$(ParseThreads "$nodes_x_mpis_x_threads")
             invoc[job]="$job_files_dir/$(GenerateJobfileName invoc)"
+            invoc[first_parallelism_call]=1
 
             for seed in ${_seeds[@]}; do
                 invoc[seed]=$seed
@@ -105,6 +108,7 @@ Generate() {
 
                         GenerateCrossProduct invoc "$seed" "$epsilon" "$algorithm" "$k"
                         invoc[first_algorithm_call]=0
+                        invoc[first_parallelism_call]=0
                     done # k
                 done # epsilon
             done # seed

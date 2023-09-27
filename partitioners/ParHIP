@@ -34,14 +34,18 @@ InstallDiskDriver() {
 
     src_dir="${install_disk_driver_args[disk_driver_src]}"
 
-    current_pwd="$PWD"
-    cd "$src_dir"
-    Prefixed CMAKE_GENERATOR="Unix Makefiles" \
-        ./compile_withcmake.sh \
-        ${install_disk_driver_args[algorithm_build_options]}
-    cd "$current_pwd"
+    echo -e "Build algorithm '$ALGO_COLOR${install_disk_driver_args[algorithm]}$NO_COLOR' in directory '$src_dir'"
+    echo -e "  - System-specific CMake options: ${WARNING_COLOR}ignored$NO_COLOR"
+    echo -e "  - Algorithm-specific options (passed to compile_withcmake.sh): $ARGS_COLOR${install_disk_driver_args[algorithm_build_options]}$NO_COLOR"
+    echo ""
 
-    cp "$src_dir/deploy/parhip" "${install_disk_driver_args[disk_driver_bin]}"
+    current_pwd="$PWD"
+
+    cd "$src_dir"
+    #export CMAKE_GENERATOR="Unix Makefiles"
+    CMAKE_GENERATOR="Unix Makefiles" Prefixed ./compile_withcmake.sh ${install_disk_driver_args[algorithm_build_options]}
+    cd "$current_pwd"
+    Prefixed cp "$src_dir/deploy/parhip" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
 InvokeFromDisk() {
@@ -53,9 +57,21 @@ InvokeFromDisk() {
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
     imbalance=$(echo "100*${invoke_from_disk_args[epsilon]}/1" | bc)
 
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo "      --k={${invoke_from_disk_args[k]}}"
+        >&2 echo "      --imbalance={$imbalance}"
+        >&2 echo "      --seed={${invoke_from_disk_args[seed]}}"
+        >&2 echo "      {$graph}"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo ""
+    fi
+
     if [[ -f "$graph" ]]; then
         echo -n "${invoke_from_disk_args[bin]} "
-        echo -n "--k ${invoke_from_disk_args[k]} "
+        echo -n "--k=${invoke_from_disk_args[k]} "
         echo -n "--imbalance=$imbalance "
         echo -n "--seed=${invoke_from_disk_args[seed]} "
         echo -n "$graph "

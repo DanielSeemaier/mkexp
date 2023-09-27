@@ -20,7 +20,7 @@ _Experiment_dKaMinPar() {
     Algorithms dKaMinPar-FM
 }
 
-Experiment_XtraPuLP() {
+_Experiment_XtraPuLP() {
     MPI OpenMPI
     Threads 1x1x1
 
@@ -30,12 +30,21 @@ Experiment_XtraPuLP() {
 _Experiment_ParHIP() {
     MPI OpenMPI
     Threads 1x1x1
+    Threads 1x1x2
+    Threads 1x1x16
 
     DefineAlgorithm ParHIP-Fast ParHIP --preconfiguration=fastsocial
     Algorithms ParHIP-Fast
 }
 
-Experiment_KaMinPar() {
+Experiment_ParMETIS() {
+    MPI OpenMPI
+    Threads 1x1x1
+
+    Algorithms ParMETIS
+}
+
+_Experiment_KaMinPar() {
     MPI taskset
     Threads 1x1x1
 
@@ -43,7 +52,7 @@ Experiment_KaMinPar() {
     Algorithms KaMinPar-FM
 }
 
-Experiment_MtKaHyPar() {
+_Experiment_MtKaHyPar() {
     # The MtKaHyPar integration does not support KaGen graphs
     # While the KaGen-Driver implements it, the library call sometimes 
     # crashes, while partitioning the same graph read from disk does not 

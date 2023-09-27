@@ -266,6 +266,7 @@ PREFIX_COLOR='\033[1;31m'
 NO_COLOR='\033[0m'
 ALGO_COLOR='\033[0;35m'
 ARGS_COLOR='\033[0;31m'
+WARNING_COLOR='\033[1;31m'
 
 Prefixed() {
     echo -e "  \$$CMD_COLOR $@ $NO_COLOR"

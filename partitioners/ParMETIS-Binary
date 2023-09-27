@@ -1,0 +1,118 @@
+#!/bin/bash
+
+. "$script_pwd/../partitioners/inc/git.sh"
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
+
+Fetch() {
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk_driver]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+    if (( ${fetch_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerFetch fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    local -n fetch_disk_driver_args=$1
+    src_dir="${fetch_disk_driver_args[disk_driver_src]}"
+
+    if [[ ! -d "$src_dir/parmetis-4.0.3/" ]]; then
+        echo -e "Downloading self-hosted tar for algorithm '$ALGO_COLOR${fetch_disk_driver_args[algorithm]}$NO_COLOR' to directory '$src_dir'"
+        echo ""
+
+        Prefixed mkdir -p "$src_dir"
+        Prefixed curl -o "$src_dir/parmetis-4.0.3.tar.gz" "https://algo2.iti.kit.edu/seemaier/parmetis-4.0.3.tar.gz"
+        Prefixed tar -xzf "$src_dir/parmetis-4.0.3.tar.gz" -C "$src_dir"
+    
+        echo -e "Patching source files for 64 bit integers"
+        echo ""
+
+        Prefixed sed -i "s/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/g" "$src_dir/parmetis-4.0.3/metis/include/metis.h"
+        Prefixed grep '#define IDXTYPEWIDTH' "$src_dir/parmetis-4.0.3/metis/include/metis.h" 
+    else
+        echo "Directory '$src_dir/parmetis-4.0.3/' already exists, skipping download"
+        echo -e "${WARNING_COLOR}If you intend to re-download ParMETIS, delete the directory!$NO_COLOR"
+        echo ""
+    fi
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk_driver]} )); then 
+        InstallDiskDriver install_args
+    fi
+    if (( ${install_args[install_kagen_driver]} )); then 
+        GenericKaGenPartitionerInstall install_args -DBUILD_PARHIP=On "ParHIP"
+    fi
+}
+
+InstallDiskDriver() {
+    local -n install_disk_driver_args=$1
+
+    if [[ ! -x "${install_disk_driver_args[disk_driver_bin]}" ]]; then
+        src_dir="${install_disk_driver_args[disk_driver_src]}"
+
+        echo -e "Build algorithm '$ALGO_COLOR${install_disk_driver_args[algorithm]}$NO_COLOR' in directory '$src_dir'"
+        echo -e "  - System-specific CMake options: $CUSTOM_CMAKE_FLAGS"
+        echo -e "  - Algorithm-specific options (passed to compile_withcmake.sh): $ARGS_COLOR${install_disk_driver_args[algorithm_build_options]}$NO_COLOR"
+        echo ""
+
+        current_pwd="$PWD"
+        cd "$src_dir/parmetis-4.0.3/"
+        CMAKE_GENERATOR="Unix Makefiles" Prefixed make config
+        CMAKE_GENERATOR="Unix Makefiles" Prefixed make 
+        Prefixed cp "$src_dir/parmetis-4.0.3/build/Linux-x86_64/programs/parmetis" "${install_disk_driver_args[disk_driver_bin]}"
+        cd "$current_pwd"
+    else
+        echo "Binary '${install_disk_driver_args[disk_driver_bin]}' already exists, skipping build"
+        echo -e "${WARNING_COLOR}If you intend to rebuild ParMETIS, delete the binary!$NO_COLOR"
+        echo ""
+    fi
+}
+
+InvokeFromDisk() {
+    local -n invoke_from_disk_args=$1
+    
+    graph="${invoke_from_disk_args[graph]}"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo "      {$graph}"
+        >&2 echo "      {1}"
+        >&2 echo "      {${invoke_from_disk_args[k]}} // number of blocks"
+        >&2 echo "      {0}"
+        >&2 echo "      {0}"
+        >&2 echo "      {3}"
+        >&2 echo "      {${invoke_from_disk_args[seed]}} // seed"
+        >&2 echo -e "      ${WARNING_COLOR}Note: The epsilon parameter is not supported by ParMETIS$NO_COLOR"
+        >&2 echo -e "  - Specified arguments: ${WARNING_COLOR}ignored$NO_COLOR"
+        >&2 echo ""
+    fi
+
+    if [[ -f "$graph" ]]; then
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "$graph "
+        echo -n "1 "
+        echo -n "${invoke_from_disk_args[k]} "
+        echo -n "0 "
+        echo -n "0 "
+        echo -n "3 "
+        echo -n "${invoke_from_disk_args[seed]} "
+        # echo -n "${invoke_from_disk_args[epsilon]}"
+        echo ""
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+InvokeFromKaGen() {
+    GenericKaGenPartitionerInvokeFromKaGen $1
+}
