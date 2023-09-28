@@ -77,7 +77,7 @@ GenerateJobfileEntry() {
             ;;
         OpenMPI)
             if [[ "${args[print_wrapper]}" == "1" ]]; then
-                >&2 echo "  - mpirun -n {$((args[num_nodes]*args[num_mpis]))} --bind-to core --map-by socket:PE={${args[num_threads]}} <call>"
+                >&2 echo -e "  - mpirun -n $ARGS_COLOR$((args[num_nodes]*args[num_mpis]))$NO_COLOR --bind-to core --map-by socket:PE=$ARGS_COLOR${args[num_threads]}$NO_COLOR <call>"
             fi
             echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;

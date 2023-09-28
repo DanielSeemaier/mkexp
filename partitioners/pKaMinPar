@@ -3,6 +3,7 @@
 . "$script_pwd/../partitioners/inc/git.sh"
 . "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
-KAMINPAR_USE_PUBLIC_REPOSITORY=1
+KAMINPAR_USE_PUBLIC_REPOSITORY=0
 
 . "$script_pwd/../partitioners/inc/kaminpar.sh"
+
