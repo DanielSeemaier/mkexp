@@ -7,7 +7,7 @@ Fetch() {
 }
 
 Install() {
-    GenericKaGenPartitionerInstall $1 "-DBUILD_MTKAHYPAR=Off -DBUILD_MTKAHIP=On" "MtKaHIP"
+    GenericKaGenPartitionerInstall $1 "-DBUILD_MTKAHYPAR=Off -DBUILD_KAHIP=Off -DBUILD_MTKAHIP=On" "MtKaHIP"
 }
 
 InvokeFromDisk() {

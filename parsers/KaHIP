@@ -29,6 +29,7 @@ BEGIN {
     yield()
 }
 
+# via kaffpa binary
 match($0, /graph has ([0-9]+) nodes and ([0-9]+) edges/, m) {
     data["N"] = m[1]
     data["M"] = m[2]
@@ -38,7 +39,7 @@ match($0, /cut[[:space:]]*([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
-match($0, /balance[[:space:]]([0-9\.e\-]+)/, m) {
+match($0, /balance[[:space:]]*([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1] - 1
 }
 
@@ -48,6 +49,21 @@ match($0, /time spent for partitioning ([0-9\.e\-]+)/, m) {
 
 match($0, /timeout/, m) {
     data["Timeout"] = 1
+}
+
+# via KaGen-Partitioner
+match($0, /Number of vertices: *([0-9]+)/, m) {
+    data["N"] = m[1]
+}
+
+match($0, /Number of edges: *([0-9]+)/, m) {
+    data["M"] = m[1]
+}
+
+match($0, /RESULT.*cut_reported=([0-9]+).*time=([0-9e\.\-]+).*imbalance_computed=([0-9e\.\-]+)/, m) {
+    data["Cut"] = m[1]
+    data["Time"] = m[2]
+    data["Balance"] = m[3]
 }
 
 END {
