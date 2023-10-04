@@ -40,11 +40,9 @@ InstallPartitioners() {
         install_partitioners_args[generic_kagen_driver_src]="$PREFIX/src/generic-$generic_build_id/"
 
         if [[ $fetch == "1" ]]; then
-            #PrintStep "Fetching $partitioner ..."
             FetchPartitioner install_partitioners_args
         fi    
         if [[ $install == "1" ]]; then 
-            #PrintStep "Installing $partitioner"
             InstallPartitioner install_partitioners_args
         fi
     done

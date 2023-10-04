@@ -33,3 +33,19 @@ GenericGitFetch() {
         Prefixed git -C "$src_dir" pull origin
     fi
 }
+
+GenericGitReportVersion() {
+    local -n generic_report_version_args=$1
+    echo -n "disk:"
+    if [[ -d "${generic_report_version_args[disk_driver_src]}" ]]; then
+        echo -n $(git -C "${generic_report_version_args[disk_driver_src]}" rev-parse HEAD)
+    fi
+    echo -n ";kagen:"
+    if [[ -d "${generic_report_version_args[kagen_driver_src]}" ]]; then
+        echo -n $(git -C "${generic_report_version_args[kagen_driver_src]}" rev-parse HEAD)
+    fi
+    echo -n ";generic:"
+    if [[ -d "${generic_report_version_args[generic_kagen_driver_src]}" ]]; then
+        echo -n $(git -C "${generic_report_version_args[generic_kagen_driver_src]}" rev-parse HEAD)
+    fi
+}

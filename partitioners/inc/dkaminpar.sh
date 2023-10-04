@@ -171,3 +171,6 @@ InvokeFromKaGen() {
     fi
 }
 
+ReportVersion() {
+    GenericGitReportVersion $1
+}

@@ -3,6 +3,8 @@
 . "$script_pwd/../partitioners/inc/git.sh"
 . "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
 
+PARMETIS_VERSION="4.0.3"
+
 Fetch() {
     local -n fetch_args=$1
 
@@ -18,21 +20,21 @@ FetchDiskDriver() {
     local -n fetch_disk_driver_args=$1
     src_dir="${fetch_disk_driver_args[disk_driver_src]}"
 
-    if [[ ! -d "$src_dir/parmetis-4.0.3/" ]]; then
+    if [[ ! -d "$src_dir/parmetis-$PARMETIS_VERSION/" ]]; then
         echo -e "Downloading self-hosted tar for algorithm '$ALGO_COLOR${fetch_disk_driver_args[algorithm]}$NO_COLOR' to directory '$src_dir'"
         echo ""
 
         Prefixed mkdir -p "$src_dir"
-        Prefixed curl -o "$src_dir/parmetis-4.0.3.tar.gz" "https://algo2.iti.kit.edu/seemaier/parmetis-4.0.3.tar.gz"
-        Prefixed tar -xzf "$src_dir/parmetis-4.0.3.tar.gz" -C "$src_dir"
+        Prefixed curl -o "$src_dir/parmetis-$PARMETIS_VERSION.tar.gz" "https://algo2.iti.kit.edu/seemaier/parmetis-$PARMETIS_VERSION.tar.gz"
+        Prefixed tar -xzf "$src_dir/parmetis-$PARMETIS_VERSION.tar.gz" -C "$src_dir"
     
         echo -e "Patching source files for 64 bit integers"
         echo ""
 
-        Prefixed sed -i "s/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/g" "$src_dir/parmetis-4.0.3/metis/include/metis.h"
-        Prefixed grep '#define IDXTYPEWIDTH' "$src_dir/parmetis-4.0.3/metis/include/metis.h" 
+        Prefixed sed -i "s/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/g" "$src_dir/parmetis-$PARMETIS_VERSION/metis/include/metis.h"
+        Prefixed grep '#define IDXTYPEWIDTH' "$src_dir/parmetis-$PARMETIS_VERSION/metis/include/metis.h" 
     else
-        echo "Directory '$src_dir/parmetis-4.0.3/' already exists, skipping download"
+        echo "Directory '$src_dir/parmetis-$PARMETIS_VERSION/' already exists, skipping download"
         echo -e "${WARNING_COLOR}If you intend to re-download ParMETIS, delete the directory!$NO_COLOR"
         echo ""
     fi
@@ -61,10 +63,10 @@ InstallDiskDriver() {
         echo ""
 
         current_pwd="$PWD"
-        cd "$src_dir/parmetis-4.0.3/"
+        cd "$src_dir/parmetis-$PARMETIS_VERSION/"
         CMAKE_GENERATOR="Unix Makefiles" Prefixed make config
         CMAKE_GENERATOR="Unix Makefiles" Prefixed make 
-        Prefixed cp "$src_dir/parmetis-4.0.3/build/Linux-x86_64/programs/parmetis" "${install_disk_driver_args[disk_driver_bin]}"
+        Prefixed cp "$src_dir/parmetis-$PARMETIS_VERSION/build/Linux-x86_64/programs/parmetis" "${install_disk_driver_args[disk_driver_bin]}"
         cd "$current_pwd"
     else
         echo "Binary '${install_disk_driver_args[disk_driver_bin]}' already exists, skipping build"
@@ -115,4 +117,8 @@ InvokeFromDisk() {
 
 InvokeFromKaGen() {
     GenericKaGenPartitionerInvokeFromKaGen $1
+}
+
+ReportVersion() {
+    echo "*:$PARMETIS_VERSION"
 }

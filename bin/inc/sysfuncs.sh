@@ -20,6 +20,12 @@ LoadLibrary() {
     . "$filename"
 }
 
+ReportPartitionerVersion() {
+    local -n report_partitioner_version_args=$1
+    LoadAlgorithm "${report_partitioner_version_args[algorithm_base]}"
+    ReportVersion report_partitioner_version_args
+}
+
 FetchPartitioner() {
     local -n fetch_partitioner_args=$1
     LoadAlgorithm "${fetch_partitioner_args[algorithm_base]}"
@@ -272,8 +278,7 @@ Prefixed() {
     echo -e "  \$$CMD_COLOR $@ $NO_COLOR"
     "$@" 2>&1 | sed 's/^/  | /'
     exit_code=$?
-    echo "  | Exit code: $?"
-    echo "  \`------------------------------------------------------------------------------------------------------------------"
+    echo "  \`-- Exit code: $? --------------------------------------------------------------------------------------------------"
     echo ""
 }
 

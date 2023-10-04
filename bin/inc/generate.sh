@@ -1,5 +1,25 @@
 GenerateInfoFile() {
     echo "Generated at $(date) on $(hostname)" > INFO
+
+    for partitioner in ${_algorithms[@]}; do 
+        declare -A info_args
+
+        info_args[algorithm]="$partitioner"
+        info_args[algorithm_base]=$(GetAlgorithmBase "$partitioner")
+        info_args[algorithm_build_options]=$(GetAlgorithmBuildOptions "$partitioner")
+        info_args[algorithm_version]=$(GetAlgorithmVersion "$partitioner")
+
+        build_id=$(GenerateBuildIdentifier info_args)
+        generic_build_id=$(GenerateGenericBuildIdentifier info_args)
+
+        info_args[disk_driver_src]="$PREFIX/src/disk-$build_id/"
+        info_args[kagen_driver_src]="$PREFIX/src/kagen-$build_id/"
+        info_args[generic_kagen_driver_src]="$PREFIX/src/generic-$generic_build_id/"
+
+        reported_version=$(ReportPartitionerVersion info_args)
+
+        echo "$build_id=$reported_version" >> INFO
+    done
 }
 
 GenerateCrossProduct() {

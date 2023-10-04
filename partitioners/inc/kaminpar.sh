@@ -96,3 +96,6 @@ InvokeFromKaGen() {
     GenericKaGenPartitionerInvokeFromKaGen $1
 }
 
+ReportVersion() {
+    GenericGitReportVersion $1
+}

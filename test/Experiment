@@ -44,7 +44,7 @@ _Experiment_KaHIP() {
     Algorithms KaHIP-Fast
 }
 
-Experiment_MtKaHIP() {
+_Experiment_MtKaHIP() {
     MPI taskset
     Threads 1x1x2
     DefineAlgorithm MtKaHIP-Fast MtKaHIP --preconfiguration=fastsocialparallel
@@ -58,7 +58,7 @@ _Experiment_ParMETIS() {
     Algorithms ParMETIS
 }
 
-_Experiment_KaMinPar() {
+Experiment_KaMinPar() {
     MPI taskset
     Threads 1x1x1
 

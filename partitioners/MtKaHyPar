@@ -105,3 +105,6 @@ InvokeFromDisk() {
     fi
 }
 
+ReportVersion() {
+    GenericGitReportVersion $1
+}
