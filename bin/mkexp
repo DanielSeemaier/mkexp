@@ -76,10 +76,6 @@ EOT
     chmod +x "$submit_impl_filename"
 fi
 
-if [[ $mode == "parse" ]]; then
-    mkdir -p "$results_dir"
-fi
-
 # Read Experiment file
 . Experiment
 
@@ -120,6 +116,7 @@ HandleExperiment() {
         mkdir -p "$results_dir"
         for algorithm in ${_algorithms[@]}; do 
             base=$(GetAlgorithmBase "$algorithm")
+            echo -e "Parsing log files for '$ALGO_COLOR$algorithm$NO_COLOR' using parser '$ALGO_COLOR$base$NO_COLOR'"
             mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
         done
     fi 
@@ -156,7 +153,7 @@ if [[ $mode == "generate" ]]; then
 fi
 
 if [[ $mode == "clean" || $mode == "purge" ]]; then 
-    rm -rf "$submit_impl_filename" "$submit_filename" "$job_files_dir" parse.sh
+    rm -rf "$submit_impl_filename" "$submit_filename" "$job_files_dir" 
 fi
 
 if [[ $mode == "purge" ]]; then

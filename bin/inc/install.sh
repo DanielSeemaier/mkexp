@@ -1,3 +1,38 @@
+FetchPartitioner() {
+    local -n fetch_partitioner_args=$1
+    LoadAlgorithm "${fetch_partitioner_args[algorithm_base]}"
+    Fetch fetch_partitioner_args
+}
+
+FetchLibrary() {
+    local -n fetch_library_args=$1
+    LoadLibrary "${fetch_library_args[library]}"
+    Fetch fetch_partitioner_args
+}
+
+InstallPartitioner() {
+    local -n install_partitioner_args=$1
+    LoadAlgorithm "${install_partitioner_args[algorithm_base]}"
+    Install install_partitioner_args
+}
+
+InstallLibrary() {
+    local -n install_library_args=$1
+    LoadLibrary "${install_library_args[library]}"
+    Install install_partitioner_args
+}
+
+LoadSystem() {
+    name="$1"
+    filename="$script_pwd/../systems/$name"
+    [[ -f "$filename" ]] || {
+        echo "Error: invalid system $name"
+        echo "       $filename"
+        exit 1
+    }
+    . "$filename"
+}
+
 InstallLibraries() {
     local fetch=$1
     local install=$2

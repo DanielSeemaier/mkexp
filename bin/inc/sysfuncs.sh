@@ -20,45 +20,21 @@ LoadLibrary() {
     . "$filename"
 }
 
-ReportPartitionerVersion() {
-    local -n report_partitioner_version_args=$1
-    LoadAlgorithm "${report_partitioner_version_args[algorithm_base]}"
-    ReportVersion report_partitioner_version_args
-}
+ScaleKaGenGraph() {
+    local -n args=$1
+    local kagen="$2"
 
-FetchPartitioner() {
-    local -n fetch_partitioner_args=$1
-    LoadAlgorithm "${fetch_partitioner_args[algorithm_base]}"
-    Fetch fetch_partitioner_args
-}
+    num_nodes=${args[num_nodes]}
+    num_mpis=${args[num_mpis]}
+    num_threads=${args[num_threads]}
+    num_pes=$((num_nodes*num_mpis*num_threads))
+    log_nodes=$(printf "%.0f" $(echo "l($num_nodes)/l(2)" | bc -l))
+    log_mpis=$(printf "%.0f" $(echo "l($num_mpis)/l(2)" | bc -l))
+    log_threads=$(printf "%.0f" $(echo "l($num_threads)/l(2)" | bc -l))
+    log_pes=$(printf "%.0f" $(echo "l($num_pes)/l(2)" | bc -l))
 
-FetchLibrary() {
-    local -n fetch_library_args=$1
-    LoadLibrary "${fetch_library_args[library]}"
-    Fetch fetch_partitioner_args
-}
-
-InstallPartitioner() {
-    local -n install_partitioner_args=$1
-    LoadAlgorithm "${install_partitioner_args[algorithm_base]}"
-    Install install_partitioner_args
-}
-
-InstallLibrary() {
-    local -n install_library_args=$1
-    LoadLibrary "${install_library_args[library]}"
-    Install install_partitioner_args
-}
-
-LoadSystem() {
-    name="$1"
-    filename="$script_pwd/../systems/$name"
-    [[ -f "$filename" ]] || {
-        echo "Error: invalid system $name"
-        echo "       $filename"
-        exit 1
-    }
-    . "$filename"
+    sub=$(echo "$kagen" | N=$num_nodes M=$num_mpis T=$num_threads P=$num_pes lN=$log_nodes lM=$log_mpis lT=$log_threads lP=$log_pes envsubst)
+    eval "echo $sub"
 }
 
 # Parse argument to "Threads"
@@ -103,75 +79,6 @@ ParseTimelimit() {
     fi
     
     echo $((seconds+60*minutes+60*60*hours+24*60*60*days))
-}
-
-ParseKaGenArgument() {
-    param_argument_name="$1"
-    param_arguments="${@:2}"
-    for kv in ${param_arguments[@]}; do 
-        key=${kv%=*}
-        value=${kv#*=}
-        if [[ "$key" == "$param_argument_name" ]]; then 
-            echo "$value"
-            return 0
-        fi
-    done
-}
-
-GenerateJobfileName() {
-    local -n args=$1
-    echo "${args[experiment]}_${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}.sh"
-}
-
-GenerateInvocIdentifier() {
-    local -n args=$1
-    echo "$(basename "${args[graph]}")___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
-}
-
-GenerateKaGenIdentifier() {
-    local -n args=$1
-    echo "${args[kagen_stringified]}___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
-}
-
-GenerateInstallDir() {
-    local -n args=$1
-    version=$(echo ${args[algorithm_version]} | tr '/' '_')
-    echo "${args[algorithm_base]}-$version"
-}
-
-GenerateInstallDirGeneric() {
-    local -n args=$1
-    version=$(echo ${args[algorithm_version]} | tr '/' '_')
-    echo "generic-$version"
-}
-
-ScaleKaGenGraph() {
-    local -n args=$1
-    local kagen="$2"
-
-    num_nodes=${args[num_nodes]}
-    num_mpis=${args[num_mpis]}
-    num_threads=${args[num_threads]}
-    num_pes=$((num_nodes*num_mpis*num_threads))
-    log_nodes=$(printf "%.0f" $(echo "l($num_nodes)/l(2)" | bc -l))
-    log_mpis=$(printf "%.0f" $(echo "l($num_mpis)/l(2)" | bc -l))
-    log_threads=$(printf "%.0f" $(echo "l($num_threads)/l(2)" | bc -l))
-    log_pes=$(printf "%.0f" $(echo "l($num_pes)/l(2)" | bc -l))
-
-    sub=$(echo "$kagen" | N=$num_nodes M=$num_mpis T=$num_threads P=$num_pes lN=$log_nodes lM=$log_mpis lT=$log_threads lP=$log_pes envsubst)
-    eval "echo $sub"
-}
-
-GenerateBinaryName() {
-    local -n args=$1
-    version=$(echo ${args[algorithm_version]} | tr '/' '_')
-    echo "$PREFIX/bin/${args[algorithm_base]}-$version"
-}
-
-GenerateKaGenBinaryName() {
-    local -n args=$1
-    version=$(echo ${args[algorithm_version]} | tr '/' '_')
-    echo "$PREFIX/bin/KaGen_${args[algorithm_base]}-$version"
 }
 
 ResetExperiment() {
@@ -283,13 +190,6 @@ Prefixed() {
 }
 
 PrintExperiment() {
-    echo "########################################################################################################################"
-    echo -e "### Generating\033[1;35m $@$NO_COLOR"
-    echo "########################################################################################################################"
+    echo -e ">>> Processing\033[1;35m $@ $NO_COLOR"
     echo ""
-}
-
-PrintStep() {
-    echo ""
-    echo -e "${STEP_COLOR}$@${NO_COLOR}"
 }

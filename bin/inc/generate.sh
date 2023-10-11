@@ -1,3 +1,24 @@
+GenerateJobfileName() {
+    local -n args=$1
+    echo "${args[experiment]}_${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}.sh"
+}
+
+GenerateInvocIdentifier() {
+    local -n args=$1
+    echo "$(basename "${args[graph]}")___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
+}
+
+GenerateKaGenIdentifier() {
+    local -n args=$1
+    echo "${args[kagen_stringified]}___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
+}
+
+ReportPartitionerVersion() {
+    local -n report_partitioner_version_args=$1
+    LoadAlgorithm "${report_partitioner_version_args[algorithm_base]}"
+    ReportVersion report_partitioner_version_args
+}
+
 GenerateInfoFile() {
     echo "Generated at $(date) on $(hostname)" > INFO
 
