@@ -16,6 +16,7 @@ graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header =
 generate_all_cut <- FALSE
 generate_per_instance <- FALSE
 generate_all_time <- FALSE
+generate_per_k_time <- FALSE
 generate_pairwise_cut <- FALSE
 generate_maxdeg_to_m <- FALSE
 generate_per_instance_fm_batches <- FALSE
@@ -45,6 +46,8 @@ if (length(algorithms) > 0) {
         generate_per_instance_fm_batches <- TRUE
     } else if (mode == "--fm-batches") {
         generate_fm_batches <- TRUE
+    } else if (mode == "--per-k-time") {
+        generate_per_k_time <- TRUE
     } else {
         picked_plot <- FALSE
     }
@@ -160,6 +163,21 @@ if (generate_all_time) {
     args[["annotation"]] <- gmean_running_times
     all_bp <- do.call(create_running_time_boxplot, args) + theme_bw() + create_theme()
     print(all_bp)
+    dev.off()
+}
+
+if (generate_per_k_time) {
+    pdf("per_k_time.pdf")
+    ks <- unique(data[[1]]$K)
+    for (k in ks) {
+        fargs <- lapply(data, function(df) {
+            df %>% dplyr::filter(K == k)
+        })
+
+        all_bp <- do.call(create_running_time_boxplot, fargs) + theme_bw() + create_theme() + 
+            ggtitle(paste0("k=", k))
+        print(all_bp)
+    }
     dev.off()
 }
 
