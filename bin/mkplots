@@ -14,9 +14,8 @@ graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header =
 
 # CLI arguments == algorithms to look at
 generate_all_cut <- FALSE
-generate_per_instance_cut <- FALSE
+generate_per_instance <- FALSE
 generate_all_time <- FALSE
-generate_per_instance_time <- FALSE 
 generate_pairwise_cut <- FALSE
 generate_maxdeg_to_m <- FALSE
 generate_per_instance_fm_batches <- FALSE
@@ -34,14 +33,12 @@ if (length(algorithms) > 0) {
         generate_all_time <- TRUE
     } else if (mode == "--all-cut") {
         generate_all_cut <- TRUE
-    } else if (mode == "--per-instance-cut") {
-        generate_per_instance_cut <- TRUE
+    } else if (mode == "--per-instance") {
+        generate_per_instance <- TRUE
     } else if (mode == "--pairwise-cut") {
         generate_pairwise_cut <- TRUE
     } else if (mode == "--all-time") {
         generate_all_time <- TRUE
-    } else if (mode == "--per-instance-time") {
-        generate_per_instance_time <- TRUE
     } else if (mode == "--maxdeg-to-m") {
         generate_maxdeg_to_m <- TRUE
     } else if (mode == "--per-instance-fm-batches") {
@@ -59,9 +56,8 @@ if (length(algorithms) > 0) {
 
 if (!picked_plot) {
     generate_all_cut <- TRUE
-    generate_per_instance_cut <- TRUE
+    generate_per_instance <- TRUE
     generate_all_time <- TRUE
-    generate_per_instance_time <- TRUE
     generate_pairwise_cut <- TRUE
     generate_maxdeg_to_m <- TRUE
 }
@@ -175,40 +171,25 @@ for (df in data) {
 all_data$K <- factor(all_data$K)
 graphs <- unique(all_data$Graph)
 
-if (generate_per_instance_time) {
-    pdf("per_instance_time.pdf")
-    for (graph in graphs) {
-        subset_data <- all_data |>
-            dplyr::filter(Graph == graph)
-        p <- ggplot(subset_data, aes(x = K, y = AvgTime, fill = Algorithm)) +
-            geom_bar(
-                stat = "identity",
-                position = position_dodge()
-            ) +
-            ggtitle(graph) +
-            ylab("Time [s]") +
-            xlab("Number of Blocks") +
-            theme_bw() +
-            create_theme()
-        print(p)
-    }
-    dev.off()
-}
 
-if (generate_per_instance_cut) {
+if (generate_per_instance) {
     side_len <- round(sqrt(length(unique(all_data$Graph))))
     normalized_data <- all_data |>
         dplyr::group_by(Graph, K) |>
         dplyr::mutate(AvgCutToBest = AvgCut / min(AvgCut) - 0.9) |>
         dplyr::mutate(AvgCutToBest0 = AvgCut / min(AvgCut) - 1) |>
+        dplyr::mutate(AvgTimeToBest = AvgTime / min(AvgTime) - 0.9) |>
+        dplyr::mutate(AvgTimeToBest0 = AvgTime / min(AvgTime) - 1) |>
         dplyr::ungroup() |>
         dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg)) |>
         dplyr::mutate(MaxDegToM = MaxDeg / M.y)
     normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
 
-    pdf("per_instance_cut.pdf", width = side_len * 4, height = side_len * 3)
+    pdf("per_instance.pdf", width = side_len * 4, height = side_len * 3)
+
+    # Cuts
     p <- ggplot(normalized_data, aes(x = K, y = AvgCutToBest, fill = Algorithm)) +
-        ggtitle("Per Instance Cuts (rel to best, lower is better, 1.0 is best)") +
+        ggtitle("Per Instance Cuts (rel. to best, lower is better, 1.0 is best)") +
         geom_bar(
             stat = "identity",
             position = position_dodge()
@@ -222,6 +203,24 @@ if (generate_per_instance_cut) {
         create_theme_facet() +
         theme(legend.position = "right")
     print(p)
+
+    # Running time
+    p <- ggplot(normalized_data, aes(x = K, y = AvgTimeToBest, fill = Algorithm)) +
+        ggtitle("Per Instance Running Times (rel. to lowest, lower is better, 1.0 is best)") +
+        geom_bar(
+            stat = "identity",
+            position = position_dodge()
+        ) +
+        ylab("Time rel. to Lowest") +
+        xlab("Number of Blocks") +
+        theme_bw() +
+        facet_wrap(~Title, ncol = side_len, scales = "free") +
+        scale_y_continuous(labels = function(x) x + 0.9) +
+        geom_hline(yintercept = 0.1) +
+        create_theme_facet() +
+        theme(legend.position = "right")
+    print(p)
+    
     dev.off()
 }
 
