@@ -37,15 +37,21 @@ GenericGitFetch() {
 GenericGitReportVersion() {
     local -n generic_report_version_args=$1
     echo -n "disk:"
-    if [[ -d "${generic_report_version_args[disk_driver_src]}" ]]; then
+    if [[ -d "${generic_report_version_args[disk_driver_src]}/.git" ]]; then
         echo -n $(git -C "${generic_report_version_args[disk_driver_src]}" rev-parse HEAD)
+    else
+        echo -n "NA"
     fi
     echo -n ";kagen:"
-    if [[ -d "${generic_report_version_args[kagen_driver_src]}" ]]; then
+    if [[ -d "${generic_report_version_args[kagen_driver_src]}/.git" ]]; then
         echo -n $(git -C "${generic_report_version_args[kagen_driver_src]}" rev-parse HEAD)
+    else
+        echo -n "NA"
     fi
     echo -n ";generic:"
-    if [[ -d "${generic_report_version_args[generic_kagen_driver_src]}" ]]; then
+    if [[ -d "${generic_report_version_args[generic_kagen_driver_src]}/.git" ]]; then
         echo -n $(git -C "${generic_report_version_args[generic_kagen_driver_src]}" rev-parse HEAD)
+    else
+        echo -n "NA"
     fi
 }
