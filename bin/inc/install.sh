@@ -39,7 +39,7 @@ InstallLibraries() {
 
     for lib in ${_libs[@]}; do 
         declare -A install_libraries_args
-        install_libraries_args[library] = "$lib"
+        install_libraries_args[library]="$lib"
 
         if [[ $fetch == "1" ]]; then
             FetchLibrary install_libraries_args

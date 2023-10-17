@@ -4,7 +4,7 @@ Fetch() {
     local -n args=$1
     
     src_dir="$PREFIX/src/Sparsehash"
-    git clone https://github.com/sparsehash/sparsehash.git "$src_dir"
+    Prefixed git clone https://github.com/sparsehash/sparsehash.git "$src_dir"
 }
 
 Install() {
@@ -14,7 +14,7 @@ Install() {
     src_dir="$PREFIX/src/Sparsehash"
     
     cd "$src_dir"
-    ./configure --prefix="$PREFIX" 
-    make install -j 4
+    Prefixed ./configure --prefix="$PREFIX" 
+    Prefixed make install -j 4
     cd "$cur_dir"
 }
