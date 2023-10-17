@@ -24,17 +24,26 @@ _project=""
 _partition=""
 
 # Enable the -oversubscribe flag for MPI.
+#
+# Oversubscribe
 Oversubscribe() {
     _oversubscribe_mpi=1
 }
 
-# Install a library; the parameter must be a filename in libs/
+# Install a library and make it available to the algorithms.
 #
 # UseLibrary <name>
+#
+# <name> must refer to a file in libraries/
 UseLibrary() {
     _libs+=(${@})
 }
 
+# Customize the build process of an algorithm by providing additional options
+#
+# DefineAlgorithmBuild <new name> <base algorithm> <options...>
+#
+# <base algorithm> must refer to a file in partitioners/
 DefineAlgorithmBuild() {
     local name="$1"
     local base_algorithm="$2"
@@ -56,6 +65,15 @@ DefineAlgorithmBuild() {
     _algorithm_definition_build_options[$name]="$options"
 }
 
+# Customize the fetch/clone/checkout process of an algorithm.
+# E.g., most algorithms interpret the argument as a Git branch or commit.
+#
+# DefineAlgorithmVersion <new name> <base algorithm> <version>
+#
+# <base algorithm> must refer to a file in partitioners/, or a name defined by any of
+# the following commands:
+#
+# * DefineAlgorithmBuild
 DefineAlgorithmVersion() {
     local name="$1"
     local base_algorithm="$2"
@@ -77,6 +95,15 @@ DefineAlgorithmVersion() {
     _algorithm_definition_build_options[$name]=""
 }
 
+# Define a new algorithm by providing additional CLI arguments to an algorithm.
+#
+# DefineAlgorithm <new name> <base algorithm> <arguments...>
+# 
+# <base algorithm> must refer to a file in partitioners/, or a name defined by any of 
+# the following commands:
+#
+# * DefineAlgorithmBuild
+# * DefineAlgorithmVersion
 DefineAlgorithm() {
     local name="$1"
     local base_algorithm="$2"
@@ -98,10 +125,11 @@ DefineAlgorithm() {
     _algorithm_definition_build_options[$name]=""
 }
 
-# Specifies the system on which the experiment will be run on. This is a 
-# filename in systems/
+# Specifies the system on which the experiment will be run on. 
 #
-# System i10
+# System <generic|i10|i10par|i10ne|horeka|...>
+#
+# The argument must refer to a file in systems/.
 System() {
     _system="$1"
 }
@@ -135,10 +163,16 @@ MPI() {
     _mpi="$1"
 }
 
-# Specify which algorithms to run, can be base partitioners or names defined by
-# BuildOptions, DefineAlgorithmVersion, DefineAlgorithm.
+# Specify which algorithms to include in the experiments. 
 #
-# Algorithms <names ...>
+# Algorithms <names...>
+#
+# The names must refer to files in partitioners/, or be names defined by any of
+# the following commands:
+# 
+# * DefineAlgorithmBuild
+# * DefineAlgorithmVersion
+# * DefineAlgorithm
 Algorithms() {
     _algorithms+=(${@})
 }
@@ -146,21 +180,21 @@ Algorithms() {
 # Specify the number of nodes, MPI processes and threads to be used for 
 # execution. Can provide multiple values for scaling experiments etc.
 #
-# Threads <<nodes>x<mpis>x<threads> ...>
+# Threads <<nodes>x<mpis>x<threads>...>
 Threads() {
     _nodes_x_mpis_x_threads+=(${@})
 }
 
 # Specify seeds for PRNG. Can provide multiple values for repeated execution.
 #
-# Seeds <seed ...>
+# Seeds <seeds...>
 Seeds() {
     _seeds+=(${@})
 }
 
 # Specify number of blocks. Can provide multiple values.
 #
-# Ks <k ...>
+# Ks <k...>
 Ks() {
     _ks+=(${@})
 }
@@ -188,31 +222,46 @@ TimelimitPerInstance() {
 
 # Specify a directory containing graphs. 
 #
-# Graphs <dirs ...>
+# Graphs <paths/to/graphs...>
 Graphs() {
     for filename in ${1%/}/*.*; do 
         _graphs+=("${filename%.*}")
     done
 }
 
+# Specify a single graph file.
+#
+# Graph <path/to/file/without/extension>
 Graph() {
     _graphs+=("${1%.*}")
 }
 
+# Specify imbalance factors for which the experiment is repeated.
+#
+# Epsilons <epsilons, e.g., 0.03 for 3%...>
 Epsilons() {
     _epsilons+=(${@})
 }
 
+# Specify a KaGen graph which is included in the experiment.
+#
+# KaGen <generator> <arguments...>
 KaGen() {
     generator="$1"
     arguments="${@:2}"
     _kagen_graphs+=("$generator $arguments")
 }
 
+# Reset the list of included from-disk graphs
+#
+# ClearGraphs
 ClearGraphs() {
     _graphs=()
 }
 
+# Reset the list of included KaGen graphs
+#
+# ClearKaGenGraphs
 ClearKaGenGraphs() {
     _kagen_graphs=()
 }

@@ -1,3 +1,5 @@
+# The directory in which all partitioners, tools, libraries etc. are build
+# $PWD refers to the directory of the experiment in which mkexp is executed
 PREFIX="$PWD/usr"
 
 export PATH="$PREFIX/bin:$PATH"
