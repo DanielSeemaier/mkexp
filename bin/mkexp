@@ -102,6 +102,10 @@ HandleExperiment() {
         fi
     fi
 
+    if [[ $install_everything == "1" ]]; then
+        SetupBuildEnv
+    fi
+
     if [[ $fetch_everything == "1" || $install_everything == "1" ]]; then
         InstallLibraries "$fetch_everything" "$install_everything"
         InstallPartitioners "$fetch_everything" "$install_everything"
