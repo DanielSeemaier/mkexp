@@ -46,7 +46,7 @@ InstallDiskDriver() {
         -DCMAKE_BUILD_TYPE=Release \
         -DKAHYPAR_ENFORCE_MINIMUM_TBB_VERSION=Off \
         $CUSTOM_CMAKE_FLAGS \
-f       ${install_disk_driver_args[algorithm_build_options]}
+        ${install_disk_driver_args[algorithm_build_options]}
     Prefixed cmake --build "$src_dir/build" --target MtKaHyPar --parallel
 
     Prefixed cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${install_disk_driver_args[disk_driver_bin]}"
