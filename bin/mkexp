@@ -82,6 +82,12 @@ fi
 # Load the system -- there may only be one system definition per Experiment file
 LoadSystem "$_system"
 
+if [[ $skip_install == "0" ]]; then
+    if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
+        SetupBuildEnv
+    fi
+fi
+
 # Modes that depend on the system
 . "$ROOT/bin/inc/transfer.sh"
 
@@ -100,10 +106,6 @@ HandleExperiment() {
         if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
             install_everything=1
         fi
-    fi
-
-    if [[ $install_everything == "1" ]]; then
-        SetupBuildEnv
     fi
 
     if [[ $fetch_everything == "1" || $install_everything == "1" ]]; then
