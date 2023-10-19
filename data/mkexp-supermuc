@@ -1,0 +1,29 @@
+#%Module5.1
+module use --append /lrz/sys/spack/release/23.1.0/modules/x86_64/.intel-toolkit/2023.2.0
+module use --append /lrz/sys/spack/release/23.1.0/modules/compilers
+module use --append /lrz/sys/spack/release/23.1.0/modules/MPI
+module use --append /lrz/sys/spack/release/23.1.0/modules/MPI-skylake_avx512
+module use --append /lrz/sys/spack/release/23.1.0/modules/skylake_avx512
+module use --append /lrz/sys/spack/release/23.1.0/modules/x86_64
+module use --append /lrz/sys/tools/modules/5.1.1/modulefiles
+module use --append /lrz/sys/share/modules/files_sles15/applications
+module use --append /lrz/sys/share/modules/files_sles15/compilers
+module use --append /lrz/sys/share/modules/files_sles15/environment
+module use --append /lrz/sys/share/modules/files_sles15/graphics
+module use --append /lrz/sys/share/modules/files_sles15/libraries
+module use --append /lrz/sys/share/modules/files_sles15/io_tools
+module use --append /lrz/sys/share/modules/files_sles15/parallel
+module use --append /lrz/sys/share/modules/files_sles15/tools
+module load admin
+module load tempdir
+module load lrz
+module load spack
+module load lrztools
+module load --tag=auto-loaded intel/2023.2.0
+module load intel-toolkit
+module load intel-tbb
+module load gcc/13.1.0
+module load --tag=auto-loaded intel-mpi/2021.10.0
+module load --tag=auto-loaded intel-mkl/2023.2.0
+module load cmake
+

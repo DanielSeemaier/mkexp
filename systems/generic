@@ -4,6 +4,10 @@ SetupBuildEnv() {
     return
 }
 
+SetupSystem() {
+    return
+}
+
 UploadExperiment() {
     echo "Error: unsupported"
 }

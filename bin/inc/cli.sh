@@ -64,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             mode="progress"
             shift 
             ;;
+        --setup-system)
+            mode="setup-system"
+            shift
+            ;;
         -*|--*)
             echo "Error: unknown option $1"
             exit 1
@@ -99,6 +103,7 @@ if [[ $mode == "help" ]]; then
     echo "    --stats: Compute some statistics from the CSV files"
     echo "    --upload: Upload the experiments to a remote machine"
     echo "    --download: Download results from a remove machine"
+    echo "    --setup-system: Install system-wide configuration files etc."
     echo "    --help: Print this help message"
     echo ""
     echo "This framework supports running experiments on a machine without internet access."

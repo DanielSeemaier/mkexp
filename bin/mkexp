@@ -82,6 +82,10 @@ fi
 # Load the system -- there may only be one system definition per Experiment file
 LoadSystem "$_system"
 
+if [[ $mode == "setup-system" ]]; then 
+    SetupSystem
+fi
+
 if [[ $skip_install == "0" ]]; then
     if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
         SetupBuildEnv

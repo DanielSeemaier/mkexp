@@ -40,12 +40,22 @@ DownloadExperiment() {
 }
 
 SetupBuildEnv() {
-    module restore mkexp-supermuc
+    if [[ ! -f "~/module/mkexp-supermuc" ]]; then 
+        echo "Error: file '~/module/mkexp-supermuc' does not exist"
+        echo "  Run 'mkexp --setup-system' once to create it"
+    fi
+
+    Prefixed module restore mkexp-supermuc
     #if [[ "$_mpi" == "OpenMPI" ]]; then 
     #    module load openmpi/${SUPERMUC_OPENMPI_VERSION}
     #elif [[ "$_mpi" == "IMPI" ]]; then
     #    module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}
     #fi
+}
+
+SetupSystem() {
+    Prefixed mkdir -p "~/.module/"
+    Prefixed cp "$script_pwd/../data/mkexp-supermuc" "~/.module/"
 }
 
 GenerateJobfileHeader() {
