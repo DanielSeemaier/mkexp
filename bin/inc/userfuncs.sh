@@ -163,6 +163,11 @@ MPI() {
     _mpi="$1"
 }
 
+# Same as MPI
+Wrapper() {
+    _mpi="$1"
+}
+
 # Specify which algorithms to include in the experiments. 
 #
 # Algorithms <names...>
