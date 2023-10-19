@@ -36,19 +36,38 @@ GenerateInfoFile() {
         info_args[disk_driver_src]="$PREFIX/src/disk-$build_id/"
         info_args[kagen_driver_src]="$PREFIX/src/kagen-$build_id/"
         info_args[generic_kagen_driver_src]="$PREFIX/src/generic-$generic_build_id/"
-
         reported_version=$(ReportPartitionerVersion info_args)
 
-        echo "$build_id=$reported_version" >> INFO
+        echo "- Version reported by $partitioner: $reported_version" >> INFO
     done
 }
 
-GenerateCrossProduct() {
+GenerateAlgorithmArguments() {
+    local -n args=$1
+
+    local algorithm="${args[algorithm]}"
+    local plain_arguments="$(GetAlgorithmArguments $algorithm)"
+
+    num_nodes=${args[num_nodes]}
+    num_mpis=${args[num_mpis]}
+    num_threads=${args[num_threads]}
+    num_pes=$((num_nodes*num_mpis*num_threads))
+
+    echo "$plain_arguments" | \
+        Graph="${args[graph]}" \
+        K="${args[k]}" \
+        Epsilon="${args[epsilon]}" \
+        Seed="${args[seed]}" \
+        N="${num_nodes}" \
+        M="${num_mpis}" \
+        T="${num_threads}" \
+        P="${num_pes}" \
+        envsubst
+}
+
+GenerateInvokationForEveryGraph() {
     local -n prepared_invoc=$1
-    local seed="$2"
-    local epsilon="$3"
-    local algorithm="$4"
-    local k="$5"
+    local algorithm="${prepared_invoc[algorithm]}"
 
     prepared_invoc[bin]="${prepared_invoc[disk_driver_bin]}"
     prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
@@ -57,6 +76,9 @@ GenerateCrossProduct() {
         prepared_invoc[graph]="$graph"
         prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"
         prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
+
+        prepared_invoc[algorithm_arguments]=$(GenerateAlgorithmArguments prepared_invoc)
+
         prepared_invoc[exe]="$(InvokeFromDisk prepared_invoc)"
         prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
         if [[ "$_timelimit_per_instance" != "" ]]; then 
@@ -75,10 +97,15 @@ GenerateCrossProduct() {
         kagen_arguments_arr=($kagen)
         prepared_invoc[kagen_stringified]="$(echo "$kagen" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/' | tr ' ' '-')"
         prepared_invoc[kagen_arguments_stringified]="$(echo "$kagen" | tr ' ' ';')"
+        prepared_invoc[graph]="${prepared_invoc[kagen_arguments_stringified]}"
+
         prepared_invoc[kagen_generator]="${kagen_arguments_arr[0]}"
         prepared_invoc[kagen_arguments]="${kagen_arguments_arr[@]:1}"
         prepared_invoc[id]="$(GenerateKaGenIdentifier prepared_invoc)"
         prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
+
+        prepared_invoc[algorithm_arguments]=$(GenerateAlgorithmArguments prepared_invoc)
+
         prepared_invoc[exe]="$(InvokeFromKaGen prepared_invoc)"
         prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
         if [[ "$_timelimit_per_instance" != "" ]]; then 
@@ -116,7 +143,6 @@ Generate() {
         invoc[algorithm]=$algorithm
         invoc[algorithm_base]=$(GetAlgorithmBase "$algorithm")
         invoc[algorithm_version]=$(GetAlgorithmVersion "$algorithm")
-        invoc[algorithm_arguments]=$(GetAlgorithmArguments "$algorithm")
         invoc[algorithm_build_options]=$(GetAlgorithmBuildOptions "$algorithm")
 
         LoadAlgorithm "${invoc[algorithm_base]}"
@@ -147,7 +173,7 @@ Generate() {
                         fi
                         invoc[k]=$k
 
-                        GenerateCrossProduct invoc "$seed" "$epsilon" "$algorithm" "$k"
+                        GenerateInvokationForEveryGraph invoc 
                         invoc[first_algorithm_call]=0
                         invoc[first_parallelism_call]=0
                     done # k
