@@ -53,8 +53,13 @@ GenerateAlgorithmArguments() {
     num_threads=${args[num_threads]}
     num_pes=$((num_nodes*num_mpis*num_threads))
 
+    graph_basename="$(basename "${args[graph]}")"
+    graph_basename="${graph_basename%%.*}"
+
     echo "$plain_arguments" | \
+        ROOT="$PWD" \
         Graph="${args[graph]}" \
+        GraphBasename="$graph_basename" \
         K="${args[k]}" \
         Epsilon="${args[epsilon]}" \
         Seed="${args[seed]}" \
