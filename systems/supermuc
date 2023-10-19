@@ -1,14 +1,6 @@
 #!/bin/bash 
 . "$script_pwd/../systems/generic"
 
-SUPERMUC_OPENMPI_VERSION="4.1.2-gcc11"
-SUPERMUC_IMPI_VERSION="2021-gcc"
-SUPERMUC_TBB_VERSION="2021.4.0"
-SUPERMUC_GCC_VERSION="11.2.0"
-SUPERMUC_CMAKE_VERSION="3.21.4"
-
-#CUSTOM_CMAKE_FLAGS="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off"
-
 _ExecRsyncCommand() {
     if command -v sshpass; then
         if [[ ${SUPERMUC_PASS:-""} != "" ]]; then 
@@ -48,16 +40,12 @@ DownloadExperiment() {
 }
 
 SetupBuildEnv() {
-    module unload openmpi
-    module unload intel-mpi
-    module load gcc/${SUPERMUC_GCC_VERSION}
-    if [[ "$_mpi" == "OpenMPI" ]]; then 
-        module load openmpi/${SUPERMUC_OPENMPI_VERSION}
-    elif [[ "$_mpi" == "IMPI" ]]; then
-        module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}
-    fi
-    module load intel-oneapi-tbb/${SUPERMUC_TBB_VERSION}
-    module load cmake/${SUPERMUC_CMAKE_VERSION}
+    module restore mkexp-supermuc
+    #if [[ "$_mpi" == "OpenMPI" ]]; then 
+    #    module load openmpi/${SUPERMUC_OPENMPI_VERSION}
+    #elif [[ "$_mpi" == "IMPI" ]]; then
+    #    module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}
+    #fi
 }
 
 GenerateJobfileHeader() {
@@ -95,38 +83,45 @@ GenerateJobfileHeader() {
     fi
     echo "#SBATCH --partition=$partition"
 
-    echo "module unload openmpi"
-    echo "module unload intel-mpi"
-    echo "module load gcc/${SUPERMUC_GCC_VERSION}"
-    if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
-        echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
-    elif [[ "${args[mpi]}" == "IMPI" ]]; then
-        echo "module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}"
+    echo "module restore mkexp-supermuc"
+    #if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
+    #    echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
+    #elif [[ "${args[mpi]}" == "IMPI" ]]; then
+    #    echo "module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}"
+    #fi
+
+    if [[ "${args[mpi]}" != "IMPI" ]]; then
+        >&2 echo "Error: application must be run with IMPI"
+        exit 1
     fi
-    echo "module load intel-oneapi-tbb/${SUPERMUC_TBB_VERSION}"
-    echo "module load cmake/${SUPERMUC_CMAKE_VERSION}"
 
     echo "unset OMP_NUM_THREADS"
     echo "unset OMP_PROC_BIND"
     echo "unset OMP_PLACES"
+    
+    echo "export I_MPI_PIN_CELL=core"
+    echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact"
+    if [[ "${args[timeout]}" != "0" ]]; then 
+        echo "export I_MPI_JOB_TIMEOUT=${args[timeout]}"
+    fi
 }
 
 GenerateJobfileEntry() {
     local -n args=$1
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    fi
 
     case "${args[mpi]}" in
         none)
             >&2 echo "Error: application must be run with MPI"
             exit 1
             ;;
-        OpenMPI)
-            echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
-            ;;
+        #OpenMPI)
+        #    echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
+        #    ;;
         IMPI)
-            echo -n "I_MPI_PIN_CELL=core I_MPI_PIN_DOMAIN=1:compact "
-            if [[ "${args[timeout]}" != "0" ]]; then 
-                echo -n "I_MPI_JOB_TIMEOUT=${args[timeout]} "
-            fi
             echo "mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
             ;;
         *)
