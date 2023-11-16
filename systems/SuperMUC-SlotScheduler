@@ -39,6 +39,12 @@ SetupSystem() {
     return 0
 }
 
+WORKER_HEADER_FILENAME="worker.tmp"
+WORKER_FILENAME="worker.sh"
+SCHEDULER_HEADER_FILENAME="scheduler.tmp"
+SCHEDULER_FILENAME="scheduler.py"
+GLOBAL_QUEUE_FILENAME="global_queue.txt"
+
 GenerateJobfileHeader() {
     local -n args=$1
 
@@ -50,46 +56,44 @@ GenerateJobfileHeader() {
         >&2 echo "Error: no project specified"
         exit 1
     fi
-
-    echo "#!/bin/bash"
-    echo "#SBATCH --nodes=${args[num_nodes]}"
-    echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
-    echo "#SBATCH --cpus-per-task=${args[num_threads]}"
-    echo "#SBATCH --ntasks-per-node=${args[num_mpis]}"
-    echo "#SBATCH --switches=1"
-    echo "#SBATCH --ear=off"
-    echo "#SBATCH --account=$_project"
-    echo "#SBATCH --time=${args[timelimit]}"
-
-    if [[ "$_partition" == "" ]]; then 
-        if (( ${args[num_nodes]} < 17 )); then
-            partition="micro"
-        elif (( ${args[num_nodes]} < 769 )); then
-            partition="general"
-        else
-            partition="large"
-        fi
-    else 
-        partition="$_partition"
-    fi
-    echo "#SBATCH --partition=$partition"
-
-    echo "module restore $ROOT/data/SuperMUC/modules-scheduler"
-
     if [[ "${args[mpi]}" != "IMPI" ]]; then
         >&2 echo "Error: application must be run with IMPI"
         exit 1
     fi
 
-    echo "unset OMP_NUM_THREADS"
-    echo "unset OMP_PROC_BIND"
-    echo "unset OMP_PLACES"
-    
-    echo "export I_MPI_PIN_CELL=core"
-    echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact"
-    if [[ "${args[timeout]}" != "0" ]]; then 
-        echo "export I_MPI_JOB_TIMEOUT=${args[timeout]}"
+
+    echo "#!/bin/bash" > $WORKER_HEADER_FILENAME
+    echo "#SBATCH --nodes=1" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --ntasks=1" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --cpus-per-task=${args[num_threads]}" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --ntasks-per-node=1" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --switches=1" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --ear=off" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --account=$_project" >> $WORKER_HEADER_FILENAME
+    echo "#SBATCH --time=${args[timelimit]}" >> $WORKER_HEADER_FILENAME
+
+    if [[ "$_partition" == "" ]]; then 
+        partition="general"
+    else 
+        partition="$_partition"
     fi
+    echo "#SBATCH --partition=$partition" >> $WORKER_HEADER_FILENAME
+
+    echo "module restore $ROOT/data/SuperMUC/modules-scheduler" >> $WORKER_HEADER_FILENAME
+    echo "unset OMP_NUM_THREADS" >> $WORKER_HEADER_FILENAME
+    echo "unset OMP_PROC_BIND" >> $WORKER_HEADER_FILENAME
+    echo "unset OMP_PLACES" >> $WORKER_HEADER_FILENAME
+    echo "export I_MPI_PIN_CELL=core" >> $WORKER_HEADER_FILENAME
+    echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact" >> $WORKER_HEADER_FILENAME
+    if [[ "${args[timeout]}" != "0" ]]; then  >> $WORKER_HEADER_FILENAME
+        echo "export I_MPI_JOB_TIMEOUT=${args[timeout]}" >> $WORKER_HEADER_FILENAME
+    fi
+
+    echo "#!/usr/bin/env python3" > $SCHEDULER_HEADER_FILENAME
+    echo "MAX_TASKS_IN_SLOT_QUEUE=6" >> $SCHEDULER_HEADER_FILENAME
+    echo "MAX_JOBS_IN_QUEUE=${args[num_nodes]}" >> $SCHEDULER_HEADER_FILENAME
+
+    echo ""
 }
 
 GenerateJobfileEntry() {
@@ -104,11 +108,8 @@ GenerateJobfileEntry() {
             >&2 echo "Error: application must be run with MPI"
             exit 1
             ;;
-        #OpenMPI)
-        #    echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
-        #    ;;
         IMPI)
-            echo "mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
+            echo "mpiexec -n ${args[num_mpis]} --perhost ${args[num_mpis]} ${args[exe]}"
             ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
@@ -117,8 +118,17 @@ GenerateJobfileEntry() {
 }
 
 GenerateJobfileSubmission() {
+    cat $SCHEDULER_HEADER_FILENAME > $SCHEDULER_FILENAME
+    cat "$ROOT/data/SuperMUC/scheduler/scheduler.py" >> "scheduler.py"
+
+    cat $WORKER_HEADER_FILENAME > $WORKER_FILENAME 
+    cat "$ROOT/data/SuperMUC/scheduler/worker.sh" >> $WORKER_FILENAME
+
+    echo "" > $GLOBAL_QUEUE_FILENAME
     for jobfile in ${@}; do 
-        echo "sbatch $jobfile"
+        cat $jobfile >> $GLOBAL_QUEUE_FILENAME
     done
+
+    echo "python $SCHEDULER_FILENAME $GLOBAL_QUEUE_FILENAME"
 }
 

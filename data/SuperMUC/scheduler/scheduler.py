@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import subprocess
 import argparse
 import random
@@ -12,16 +10,12 @@ import collections
 
 my_dir = os.path.dirname(os.path.abspath(__file__))
 
-MAX_TASKS_IN_SLOT_QUEUE=6
-MAX_JOBS_IN_QUEUE=50
-
 parser = argparse.ArgumentParser()
 parser.add_argument("workload", type=str)
 args = parser.parse_args()
 workload_file = args.workload
 remaining_work_file = "{}.remaining".format(workload_file)
 terminate_work_file = "{}.terminate".format(workload_file)
-
 
 def chunk_and_extract(workload, num_tasks, num_chunks):
 	chunks = [ [] for i in range(num_chunks)]
@@ -102,9 +96,8 @@ def submit(slot):
 		del jobid2slot[slot2jobid[slot]]
 		del slot2jobid[slot]
 
-	time_option = "-t 72:00:00"
 	queue_option = "--export=QUEUE_FILE=\"" + slotqueue_filename(slot) + "\""
-	jobdesc = "sbatch -p single -n 1 --exclusive --parsable " + time_option + " " + queue_option + " ./smallworkqueue_worker.sh"
+	jobdesc = "sbatch --parsable " + queue_option + " ./worker.sh"
 	print("submit job with the command: ", jobdesc)
 	out, err = subprocess.Popen([jobdesc], shell=True, stdout=subprocess.PIPE, universal_newlines=True).communicate()
 	if len(out.strip()):

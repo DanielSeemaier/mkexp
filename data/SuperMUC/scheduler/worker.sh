@@ -5,10 +5,6 @@ TMP_QUEUE_FILE=$QUEUE_FILE".worker.tmp"
 FAILED_QUEUE_FILE=$QUEUE_FILE".failed"
 DEBUG_FILE=$QUEUE_FILE".debug"
 
-module load compiler/gnu/9.2
-module load mpi/openmpi/4.0
-module load devel/python/3.7.4_gnu_9.2
-
 MAX_IDLE_STEPS=100
 STEP=0
 SLEEP_TIME=3	#in seconds
