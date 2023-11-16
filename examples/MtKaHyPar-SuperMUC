@@ -3,16 +3,14 @@
 CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=${INTEL_ONEAPI_TBB_BASE:-} $CUSTOM_CMAKE_FLAGS"
 
 # Unfortunately, the Boost module on SuperMUC does not include the non-header-only part of Boost, thus we have to download, transfer and compile 
-# it on our own; this setup assumes that Boost v >= 1.69 was installed to $HOME/usr/
-#
-# To do so, follow these steps:
+# it on our own. To do so, follow these steps (you only have to do this once); replace <username> by your SuperMUC username:
 #
 # 1. Download Boost onto a computer with internet access, then copy it to your $HOME directory on SuperMUC:
 #
 # wget http://downloads.sourceforge.net/project/boost/boost/1.69.0/boost_1_69_0.tar.bz2 
 # rsync boost_1_69_0.tar.bz2 <username>@skx.supermuc.lrz.de:~/
 #
-# 2. On the SuperMUC, extract, build and install Boost to $HOME/usr:
+# 2. On SuperMUC, extract, build and install Boost to $HOME/usr:
 #
 # mkdir -p usr 
 # bunzip2 boost_1_69_0.tar.bz2
@@ -25,7 +23,6 @@ CUSTOM_CMAKE_FLAGS="-DBOOST_ROOT=$HOME/usr $CUSTOM_CMAKE_FLAGS"
 
 # Avoid dependency on python (we do not want to build the python interface anyways)
 CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF $CUSTOM_CMAKE_FLAGS"
-
 
 # If you don't want to run experiments with the current main branch, define a custom version of Mt-KaHyPar 
 # by specifying a branch or commit hash like this:
@@ -44,7 +41,10 @@ DefineAlgorithm QualityGraph Graph --preset-type=quality
 # Keep as-it for this type of experiment
 System SuperMUC-SlotScheduler
 
+# Your SuperMUC username
 Username <username> 
+
+# Your SuperMUC project (should be shown after logging in)
 Project <project>
 
 # Max running time for a single worker
@@ -64,12 +64,12 @@ ExperimentDefaultVsQuality() {
     # Seeds for PRNG, more values = more repetitions
     Seeds 1 
 
-    #       |-- run 8 workers at a time
-    #         |-- should be always 1 for this type of experiment
-    #           |-- number of threads used by Mt-KaHyPar
+    #       /-- run 8 workers at a time, can be changed to other values
+    #       | /-- should be always 1 for this type of experiment
+    #       | |  /-- number of threads used by Mt-KaHyPar
     Threads 8x1x32
 
     # All graphs that should be included in the experiment 
-    # (DIRECTORY ON SUPERMUC!)
+    # (refers to a directory on SuperMUC, so you have to upload the graphs first)
     Graphs ${WORK:-}/benchmark/
 }
