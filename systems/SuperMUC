@@ -1,61 +1,42 @@
 #!/bin/bash 
-. "$script_pwd/../systems/generic"
+. "$script_pwd/../systems/Generic"
 
 _ExecRsyncCommand() {
-    if command -v sshpass; then
-        if [[ ${SUPERMUC_PASS:-""} != "" ]]; then 
-            sshpass -p "$SUPERMUC_PASS" $cmd
-        else
-            eval $cmd
-        fi
-    else
-        eval $cmd
-    fi
+    Prefixed eval $cmd
 }
 
-UploadExperiment() {
+UploadDirectory() {
+    local -n dir="$1"
+    local -n name="$2"
+
     if [[ "${_username}" == "" ]]; then
         echo "Error: provide username via the Username command, e.g., Username skx1234"
         exit 1
     fi
 
-    dir="$(pwd)"
-    name=${dir##*/}
-
-    cmd='rsync -rutvP --cvs-exclude . '$_username'@skx.supermuc.lrz.de:~/'$name
+    cmd='rsync -rutvP --cvs-exclude '"$dir"' '$_username'@skx.supermuc.lrz.de:~/'"$name"
     _ExecRsyncCommand "$cmd"
 }
 
-DownloadExperiment() {
+DownloadDirectory() {
+    local -n dir="$1"
+    local -n name="$2"
+
     if [[ "${_username}" == "" ]]; then
         echo "Error: provide username via the Username command, e.g., Username skx1234"
         exit 1
     fi
 
-    dir="$(pwd)"
-    name=${dir##*/}
-
-    cmd='rsync -rutvP --cvs-exclude '$_username'@skx.supermuc.lrz.de:~/'$name'/ .'
+    cmd='rsync -rutvP --cvs-exclude '$_username'@skx.supermuc.lrz.de:~/'$name'/ '"$dir"
     _ExecRsyncCommand "$cmd"
 }
 
 SetupBuildEnv() {
-    if [[ ! -f "~/module/mkexp-supermuc" ]]; then 
-        echo "Error: file '~/module/mkexp-supermuc' does not exist"
-        echo "  Run 'mkexp --setup-system' once to create it"
-    fi
-
-    Prefixed module restore mkexp-supermuc
-    #if [[ "$_mpi" == "OpenMPI" ]]; then 
-    #    module load openmpi/${SUPERMUC_OPENMPI_VERSION}
-    #elif [[ "$_mpi" == "IMPI" ]]; then
-    #    module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}
-    #fi
+    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
 }
 
 SetupSystem() {
-    Prefixed mkdir -p "~/.module/"
-    Prefixed cp "$script_pwd/../data/mkexp-supermuc" "~/.module/"
+    return 0
 }
 
 GenerateJobfileHeader() {
@@ -93,12 +74,7 @@ GenerateJobfileHeader() {
     fi
     echo "#SBATCH --partition=$partition"
 
-    echo "module restore mkexp-supermuc"
-    #if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
-    #    echo "module load openmpi/${SUPERMUC_OPENMPI_VERSION}"
-    #elif [[ "${args[mpi]}" == "IMPI" ]]; then
-    #    echo "module load intel-oneapi-mpi/${SUPERMUC_IMPI_VERSION}"
-    #fi
+    echo "module restore $ROOT/data/SuperMUC/modules-impi"
 
     if [[ "${args[mpi]}" != "IMPI" ]]; then
         >&2 echo "Error: application must be run with IMPI"
@@ -128,9 +104,6 @@ GenerateJobfileEntry() {
             >&2 echo "Error: application must be run with MPI"
             exit 1
             ;;
-        #OpenMPI)
-        #    echo "mpirun -n $((args[num_nodes]*args[num_mpis])) --bind-to core --map-by socket:PE=${args[num_threads]} ${args[exe]}"
-        #    ;;
         IMPI)
             echo "mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
             ;;

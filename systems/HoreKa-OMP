@@ -2,7 +2,7 @@
 
 # HoreKa with OpenMP: sets OMP_NUM_THREADS
 
-. "$script_pwd/../systems/horeka"
+. "$script_pwd/../systems/HoreKa"
 
 GenerateJobfileHeader() {
     local -n args=$1

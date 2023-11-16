@@ -1,5 +1,5 @@
 #!/bin/bash 
-. "$script_pwd/../systems/generic"
+. "$script_pwd/../systems/Generic"
 
 # i10*: runs the experiment through `exclusive`
 

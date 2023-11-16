@@ -8,11 +8,11 @@ SetupSystem() {
     return
 }
 
-UploadExperiment() {
+UploadDirectory() {
     echo "Error: unsupported"
 }
 
-DownloadExperiment() {
+DownloadDirectory() {
     echo "Error: unsupported"
 }
 

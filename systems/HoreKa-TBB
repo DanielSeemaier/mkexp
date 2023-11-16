@@ -1,11 +1,11 @@
 #!/bin/bash 
-. "$script_pwd/../systems/generic"
+. "$script_pwd/../systems/Generic"
 
 # HoreKa without OpenMP: unsets all OMP_* env variables
 # This is really important when using TBB
 
 HOREKA_OPENMPI_VERSION="4.0"
-CUSTOM_CMAKE_FLAGS="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off"
+CUSTOM_CMAKE_FLAGS="-DTBB_DIR=/hkfs/home/software/all/toolkit/Intel_OneAPI/tbb/2021.2.0/lib/cmake/tbb -DMPFR_INCLUDE_DIR=$HOME/usr/include -DMPFR_LIBRARIES=$HOME/usr/lib/libmpfr.so -DSAMPLING_USE_MKL=Off $CUSTOM_CMAKE_FLAGS"
 
 SetupBuildEnv() {
     return

@@ -1,0 +1,46 @@
+#!/bin/bash
+# Unfortunately, the FindTBB.cmake script does not seem to pick up the loaded TBB module on SuperMUC, so we have to specify the path manually
+CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=$INTEL_ONEAPI_TBB_BASE $CUSTOM_CMAKE_FLAGS"
+
+# Unfortunately, the Boost module on SuperMUC does not include the non-header-only part of Boost, thus we have to download, transfer and compile 
+# it on our own; this setup assumes that Boost v >= 1.69 was installed to $HOME/usr/
+#
+# To do so, follow these steps:
+#
+# 1. Download Boost onto a computer with internet access, then copy it to your $HOME directory on SuperMUC:
+#
+# wget http://downloads.sourceforge.net/project/boost/boost/1.69.0/boost_1_69_0.tar.bz2 
+# rsync boost_1_69_0.tar.bz2 <username>@skx.supermuc.lrz.de:~/
+#
+# 2. On the SuperMUC, extract, build and install Boost to $HOME/usr:
+#
+# mkdir -p usr 
+# bunzip2 boost_1_69_0.tar.bz2
+# tar -xf boost_1_69_0.tar 
+# cd boost_1_69_0/
+# ./bootstrap.sh --prefix=$HOME/usr/
+# ./b2
+# ./b2 install
+CUSTOM_CMAKE_FLAGS="-DBOOST_ROOT=$HOME/usr $CUSTOM_CMAKE_FLAGS"
+
+# Configure Mt-KaHyPar for graphs 
+DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis -o cut 
+
+# ... configure your own algorithms here, this is just an example ...
+DefineAlgorithm DefaultGraph Graph --preset-type=default 
+DefineAlgorithm QualityGraph Graph --preset-type=quality
+
+System SuperMUC-SlotScheduler
+
+Username <username> 
+Project <project>
+
+MPI IMPI 
+
+ExperimentDefaultVsQuality() {
+    Algorithms DefaultGraph QualityGraph
+    Ks 2 4 8 
+    Seeds 1 
+    Threads 1 2 4
+    Graphs $WORK/benchmark/
+}

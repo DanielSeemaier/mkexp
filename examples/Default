@@ -48,14 +48,14 @@ DefineAlgorithm KaMinPar-FM KaMinPar64 -P fm
 #--------------------------------------------------------------------------------
 # Pick a system for which the jobfiles should be generated:
 #
-System generic     # any Linux system
-# 
-# System i10       # i10 compute servers, run experiment via "exclusive"
-# System i10ne     # i10 compute servers, run without "exclusive"
-# System i10par    # i10 + GNU Parallel (only use for sequential runs and if you don't need precise running times)
-# System horeka    # HoreKa with MPI only / MPI+TBB
-# System horekaOMP # HoreKa with MPI only / MPI+OpenMP
-# System supermuc  # SuperMUC with MPI only / MPI+TBB
+System Generic                  # any Linux system
+# System i10                    # i10 compute servers, run experiment via "exclusive"
+# System i10-Nonexclusive       # i10 compute servers, run without "exclusive"
+# System i10-Parallel           # i10 + GNU Parallel (only use for sequential runs and if you don't need precise running times)
+# System HoreKa-TBB             # HoreKa with MPI only / MPI+TBB
+# System HoreKa-OMP             # HoreKa with MPI only / MPI+OpenMP
+# System SuperMUC               # SuperMUC with MPI only / MPI+TBB
+# System SuperMUC-SlotScheduler # SuperMUC for shared-memory or sequential jobs, that are executed in parallel on multiple jobs by a job scheduler
 
 # If you want to run this experiment on SuperMUC, provide additional parameters:
 #

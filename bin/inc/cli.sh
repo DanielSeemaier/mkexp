@@ -52,6 +52,10 @@ while [[ $# -gt 0 ]]; do
             mode="upload"
             shift
             ;;
+        --upload-self)
+            mode="upload-self"
+            shift
+            ;;
         --download)
             mode="download"
             shift
@@ -59,6 +63,10 @@ while [[ $# -gt 0 ]]; do
         --init)
             mode="init"
             shift 
+            ;;
+        --init-mtkahypar-supermuc)
+            mode="init-mtkahypar-supermuc"
+            shift
             ;;
         --progress)
             mode="progress"
@@ -102,6 +110,7 @@ if [[ $mode == "help" ]]; then
     echo "    --purge: --clean, but also delete log and result files"
     echo "    --stats: Compute some statistics from the CSV files"
     echo "    --upload: Upload the experiments to a remote machine"
+    echo "    --upload-self: Upload this toolkit to a remote machine"
     echo "    --download: Download results from a remove machine"
     echo "    --setup-system: Install system-wide configuration files etc."
     echo "    --help: Print this help message"

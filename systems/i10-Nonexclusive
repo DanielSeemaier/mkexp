@@ -1,5 +1,5 @@
 #!/bin/bash 
-. "$script_pwd/../systems/generic"
+. "$script_pwd/../systems/Generic"
 
 # i10*: runs the experiment *without* `exclusive`
 # (e.g., for running on the login node or when already holding an exclusive token)
