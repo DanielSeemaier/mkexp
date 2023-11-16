@@ -26,6 +26,14 @@ CUSTOM_CMAKE_FLAGS="-DBOOST_ROOT=$HOME/usr $CUSTOM_CMAKE_FLAGS"
 # Avoid dependency on python (we do not want to build the python interface anyways)
 CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF $CUSTOM_CMAKE_FLAGS"
 
+
+# If you don't want to run experiments with the current main branch, define a custom version of Mt-KaHyPar 
+# by specifying a branch or commit hash like this:
+#
+# DefineAlgorithmVersion MyMtKaHyPar MtKaHyPar origin/my/feature/branch
+# 
+# Then use MyMtKaHyPar instead of MtKaHyPar in the next line
+
 # Configure Mt-KaHyPar for graphs 
 DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis -o cut 
 
