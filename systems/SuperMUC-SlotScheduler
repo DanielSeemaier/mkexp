@@ -73,7 +73,7 @@ GenerateJobfileHeader() {
     echo "#SBATCH --time=${args[timelimit]}" >> $WORKER_HEADER_FILENAME
 
     if [[ "$_partition" == "" ]]; then 
-        partition="general"
+        partition="micro"
     else 
         partition="$_partition"
     fi
@@ -85,13 +85,14 @@ GenerateJobfileHeader() {
     echo "unset OMP_PLACES" >> $WORKER_HEADER_FILENAME
     echo "export I_MPI_PIN_CELL=core" >> $WORKER_HEADER_FILENAME
     echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact" >> $WORKER_HEADER_FILENAME
-    if [[ "${args[timeout]}" != "0" ]]; then  >> $WORKER_HEADER_FILENAME
-        echo "export I_MPI_JOB_TIMEOUT=${args[timeout]}" >> $WORKER_HEADER_FILENAME
+    if [[ "${args[timelimit]}" != "0" ]]; then  
+        echo "export I_MPI_JOB_TIMEOUT=${args[timelimit]}" >> $WORKER_HEADER_FILENAME
     fi
 
     echo "#!/usr/bin/env python3" > $SCHEDULER_HEADER_FILENAME
     echo "MAX_TASKS_IN_SLOT_QUEUE=6" >> $SCHEDULER_HEADER_FILENAME
     echo "MAX_JOBS_IN_QUEUE=${args[num_nodes]}" >> $SCHEDULER_HEADER_FILENAME
+    echo "USERNAME='$_username'" >> $SCHEDULER_HEADER_FILENAME
 
     echo ""
 }

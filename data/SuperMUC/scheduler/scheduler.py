@@ -36,7 +36,7 @@ def serialize_slot_work(workloads, slots):
 		serialize(w, slotqueue_filename(s))
 
 def parse_squeue(state):
-	parse_desc = "squeue --long -t " + state
+	parse_desc = "squeue -u " + USERNAME + " --long -t " + state
 	p, err = subprocess.Popen([parse_desc], shell=True, stdout=subprocess.PIPE, universal_newlines=True).communicate()
 	lines = p.split('\n')
 	if len(lines) < 3:
