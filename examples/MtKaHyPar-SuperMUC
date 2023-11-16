@@ -23,6 +23,9 @@ CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=$INTEL_ONEAPI_TBB_BASE $CUSTOM_CMAKE_FLAGS"
 # ./b2 install
 CUSTOM_CMAKE_FLAGS="-DBOOST_ROOT=$HOME/usr $CUSTOM_CMAKE_FLAGS"
 
+# Avoid dependency on python (we do not want to build the python interface anyways)
+CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF"
+
 # Configure Mt-KaHyPar for graphs 
 DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis -o cut 
 
