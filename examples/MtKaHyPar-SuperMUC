@@ -1,6 +1,6 @@
 #!/bin/bash
 # Unfortunately, the FindTBB.cmake script does not seem to pick up the loaded TBB module on SuperMUC, so we have to specify the path manually
-CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=$INTEL_ONEAPI_TBB_BASE $CUSTOM_CMAKE_FLAGS"
+CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=${INTEL_ONEAPI_TBB_BASE:-} $CUSTOM_CMAKE_FLAGS"
 
 # Unfortunately, the Boost module on SuperMUC does not include the non-header-only part of Boost, thus we have to download, transfer and compile 
 # it on our own; this setup assumes that Boost v >= 1.69 was installed to $HOME/usr/
@@ -24,7 +24,7 @@ CUSTOM_CMAKE_FLAGS="-DTBB_ROOT=$INTEL_ONEAPI_TBB_BASE $CUSTOM_CMAKE_FLAGS"
 CUSTOM_CMAKE_FLAGS="-DBOOST_ROOT=$HOME/usr $CUSTOM_CMAKE_FLAGS"
 
 # Avoid dependency on python (we do not want to build the python interface anyways)
-CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF"
+CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF $CUSTOM_CMAKE_FLAGS"
 
 # Configure Mt-KaHyPar for graphs 
 DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis -o cut 
@@ -33,17 +33,35 @@ DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis 
 DefineAlgorithm DefaultGraph Graph --preset-type=default 
 DefineAlgorithm QualityGraph Graph --preset-type=quality
 
+# Keep as-it for this type of experiment
 System SuperMUC-SlotScheduler
 
 Username <username> 
 Project <project>
 
+# Max running time for a single worker
+# shorter = can do less, but is usually scheduled for execution sooner
+Timelimit 8:00:00 
+
+# Keep as-it for this type of experiment
 MPI IMPI 
 
 ExperimentDefaultVsQuality() {
+    # Configurations included in this experiment
     Algorithms DefaultGraph QualityGraph
+
+    # Values for k that should be run
     Ks 2 4 8 
+
+    # Seeds for PRNG, more values = more repetitions
     Seeds 1 
-    Threads 1 2 4
-    Graphs $WORK/benchmark/
+
+    #       |-- run 8 workers at a time
+    #         |-- should be always 1 for this type of experiment
+    #           |-- number of threads used by Mt-KaHyPar
+    Threads 8x1x32
+
+    # All graphs that should be included in the experiment 
+    # (DIRECTORY ON SUPERMUC!)
+    Graphs ${WORK:-}/benchmark/
 }
