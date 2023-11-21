@@ -6,8 +6,8 @@ _ExecRsyncCommand() {
 }
 
 UploadDirectory() {
-    local -n dir="$1"
-    local -n name="$2"
+    local dir="$1"
+    local name="$2"
 
     if [[ "${_username}" == "" ]]; then
         echo "Error: provide username via the Username command, e.g., Username skx1234"
@@ -19,8 +19,8 @@ UploadDirectory() {
 }
 
 DownloadDirectory() {
-    local -n dir="$1"
-    local -n name="$2"
+    local dir="$1"
+    local name="$2"
 
     if [[ "${_username}" == "" ]]; then
         echo "Error: provide username via the Username command, e.g., Username skx1234"

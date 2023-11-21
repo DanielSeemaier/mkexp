@@ -19,11 +19,8 @@ module load tempdir
 module load lrz
 module load spack
 module load lrztools
-module load --tag=auto-loaded intel/2023.2.0
 module load intel-toolkit
 module load intel-tbb
 module load gcc/13.1.0
-module load --tag=auto-loaded intel-mpi/2021.10.0
-module load --tag=auto-loaded intel-mkl/2023.2.0
 module load cmake
 
