@@ -20,6 +20,7 @@ generate_per_k_time <- FALSE
 generate_pairwise_cut <- FALSE
 generate_per_instance_fm_batches <- FALSE
 generate_fm_batches <- FALSE
+generate_ss <- FALSE
 
 picked_plot <- FALSE
 
@@ -45,6 +46,8 @@ if (length(algorithms) > 0) {
         generate_fm_batches <- TRUE
     } else if (mode == "--per-k-time") {
         generate_per_k_time <- TRUE
+    } else if (mode == "--ss") {
+        generate_ss <- TRUE
     } else {
         picked_plot <- FALSE
     }
@@ -309,5 +312,21 @@ if (generate_fm_batches) {
             theme(legend.position = "bottom")
         print(p)
     }
+    dev.off()
+}
+
+if (generate_ss) {
+    pdf("ss.pdf", width = 14, height = 3)
+    p <- ggplot(all_data, aes(x = NumPEs, y = AvgTime)) +
+        ggtitle("Strong scaling") +
+        geom_line() +
+        ylab("Running time") +
+        xlab("Number of PEs") +
+        theme_bw() +
+        scale_x_continuous(trans = "log2", breaks = unique(all_data$NumPEs)) +
+        facet_wrap(~Graph, ncol = 4, scales = "free") +
+        create_theme_facet() +
+        theme(legend.position = "right")
+    print(p)
     dev.off()
 }
