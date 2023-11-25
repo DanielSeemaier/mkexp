@@ -32,7 +32,7 @@ DownloadDirectory() {
 }
 
 SetupBuildEnv() {
-    Prefixed module restore "$ROOT/data/SuperMUC/modules-scheduler"
+    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
 }
 
 SetupSystem() {
@@ -79,7 +79,7 @@ GenerateJobfileHeader() {
     fi
     echo "#SBATCH --partition=$partition" >> $WORKER_HEADER_FILENAME
 
-    echo "module restore $ROOT/data/SuperMUC/modules-scheduler" >> $WORKER_HEADER_FILENAME
+    echo "module restore $ROOT/data/SuperMUC/modules-impi" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_NUM_THREADS" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_PROC_BIND" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_PLACES" >> $WORKER_HEADER_FILENAME
