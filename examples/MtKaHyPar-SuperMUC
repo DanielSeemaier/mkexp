@@ -32,7 +32,7 @@ CUSTOM_CMAKE_FLAGS="-DKAHYPAR_PYTHON=OFF $CUSTOM_CMAKE_FLAGS"
 # Then use MyMtKaHyPar instead of MtKaHyPar in the next line
 
 # Configure Mt-KaHyPar for graphs 
-DefineAlgorithm Graph MtKaHyPar --instance-type=graph --input-file-format=metis -o cut 
+DefineAlgorithm Graph MtKaHyPar --instance-type=graph -o cut 
 
 # ... configure your own algorithms here, this is just an example ...
 DefineAlgorithm DefaultGraph Graph --preset-type=default 
