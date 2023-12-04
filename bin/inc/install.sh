@@ -54,6 +54,8 @@ InstallPartitioners() {
     local fetch=$1
     local install=$2
 
+    declare -A cache=()
+
     for partitioner in ${_algorithms[@]}; do 
         declare -A install_partitioners_args
 
@@ -62,11 +64,34 @@ InstallPartitioners() {
         install_partitioners_args[algorithm_build_options]=$(GetAlgorithmBuildOptions "$partitioner")
         install_partitioners_args[algorithm_version]=$(GetAlgorithmVersion "$partitioner")
 
-        install_partitioners_args[install_disk_driver]=$((${#_graphs[@]}))
-        install_partitioners_args[install_kagen_driver]=$((${#_kagen_graphs[@]}))
-
         build_id=$(GenerateBuildIdentifier install_partitioners_args)
         generic_build_id=$(GenerateGenericBuildIdentifier install_partitioners_args)
+        install_disk_driver=$((${#_graphs[@]}))
+        install_kagen_driver=$((${#_kagen_graphs[@]}))
+
+        if (( $install_disk_driver )); then 
+            cache_key="disk-$build_id"
+            if [[ -v "cache[$cache_key]" ]]; then
+                echo -e "Skipping disk driver for algorithm '$ALGO_COLOR$partitioner$NO_COLOR': already built"
+                echo ""
+                install_disk_driver=0
+            else
+                cache[$cache_key]=1
+            fi
+        fi
+        if (( $install_kagen_driver )); then
+            cache_key="kagen-$build_id"
+            if [[ -v "cache[$cache_key]" ]]; then
+                echo -e "Skipping KaGen driver for algorithm '$ALGO_COLOR$partitioner$NO_COLOR': already built"
+                echo ""
+                install_kagen_driver=0
+            else
+                cache[$cache_key]=1
+            fi
+        fi
+
+        install_partitioners_args[install_disk_driver]=$install_disk_driver
+        install_partitioners_args[install_kagen_driver]=$install_kagen_driver
 
         install_partitioners_args[disk_driver_bin]="$PREFIX/bin/disk-$build_id"
         install_partitioners_args[kagen_driver_bin]="$PREFIX/bin/kagen-$build_id"
@@ -78,6 +103,7 @@ InstallPartitioners() {
             FetchPartitioner install_partitioners_args
         fi    
         if [[ $install == "1" ]]; then 
+
             InstallPartitioner install_partitioners_args
         fi
     done
