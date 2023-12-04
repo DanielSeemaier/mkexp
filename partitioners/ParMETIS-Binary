@@ -95,6 +95,7 @@ InvokeFromDisk() {
         >&2 echo -e "      $ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR // seed"
         >&2 echo -e "      ${WARNING_COLOR}Note: The epsilon parameter is not supported by ParMETIS$NO_COLOR"
         >&2 echo -e "  - Specified arguments: ${WARNING_COLOR}ignored$NO_COLOR"
+        >&2 echo "[...]"
         >&2 echo ""
     fi
 

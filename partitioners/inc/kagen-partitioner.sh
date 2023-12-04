@@ -46,6 +46,7 @@ GenericKaGenPartitionerInvokeFromDisk() {
         >&2 echo -e "      -k $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[k]}$NO_COLOR"
         >&2 echo -e "      -G\"file;filename=$ARGS_COLOR$graph$NO_COLOR\""
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "[...]"
         >&2 echo ""
     fi
 
@@ -68,6 +69,7 @@ GenericKaGenPartitionerInvokeFromKaGen() {
         >&2 echo -e "      -k $ARGS_COLOR${generic_kagen_partitioner_invoke_from_kagen[k]}$NO_COLOR"
         >&2 echo -e "      -G\"$ARGS_COLOR${generic_kagen_partitioner_invoke_from_kagen[kagen_arguments_stringified]}$NO_COLOR\""
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_kagen[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "[...]"
         >&2 echo ""
     fi
 

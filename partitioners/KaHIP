@@ -42,7 +42,6 @@ InstallDiskDriver() {
     current_pwd="$PWD"
 
     cd "$src_dir"
-    #export CMAKE_GENERATOR="Unix Makefiles"
     CMAKE_GENERATOR="Unix Makefiles" Prefixed ./compile_withcmake.sh ${install_disk_driver_args[algorithm_build_options]}
     cd "$current_pwd"
     Prefixed cp "$src_dir/deploy/kaffpa" "${install_disk_driver_args[disk_driver_bin]}"
@@ -65,6 +64,7 @@ InvokeFromDisk() {
         >&2 echo -e "      --seed=$ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR"
         >&2 echo -e "      $ARGS_COLOR$graph$NO_COLOR"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "[...]"
         >&2 echo ""
     fi
 

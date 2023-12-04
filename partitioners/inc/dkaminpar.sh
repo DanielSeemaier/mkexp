@@ -100,6 +100,7 @@ InvokeFromDisk() {
         >&2 echo -e "      -t $ARGS_COLOR${invoke_from_disk_args[num_threads]}$NO_COLOR"
         >&2 echo "      -T"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "[...]"
         >&2 echo ""
     fi
 
@@ -133,6 +134,7 @@ InvokeFromKaGen() {
             >&2 echo -e "      -e $ARGS_COLOR${invoke_from_kagen_args[epsilon]}$NO_COLOR"
             >&2 echo -e "      -G\"$ARGS_COLOR${invoke_from_kagen_args[kagen_arguments_stringified]}$NO_COLOR\""
             >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_kagen_args[algorithm_arguments]}$NO_COLOR"
+            >&2 echo "[...]"
             >&2 echo ""
         fi
 
@@ -156,6 +158,7 @@ InvokeFromKaGen() {
             >&2 echo "      -T"
             >&2 echo -e "      -G\"$ARGS_COLOR${invoke_from_kagen_args[kagen_arguments_stringified]}$NO_COLOR\""
             >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_kagen_args[algorithm_arguments]}$NO_COLOR"
+            >&2 echo "[...]"
             >&2 echo ""
         fi
 
