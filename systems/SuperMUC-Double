@@ -1,0 +1,121 @@
+#!/bin/bash 
+. "$script_pwd/../systems/Generic"
+
+_ExecRsyncCommand() {
+    Prefixed eval $cmd
+}
+
+UploadDirectory() {
+    local dir="$1"
+    local name="$2"
+
+    if [[ "${_username}" == "" ]]; then
+        echo "Error: provide username via the Username command, e.g., Username skx1234"
+        exit 1
+    fi
+
+    cmd='rsync -rutvP --cvs-exclude '"$dir"' '$_username'@skx.supermuc.lrz.de:~/'"$name"
+    _ExecRsyncCommand "$cmd"
+}
+
+DownloadDirectory() {
+    local dir="$1"
+    local name="$2"
+
+    if [[ "${_username}" == "" ]]; then
+        echo "Error: provide username via the Username command, e.g., Username skx1234"
+        exit 1
+    fi
+
+    cmd='rsync -rutvP --cvs-exclude '$_username'@skx.supermuc.lrz.de:~/'$name'/ '"$dir"
+    _ExecRsyncCommand "$cmd"
+}
+
+SetupBuildEnv() {
+    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
+}
+
+SetupSystem() {
+    return 0
+}
+
+GenerateJobfileHeader() {
+    local -n args=$1
+
+    if (( $((args[num_mpis] * args[num_threads])) > 48 )); then 
+        >&2 echo "Error: too many MPI processes * threads"
+        exit 1
+    fi
+    if [[ $_project == "" ]]; then
+        >&2 echo "Error: no project specified"
+        exit 1
+    fi
+
+    echo "#!/bin/bash"
+    echo "#SBATCH --nodes=${args[num_nodes]}"
+    echo "#SBATCH --ntasks=$((args[num_nodes]*args[num_mpis]))"
+    echo "#SBATCH --cpus-per-task=$((2*args[num_threads]))"
+    echo "#SBATCH --ntasks-per-node=${args[num_mpis]}"
+    echo "#SBATCH --switches=1"
+    echo "#SBATCH --ear=off"
+    echo "#SBATCH --account=$_project"
+    echo "#SBATCH --time=${args[timelimit]}"
+
+    if [[ "$_partition" == "" ]]; then 
+        if (( ${args[num_nodes]} < 17 )); then
+            partition="micro"
+        elif (( ${args[num_nodes]} < 769 )); then
+            partition="general"
+        else
+            partition="large"
+        fi
+    else 
+        partition="$_partition"
+    fi
+    echo "#SBATCH --partition=$partition"
+
+    echo "module restore $ROOT/data/SuperMUC/modules-impi"
+
+    if [[ "${args[mpi]}" != "IMPI" ]]; then
+        >&2 echo "Error: application must be run with IMPI"
+        exit 1
+    fi
+
+    echo "unset OMP_NUM_THREADS"
+    echo "unset OMP_PROC_BIND"
+    echo "unset OMP_PLACES"
+    
+    echo "export I_MPI_PIN_CELL=core"
+    echo "export I_MPI_PIN_DOMAIN=$((2*args[num_threads])):compact"
+    if [[ "${args[timelimit]}" != "0" ]]; then 
+        echo "export I_MPI_JOB_TIMEOUT=${args[timelimit]}"
+    fi
+}
+
+GenerateJobfileEntry() {
+    local -n args=$1
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    fi
+
+    case "${args[mpi]}" in
+        none)
+            >&2 echo "Error: application must be run with MPI"
+            exit 1
+            ;;
+        IMPI)
+            echo "mpiexec -n $((args[num_nodes]*args[num_mpis])) --perhost ${args[num_mpis]} ${args[exe]}"
+            ;;
+        *)
+            >&2 echo "Error: unsupported MPI ${args[mpi]}"
+            exit 1
+    esac
+}
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do 
+        echo "sbatch $jobfile"
+    done
+}
+
