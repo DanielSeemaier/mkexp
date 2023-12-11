@@ -42,7 +42,8 @@ SetupSystem() {
 GenerateJobfileHeader() {
     local -n args=$1
 
-    if (( $((args[num_mpis] * args[num_threads])) > 48 )); then 
+    # 24, because we bind each MPI process to two cores
+    if (( $((args[num_mpis] * args[num_threads])) > 24 )); then 
         >&2 echo "Error: too many MPI processes * threads"
         exit 1
     fi
