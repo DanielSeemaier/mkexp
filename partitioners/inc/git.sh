@@ -26,11 +26,13 @@ GenericGitFetch() {
         echo ""
 
         Prefixed git -C "$src_dir" reset --hard "${generic_git_fetch_args[algorithm_version]}"
+        Prefixed git -C "$src_dir" submodule update --init --recursive
     else
         echo -e "No version specified for algorithm '$ALGO_COLOR${generic_git_fetch_args[algorithm]}$NO_COLOR': update to latest commit"
         echo ""
 
         Prefixed git -C "$src_dir" pull origin
+        Prefixed git -C "$src_dir" submodule update --init --recursive
     fi
 }
 
