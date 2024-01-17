@@ -44,7 +44,6 @@ InstallDiskDriver() {
     Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
         -DCMAKE_BUILD_TYPE=Release \
-        -DKAHYPAR_ENFORCE_MINIMUM_TBB_VERSION=Off \
         $CUSTOM_CMAKE_FLAGS \
         ${install_disk_driver_args[algorithm_build_options]}
     Prefixed cmake --build "$src_dir/build" --target MtKaHyPar --parallel
