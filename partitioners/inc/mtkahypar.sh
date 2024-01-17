@@ -42,7 +42,7 @@ InstallDiskDriver() {
     echo ""
 
     # For -DKAHYPAR_DOWNLOAD_TBB=ON to work, the cmake command must be run from within the build directory
-    mkdir "$src_dir/build" 
+    mkdir -p "$src_dir/build" 
     cd "$src_dir/build"
     Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
