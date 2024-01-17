@@ -41,11 +41,16 @@ InstallDiskDriver() {
     echo "  - Algorithm-specific CMake options: ${install_disk_driver_args[algorithm_build_options]}"
     echo ""
 
+    # For -DKAHYPAR_DOWNLOAD_TBB=ON to work, the cmake command must be run from within the build directory
+    mkdir "$src_dir/build" 
+    cd "$src_dir/build"
     Prefixed cmake -S "$src_dir" \
         -B "$src_dir/build" \
         -DCMAKE_BUILD_TYPE=Release \
         $CUSTOM_CMAKE_FLAGS \
         ${install_disk_driver_args[algorithm_build_options]}
+    cd "$current_pwd"
+
     Prefixed cmake --build "$src_dir/build" --target MtKaHyPar --parallel
 
     Prefixed cp "$src_dir/build/mt-kahypar/application/MtKaHyPar" "${install_disk_driver_args[disk_driver_bin]}"
