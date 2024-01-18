@@ -89,9 +89,19 @@ for (algorithm in algorithms) {
   }
 }
 
+cat("\n")
+cat("Determining common k values:\n")
 ks <- unique(data[[1]]$K)
+for (i in 1:length(data)) {
+    cat(paste0("  Algorithm ", algorithms[i], ": k in {", paste(ks, collapse = ", "), "}\n"))
+    ks <- intersect(ks, unique(data[[i]]$K))
+}
+cat(paste0("Intersection: k in {", paste(ks, collapse = ", "), "}\n"))
+cat("\n")
+
 graphs <- unique(data[[1]]$Graph)
 num_unique_graphs <- length(unique(data[[1]]$Graph))
+
 
 if (!generate_per_instance_fm_batches && !generate_fm_batches) {
     for (i in 1:length(data)) {
@@ -118,6 +128,8 @@ if (!generate_per_instance_fm_batches && !generate_fm_batches) {
             cur_graph <- data[[i]][row, "Graph"]
             cur_k <- data[[i]][row, "K"]
             if (first_graph != cur_graph || first_k != cur_k) {
+                #print(data[[i]]$Graph)
+                #print(data[[i]]$K)
                 cat(paste0("Mismatch in row ", row, " for ", algorithms[i], "\n"))
                 cat(paste0("Expected graph=", first_graph, ", k=", first_k, "\n"))
                 cat(paste0("Got graph=", cur_graph, ", k=", cur_k, "\n"))

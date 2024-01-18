@@ -55,23 +55,8 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(Time = ifelse(Failed & !Timeout, NA, Time)) %>%
     dplyr::mutate(Cut = ifelse(Balance > 0.03 + .Machine$double.eps, NA, Cut))
 
-  additional_cols <- c()
-  if ("Phase" %in% colnames(df)) {
-    additional_cols <- c(additional_cols, "Phase")
-  }
-  if ("Distance" %in% colnames(df)) {
-    additional_cols <- c(additional_cols, "Distance")
-  }
-  if ("BatchesGain" %in% colnames(df)) {
-    additional_cols <- c(additional_cols, "BatchesGain")
-  }
-  if ("BatchesSize" %in% colnames(df)) {
-    additional_cols <- c(additional_cols, "BatchesSize")
-  }
-
   vars <- colnames(df)
   vars <- vars[! vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed")]
-  #df <- ddply(df, c("Algorithm", "Graph", "K", "Epsilon", "NumPEs", "NumNodes", "NumMPIsPerNode", "NumThreadsPerMPI", additional_cols), aggregator)
   df <- ddply(df, vars, aggregator)
 
   df <- df %>%
