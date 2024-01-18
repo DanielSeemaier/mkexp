@@ -61,7 +61,7 @@ DefineAlgorithmBuild() {
     _algorithm_definition_names[$name]=1
     _algorithm_definition_bases[$name]="$base_algorithm"
     _algorithm_definition_arguments[$name]=""
-    _algorithm_definition_versions[$name]="latest"
+    _algorithm_definition_versions[$name]=""
     _algorithm_definition_build_options[$name]="$options"
 }
 
@@ -289,6 +289,9 @@ PrintSummary() {
     echo "Algorithms:"
     for algorithm in ${_algorithms[@]}; do 
         echo "- $algorithm"
+        echo "  + Version: $(GetAlgorithmVersion "$algorithm")"
+        echo "  + Build options: $(GetAlgorithmBuildOptions "$algorithm")"
+        echo "  + Arguments: $(GetAlgorithmArguments "$algorithm")"
     done
     echo ""
 
