@@ -83,7 +83,7 @@ for (algorithm in algorithms) {
     gmean_running_times <- gmean_running_times |>
       rbind(data.frame(
         Algorithm = factor(paste0(algorithm, "-", thread_config)),
-        Time = mean(subdf$AvgTime)
+        Time = exp(mean(log(subdf$AvgTime)))
       ))
     data <- append(data, list(subdf))
   }
