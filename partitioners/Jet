@@ -1,0 +1,55 @@
+#!/bin/bash
+
+Fetch() {
+    return
+}
+
+FetchDiskDriver() {
+    return
+}
+
+Install() {
+    local -n install_args=$1
+
+    if (( ${install_args[install_disk_driver]} )); then 
+        HOST=$(hostname)
+        HOST=${HOST:5}
+        Prefixed cp "$HOME/usr$HOST/bin/jet" "${install_args[disk_driver_bin]}"
+    fi
+}
+
+InvokeFromDisk() {
+    local -n invoke_from_disk_args=$1
+
+    graph="${invoke_from_disk_args[graph]}"
+    if [[ -f "$graph.graph" ]]; then
+        graph="$graph.graph"
+    elif [[ -f "$graph.metis" ]]; then
+        graph="$graph.metis"
+    fi
+
+    config="$job_files_dir/jet-configs/k${invoke_from_disk_args[k]}.txt"
+    if [[ ! -d "$job_files_dir/jet-configs/" ]]; then
+        mkdir -p "$job_files_dir/jet-configs/"
+    fi
+    if [[ ! -f "$config" ]]; then
+        echo "0" >> "$config"
+        echo "${invoke_from_disk_args[k]}" >> "$config"
+        echo "1" >> "$config"
+        echo "1.03" >> "$config"
+    fi
+
+    if [[ -f "$graph" ]]; then
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "$graph "
+        echo -n "$config"
+        echo ""
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+ReportVersion() {
+    return
+}

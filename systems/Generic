@@ -57,6 +57,9 @@ GenerateJobfileEntry() {
             fi
             echo "mpirun -n ${args[num_mpis]} $oversubscribe --bind-to core$overload --map-by socket:PE=${args[num_threads]} ${args[exe]}"
             ;;
+        OpenMP)
+            echo "OMP_PROC_BIND=spread OMP_PLACES=threads OMP_NUM_THREADS=${args[num_threads]} ${args[exe]}"
+            ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"
             exit 1
