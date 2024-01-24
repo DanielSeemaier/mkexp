@@ -1,16 +1,21 @@
 #!/bin/bash
 
 Fetch() {
+    return
 }
 
 FetchDiskDriver() {
+    return
 }
 
 Install() {
-}
+    local -n install_args=$1
 
-InstallDiskDriver() {
-    #Prefixed cp "$PREFIX/jet" "${install_disk_driver_args[disk_driver_bin]}"
+    if (( ${install_args[install_disk_driver]} )); then 
+        HOST=$(hostname)
+        HOST=${HOST:5}
+        Prefixed cp "$HOME/usr$HOST/bin/jet" "${install_args[disk_driver_bin]}"
+    fi
 }
 
 InvokeFromDisk() {
@@ -46,5 +51,5 @@ InvokeFromDisk() {
 }
 
 ReportVersion() {
-    GenericGitReportVersion $1
+    return
 }
