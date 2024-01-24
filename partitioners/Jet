@@ -11,10 +11,24 @@ FetchDiskDriver() {
 Install() {
     local -n install_args=$1
 
+    # Jet must be build manually and be placed in:
+    # $HOME/usr<host id>/bin/jet
     if (( ${install_args[install_disk_driver]} )); then 
-        HOST=$(hostname)
-        HOST=${HOST:5}
-        Prefixed cp "$HOME/usr$HOST/bin/jet" "${install_args[disk_driver_bin]}"
+        HOST=$(hostname) # i10pc<host id>
+        HOST=${HOST:5} # <host id>
+        import_filename="$HOME/usr$HOST/bin/jet"
+
+        if [[ ! -f "$import_filename" ]]; then
+            echo "Error: Jet binary not found at $import_filename"
+            exit 1
+        fi
+
+        Prefixed cp "$import_filename" "${install_args[disk_driver_bin]}"
+    fi
+
+    if (( ${install_args[install_kagen_driver]} )); then 
+        echo "Error: KaGen support not implemented for MtKaHyPar"
+        exit 1
     fi
 }
 
