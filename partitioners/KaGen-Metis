@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
+
+Fetch() {
+    GenericKaGenPartitionerFetch $1
+}
+
+Install() {
+    GenericKaGenPartitionerInstall $1 -DBUILD_METIS=On "Metis"
+}
+
+InvokeFromDisk() {
+    GenericKaGenPartitionerInvokeFromDisk $1
+}
+
+InvokeFromKaGen() {
+    GenericKaGenPartitionerInvokeFromKaGen $1
+}
+
+ReportVersion() {
+    GenericGitReportVersion $1
+}
