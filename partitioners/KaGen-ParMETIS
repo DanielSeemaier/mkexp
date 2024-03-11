@@ -1,0 +1,24 @@
+#!/bin/bash
+
+. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
+
+Fetch() {
+    GenericKaGenPartitionerFetch $1
+}
+
+Install() {
+    GenericKaGenPartitionerInstall $1 -DBUILD_PARMETIS=On "ParMETIS"
+}
+
+InvokeFromDisk() {
+    GenericKaGenPartitionerInvokeFromDisk $1
+}
+
+InvokeFromKaGen() {
+    GenericKaGenPartitionerInvokeFromKaGen $1
+}
+
+ReportVersion() {
+    GenericGitReportVersion $1
+}
+
