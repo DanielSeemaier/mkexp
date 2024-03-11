@@ -45,6 +45,9 @@ GenericKaGenPartitionerInvokeFromDisk() {
         >&2 echo -e "      -s $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[seed]}$NO_COLOR"
         >&2 echo -e "      -k $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[k]}$NO_COLOR"
         >&2 echo -e "      -G\"file;filename=$ARGS_COLOR$graph$NO_COLOR\""
+        if [[ "${generic_kagen_partitioner_invoke_from_disk_args[num_threads]}" != 1 ]]; then
+            >&2 echo -e "      -t $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[num_threads]}$NO_COLOR"
+        fi
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
         >&2 echo "[...]"
         >&2 echo ""
@@ -53,6 +56,9 @@ GenericKaGenPartitionerInvokeFromDisk() {
     echo -n "${generic_kagen_partitioner_invoke_from_disk_args[kagen_driver_bin]} "
     echo -n "-s ${generic_kagen_partitioner_invoke_from_disk_args[seed]} " 
     echo -n "-k ${generic_kagen_partitioner_invoke_from_disk_args[k]} "
+    if [[ "${generic_kagen_partitioner_invoke_from_disk_args[num_threads]}" != 1 ]]; then
+        echo -n "-t ${generic_kagen_partitioner_invoke_from_disk_args[num_threads]} "
+    fi
     echo -n "${generic_kagen_partitioner_invoke_from_disk_args[algorithm_arguments]} "
     echo -n "-G\"file;filename=$graph\""
     echo ""
