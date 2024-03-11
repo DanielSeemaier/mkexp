@@ -7,7 +7,7 @@ Fetch() {
 }
 
 Install() {
-    GenericKaGenPartitionerInstall $1 -DBUILD_METIS=On "Metis"
+    GenericKaGenPartitionerInstall $1 -DBUILD_MTMETIS=On "MtMETIS"
 }
 
 InvokeFromDisk() {
