@@ -16,12 +16,7 @@ Fetch() {
 
 FetchDiskDriver() {
     local -n fetch_disk_driver_args=$1
-
-    if [[ $DKAMINPAR_USE_PUBLIC_REPOSITORY == 1 ]]; then
-        GenericGitFetch fetch_disk_driver_args "git@github.com:KaHIP/KaMinPar.git" "disk_driver_src"
-    else 
-        GenericGitFetch fetch_disk_driver_args "git@github.com:DanielSeemaier/KaMinPar.git" "disk_driver_src"
-    fi
+    GenericGitFetch fetch_disk_driver_args "$DKAMINPAR_REPOSITORY_URL" "disk_driver_src"
 }
 
 FetchKaGenDriver() {
@@ -69,11 +64,7 @@ InstallKaGenDriver() {
     local -n install_kagen_driver_args=$1
 
     if [[ $DKAMINPAR_USE_KAGEN_DRIVER == 1 ]]; then 
-        if [[ $DKAMINPAR_USE_PUBLIC_REPOSITORY == 0 ]]; then
-            GenericKaGenPartitionerInstall install_kagen_driver_args "-DBUILD_DKAMINPAR=On -DKAMINPAR_REPOSITORY=git@github.com:DanielSeemaier/KaMinPar.git" "dKaMinPar"
-        else
-            GenericKaGenPartitionerInstall install_kagen_driver_args "-DBUILD_DKAMINPAR=On" "dKaMinPar"
-        fi
+        GenericKaGenPartitionerInstall install_kagen_driver_args "-DBUILD_DKAMINPAR=On -DKAMINPAR_REPOSITORY=$DKAMINPAR_REPOSITORY_URL" "dKaMinPar"
     else
         InstallDiskDriver install_kagen_driver_args
         Prefixed cp "${install_kagen_driver_args[disk_driver_bin]}" "${install_kagen_driver_args[kagen_driver_bin]}"
