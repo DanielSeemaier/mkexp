@@ -65,6 +65,9 @@ match($0, /`- Partitioning: \.* ([0-9\.\-e]+) s/, m) {
 match($0, /partitioning\.coarsening\.label_propagation_clustering=([0-9\.\-e]+)/, m) {
     data["LPTime"] = m[1]
 }
+match($0, /partitioning\.coarsening\.label_propagation=([0-9\.\-e]+)/, m) {
+    data["LPTime"] = m[1]
+}
 
 #match($0, /RESULT .*time=([0-9e\-\.]+).*/, m) {
     #data["Time"] = m[1]
