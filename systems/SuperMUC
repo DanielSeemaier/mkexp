@@ -87,9 +87,9 @@ GenerateJobfileHeader() {
     
     echo "export I_MPI_PIN_CELL=core"
     echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact"
-    if [[ "${args[timelimit]}" != "0" ]]; then 
-        echo "export I_MPI_JOB_TIMEOUT=${args[timelimit]}"
-    fi
+    #if [[ "${args[timelimit]}" != "0" ]]; then 
+        #echo "export I_MPI_JOB_TIMEOUT=${args[timelimit]}"
+    #fi
 }
 
 GenerateJobfileEntry() {
