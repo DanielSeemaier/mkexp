@@ -1,0 +1,28 @@
+module use --append /dss/dsshome1/05/di46lon/spack/modules/x86_avx512/linux-sles15-skylake_avx512
+module use --append /lrz/sys/spack/release/23.1.0/modules/compilers
+module use --append /lrz/sys/spack/release/23.1.0/modules/MPI
+module use --append /lrz/sys/spack/release/23.1.0/modules/MPI-skylake_avx512
+module use --append /lrz/sys/spack/release/23.1.0/modules/skylake_avx512
+module use --append /lrz/sys/spack/release/23.1.0/modules/x86_64
+module use --append /lrz/sys/tools/modules/5.1.1/modulefiles
+module use --append /lrz/sys/share/modules/files_sles15/applications
+module use --append /lrz/sys/share/modules/files_sles15/compilers
+module use --append /lrz/sys/share/modules/files_sles15/environment
+module use --append /lrz/sys/share/modules/files_sles15/graphics
+module use --append /lrz/sys/share/modules/files_sles15/libraries
+module use --append /lrz/sys/share/modules/files_sles15/io_tools
+module use --append /lrz/sys/share/modules/files_sles15/parallel
+module use --append /lrz/sys/share/modules/files_sles15/tools
+module load admin
+module load tempdir
+module load lrz
+module load spack
+module load gcc
+module load cmake
+module load user_spack
+module load sparsehash
+module load git
+module load openmpi/4.0.7-gcc12
+
+module use /lrz/sys/spack/release/23.1.0/modules/x86_64/intel-toolkit/../.intel-toolkit/2023.2.0
+module load intel-tbb/2021.10.0
