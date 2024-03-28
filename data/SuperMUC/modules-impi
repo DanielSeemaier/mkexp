@@ -1,5 +1,5 @@
 #%Module5.1
-module use --append /lrz/sys/spack/release/23.1.0/modules/x86_64/.intel-toolkit/2023.2.0
+module use --append /dss/dsshome1/05/di46lon/spack/modules/x86_avx512/linux-sles15-skylake_avx512
 module use --append /lrz/sys/spack/release/23.1.0/modules/compilers
 module use --append /lrz/sys/spack/release/23.1.0/modules/MPI
 module use --append /lrz/sys/spack/release/23.1.0/modules/MPI-skylake_avx512
@@ -18,9 +18,13 @@ module load admin
 module load tempdir
 module load lrz
 module load spack
-module load lrztools
-module load intel-toolkit
-module load intel-tbb
-module load gcc/13.1.0
+module load gcc
+module load intel-mpi
+module load boost/1.82.0-gcc12-impi
 module load cmake
+module load user_spack
+module load sparsehash
+module load git
 
+module use /lrz/sys/spack/release/23.1.0/modules/x86_64/intel-toolkit/../.intel-toolkit/2023.2.0
+module load intel-tbb/2021.10.0
