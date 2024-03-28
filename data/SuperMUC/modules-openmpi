@@ -20,7 +20,6 @@ module load spack
 module load gcc
 module load cmake
 module load user_spack
-module load sparsehash
 module load git
 module load openmpi/4.0.7-gcc12
 

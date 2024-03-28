@@ -23,7 +23,6 @@ module load intel-mpi
 module load boost/1.82.0-gcc12-impi
 module load cmake
 module load user_spack
-module load sparsehash
 module load git
 
 module use /lrz/sys/spack/release/23.1.0/modules/x86_64/intel-toolkit/../.intel-toolkit/2023.2.0
