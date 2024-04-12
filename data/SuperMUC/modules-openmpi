@@ -1,3 +1,4 @@
+#%Module5.1
 module use --append /dss/dsshome1/05/di46lon/spack/modules/x86_avx512/linux-sles15-skylake_avx512
 module use --append /lrz/sys/spack/release/23.1.0/modules/compilers
 module use --append /lrz/sys/spack/release/23.1.0/modules/MPI
