@@ -7,96 +7,76 @@
 #    experiment.
 #--------------------------------------------------------------------------------
 # The term "algorithm" refers to a filename in the "partitioners/" subdirectory.
+# Each of these files contains instructions to (a) fetch, (b) build and (c) invoke 
+# a specific graph partitioner.
 #
-# Each of these files contains instructions to fetch, build and invoke a specific 
-# partitioning algorithms / toolkit.
-#
-# In this configuration file, new algorithms can be derived from the predefined 
-# algorithms by providing additional arguments for fetching, building and 
-# invoking the algorithms.
+# New algorithms can be derived by parameterizing these three phases. The semantics 
+# of the parameters depend on the algorithm, but are usually passed to (a) git, 
+# (b) CMake, (c) the partitioner's binary.
 
-# Define a new algorithm "KaMinPar-DbgBranch", which is based on the predefined 
-# algorithm "KaMinPar" but builds from the my/dbg/branch instead of main.
-# Note that the semantics of the provided arguments depend on the algrithm and 
-# is usually interpreted as a Git commit / branch etc.
+# (a) DefineAlgorithmVersion <new name> <based on> <additional argument>
 DefineAlgorithmVersion KaMinPar-DbgBranch KaMinPar origin/my/dbg/branch
+# ^ Define a new algorithm "KaMinPar-DbgBranch", based on "KaMinPar", but uses the
+# my/dbg/branch branch instead of the main branch.
 
-# Define a new algorithm "KaMinPar64", which uses the KaMinPar-DbgBranch version, 
-# but passes an additional argument to the CMake call. 
-# Note that the semantics of the provided arguments depend on the algorithm, but 
-# is usually passed to the CMake call / ./configure / make etc.
+# (b) DefineAlgorithmBuild <new name> <based on> <additional argument>
 DefineAlgorithmBuild KaMinPar64 KaMinPar-DbgBranch -DKAMINPAR_64BIT_IDS=On
+# ^ Define a new algorithm "KaMinPar64", based on "KaMinPar-DbgBranch", but passes 
+# an additional argument to the CMake script (use 64 bit edge IDs).
 
-# Define a new algorithm "KaMinPar-FM", which uses the KaMinPar64 build but 
-# passes an additional CLI flag to the executable.
+# (c) DefineAlgorithm <new name> <based on> <additional argument>
 DefineAlgorithm KaMinPar-FM KaMinPar64 -P fm
+# ^ Define a new algorithm "KaMinPar-FM", based on "KaMinPar64", but passes the 
+# additional flags "-P fm" to the binary.
 
-# Predefined algorithms include:
-# - KaMinPar
-# - MtKaHyPar
-# - ParHIP
-# - ParMETIS                   (ParMETIS via KaGen-Partitioner)
-# - ParMETIS-Binary            (ParMETIS via the original binary)
-# - dKaMinPar                  (dKaMinPar from the public repository, use KaGen-Partitioner for KaGen graphs)
-# - pdKaMinPar                 (dKaMinPar from the private repository, use KaGen-Partitioner for KaGen graphs)
-# - dKaMinPar-IntegratedKaGen  (dKaMinPar from the public repository)
-# - pdKaMinPar-IntegratedKaGen (dKaMinPar from the private repository)
-# - XtraPuLP
+# For a list of all predefined algorithms, take a look at the "partitioners/" 
+# subdirectory. The names of the files correspond to the algorithm names.
 
 #--------------------------------------------------------------------------------
 # 2. Define the environment of the experiment.
 #--------------------------------------------------------------------------------
-# Pick a system for which the jobfiles should be generated:
-#
-System Generic                  # any Linux system
+# Pick a system for which the jobfiles should be generated (the names correspond to 
+# files in the "systems/" subdirectory):
+System Generic
 # System i10                    # i10 compute servers, run experiment via "exclusive"
 # System i10-Nonexclusive       # i10 compute servers, run without "exclusive"
-# System i10-Parallel           # i10 + GNU Parallel (only use for sequential runs and if you don't need precise running times)
+# System i10-Parallel           # i10 compute servers, run multiple *sequential* jobs in parallel 
 # System HoreKa-TBB             # HoreKa with MPI only / MPI+TBB
 # System HoreKa-OMP             # HoreKa with MPI only / MPI+OpenMP
 # System SuperMUC               # SuperMUC with MPI only / MPI+TBB
 # System SuperMUC-SlotScheduler # SuperMUC for shared-memory or sequential jobs, that are executed in parallel on multiple jobs by a job scheduler
 
-# If you want to run this experiment on SuperMUC, provide additional parameters:
-#
+# For SuperMUC, provide additional information:
 # Username <username>   # your SSH username for SuperMUC file transfer
 # Project <project>     # your SuperMUC project
-# Partition <partition> # *OPTIONAL*, if not set, job partition will be either micro, general or large, depending on the number of nodes
 
-# Load any additional libraries that you need for your experiment. The arguments 
-# corresond to files in the "libraries/" subdirectory.
-#
-# UseLibrary Sparsehash # Download and compile Sparsehash before building any of the partitioner
+# Load additional libraries (the names correspond to files in the "libs/" subdirectory):
+# UseLibrary Sparsehash 
 
-# Pick a "call wrapper" that should be used to invoke the partitioners.
-#
-MPI OpenMPI   # run with mpirun
-#
-# MPI IMPI    # run with Intel MPI (SuperMUC only)
-# MPI none    # do not run with mpirun etc.
-# MPI taskset # do not run with mpirun etc., but use taskset to limit CPU affinity
+# Select a "call wrapper" that is used to start the partitioners:
+Wrapper taskset   # run with taskset to limit CPU affinity
+# Wrapper IMPI    # run with Intel MPI 
+# Wrapper OpenMPI # run with OpenMPI
+# Wrapper none
 
 #--------------------------------------------------------------------------------
-# 3. Define the experiment runs.
+# 3. Define the experiments.
 #--------------------------------------------------------------------------------
-# Each experiment run (i.e., an experiment with a specific set of graphs, 
-# epsilons, ks, etc.) should be wrapped in a bash functions which name starts 
-# with "Experiment". Changing the prefix (e.g., by prepending a _) disables the 
-# experiment run.
+# Each experiment must be wrapped inside an Experiment*() function block. A single 
+# experiment runs one job for each element of the cross product of the following
+# parameters:
 #
+# - included algorithms
+# - values for k
+# - seeds
+# - number of threads (compute nodes, mpi ranks)
+# - graphs
+#
+# Note: there can be multiple Experiment*() blocks in this file.
 ExperimentLPvsFM() {
     # Which algorithms should be included?
-    #
     Algorithms KaMinPar KaMinPar-FM
 
-    #
-    # The following parameters may also be set outside / before the Experiment*() {} 
-    # blocks if they are shared by all experiment runs.
-    #
-    
-    # Which partitioning arguments should be tested? 
-    # We will generated a cross product of all arguments.
-    #
     Ks 2 4 8 # partition into 2, 4 and 8 blocks
     Seeds 1 2 3 # perform repetitions with seeds 1, 2 and 3
     Threads 1x1x1 1x1x2 1x1x4 # run with 1, 2 and 4 threads
@@ -105,20 +85,15 @@ ExperimentLPvsFM() {
     #       +-- number of compute nodes
 
     # Abort experiment after one hour
-    #
     Timelimit 1:00:00 # (optional)
 
     # Abort one run after 30 minutes 
-    #
     TimelimitPerInstance 30:00 # (optional)
 
     # Partition all graphs contained in some directory
-    # ... can be combined with more Graphs, Graph, KaGen calls ...
-    # 
     Graphs /path/to/benchmark/set/
 
     # Partition a specific graph
-    #
     # Graph /path/to/graph/graphfile # note: filename *without* file extension
 
     # Partition an in-memory graph generated by KaGen:
@@ -128,6 +103,8 @@ ExperimentLPvsFM() {
     # KaGen grid2d p=0.5 n=10                # Random 2D grid graph with 10 vertices and 0.5 edge probability
     # KaGen rhg gamma=3.0 N=10 M=15          # Random hyperbolic graph with 2^10 vertices and 2^15 edges
     # KaGen rmat a=0.1 b=0.2 c=0.3 N=10 M=15 # Random R-MAT graph with 2^10 vertices, 2^15 edges and probabilities 0.1/0.2/0.3/0.4
+    #
+    # Note: KaGen support is only available for some of the predefined partitioners.
     #
     # Note: to perform weak scaling experiments, the variables provided to KaGen can be scaled 
     # the following values, where $lN = log2($N) etc:
@@ -141,9 +118,3 @@ ExperimentLPvsFM() {
     #
     # It is crucial to surround the variables with upticks ('), as otherwise Bash would attempt to evaluate the expression immediately.
 }
-
-# Define more experiments ...
-# ExperimentMoreToTryOut() {
-#    ...
-# }
-
