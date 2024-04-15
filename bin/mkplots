@@ -93,7 +93,7 @@ cat("\n")
 cat("Determining common k values:\n")
 ks <- unique(data[[1]]$K)
 for (i in 1:length(data)) {
-    cat(paste0("  Algorithm ", algorithms[i], ": k in {", paste(ks, collapse = ", "), "}\n"))
+    cat(paste0("  Algorithm ", data[[i]]$Algorithm[[1]], ": k in {", paste(ks, collapse = ", "), "}\n"))
     ks <- intersect(ks, unique(data[[i]]$K))
 }
 cat(paste0("Intersection: k in {", paste(ks, collapse = ", "), "}\n"))
@@ -111,13 +111,13 @@ if (!generate_per_instance_fm_batches && !generate_fm_batches) {
             dplyr::filter(Graph %in% graphs) %>%
             dplyr::arrange(Graph, K)
         n_after <- nrow(data[[i]]) 
-        cat(paste0("Removed ", n_before - n_after, " rows from ", algorithms[i], "\n"))
+        cat(paste0("Removed ", n_before - n_after, " rows from ", data[[i]]$Algorithm[[1]], "\n"))
     }
 
     exp_nrows <- nrow(data[[1]])
 
     for (i in 1:length(data)) {
-        cat(paste0(algorithms[i], ": ", nrow(data[[i]]), " rows\n"))
+        cat(paste0(data[[i]]$Algorithm[[1]], ": ", nrow(data[[i]]), " rows\n"))
     }
 
     for (row in 1:exp_nrows) {
@@ -130,7 +130,7 @@ if (!generate_per_instance_fm_batches && !generate_fm_batches) {
             if (first_graph != cur_graph || first_k != cur_k) {
                 #print(data[[i]]$Graph)
                 #print(data[[i]]$K)
-                cat(paste0("Mismatch in row ", row, " for ", algorithms[i], "\n"))
+                cat(paste0("Mismatch in row ", row, " for ", data[[i]]$Algorithm[[1]], "\n"))
                 cat(paste0("Expected graph=", first_graph, ", k=", first_k, "\n"))
                 cat(paste0("Got graph=", cur_graph, ", k=", cur_k, "\n"))
                 quit()
@@ -154,9 +154,9 @@ if (generate_all_cut) {
 # Pairwise performance profiles
 if (generate_pairwise_cut) {
     pdf("pairwise_cut.pdf")
-    algorithm_indices <- 1:(length(algorithms) - 1)
-    for (i in 1:(length(algorithms) - 1)) {
-        for (j in (i + 1):length(algorithms)) {
+    algorithm_indices <- 1:(length(data) - 1)
+    for (i in 1:(length(data) - 1)) {
+        for (j in (i + 1):length(data)) {
             pp <- create_performance_profile(data[[i]], data[[j]]) +
                 theme_bw() +
                 create_theme() +
