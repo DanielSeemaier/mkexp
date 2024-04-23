@@ -171,10 +171,10 @@ if [[ $mode == "purge" ]]; then
     echo "    $log_files_dir"
     echo "    $results_dir"
     echo "    $PREFIX"
-    echo "    $PWD/INFO"
+    echo "    $PWD/INFO.MD"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir" "$PREFIX" "$PWD/INFO"
+        rm -rf "$log_files_dir" "$results_dir" "$PREFIX" "$PWD/INFO.MD"
     fi
 fi
 

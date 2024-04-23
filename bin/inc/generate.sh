@@ -20,8 +20,16 @@ ReportPartitionerVersion() {
 }
 
 GenerateInfoFile() {
-    echo "Generated at $(date) on $(hostname)" > INFO
-
+    echo "# Experiment \`$(basename $(pwd))\`" > INFO.MD
+    echo "" >> INFO.MD 
+    echo "- Date: \`$(date)\`" >> INFO.MD
+    echo "- Hostname: \`$(hostname)\`" >> INFO.MD
+    echo "- User: \`$(whoami)\`" >> INFO.MD
+    echo "- mkexp version: \`$(git -C "$ROOT" rev-parse HEAD)\`" >> INFO.MD
+    echo "" >> INFO.MD
+    echo "## Algorithms" >> INFO.MD
+    echo "" >> INFO.MD
+    
     for partitioner in ${_algorithms[@]}; do 
         declare -A info_args
 
@@ -38,8 +46,41 @@ GenerateInfoFile() {
         info_args[generic_kagen_driver_src]="$PREFIX/src/generic-$generic_build_id/"
         reported_version=$(ReportPartitionerVersion info_args)
 
-        echo "- Version reported by $partitioner: $reported_version" >> INFO
+        echo "- Algorithm: \`$partitioner\`, version:" >> INFO.MD
+        echo " \`\`\`" >> INFO.MD
+        echo "$reported_version" | sed 's/^/  /' >> INFO.MD
+        echo " \`\`\`" >> INFO.MD
     done
+
+    echo "" >> INFO.MD
+    echo "## Toolchain" >> INFO.MD
+    echo "" >> INFO.MD
+    echo "- CC: \`$CC\`, version:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    $CC --version 2>&1 | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    echo "- CXX: \`$CXX\`, version:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    $CXX --version 2>&1 | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+
+    echo "" >> INFO.MD
+    echo "## Host \`$(hostname)\`" >> INFO.MD
+    echo "" >> INFO.MD
+    echo "- Kernel: \`$(uname -a)\`" >> INFO.MD
+    echo "- OS: \`$(lsb_release -d | cut -f2)\`" >> INFO.MD
+    echo "- CPU information:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    lscpu | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    echo "- Memory information:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    free -h | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    echo "- Memory information about hugepages:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    grep -i -E "^hugepage" /proc/meminfo | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
 }
 
 GenerateAlgorithmArguments() {
