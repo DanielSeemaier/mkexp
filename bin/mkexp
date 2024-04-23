@@ -170,19 +170,13 @@ if [[ $mode == "purge" ]]; then
     echo "!!! About to delete the following files and directories:"
     echo "    $log_files_dir"
     echo "    $results_dir"
+    echo "    $misc_files_dir"
     echo "    $PREFIX"
     echo "    $PWD/INFO.MD"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir" "$PREFIX" "$PWD/INFO.MD"
+        rm -rf "$log_files_dir" "$results_dir" "$misc_files_dir" "$PREFIX" "$PWD/INFO.MD"
     fi
-fi
-
-if [[ $mode == "submit" ]]; then 
-    if [[ ! -f "$submit_filename" ]]; then 
-        mkexp
-    fi
-    bash "$submit_filename"
 fi
 
 exit 0

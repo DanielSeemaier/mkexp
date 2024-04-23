@@ -1,8 +1,8 @@
 if [[ $mode == "init" ]]; then 
-    cp "$ROOT/examples/Default" "$PWD/Experiment"
-    exit 0
-fi
-if [[ $mode == "init-mtkahypar-supermuc" ]]; then 
-    cp "$ROOT/examples/MtKaHyPar-SuperMUC" "$PWD/Experiment"
+    if [[ ! -f "$ROOT/examples/$init_filename" ]]; then
+        echo "Error: File $ROOT/examples/$init_filename not found."
+        exit 1
+    fi
+    cp "$ROOT/examples/$init_filename" "$PWD/Experiment"
     exit 0
 fi

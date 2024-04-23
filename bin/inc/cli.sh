@@ -1,5 +1,6 @@
 mode="generate"
 skip_install=0
+init_filename="Default"
 
 declare -A active_algorithms
 while [[ $# -gt 0 ]]; do 
@@ -26,10 +27,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             mode="help"
-            shift
-            ;;
-        --submit)
-            mode="submit"
             shift
             ;;
         --install)
@@ -62,15 +59,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         --init)
             mode="init"
-            shift 
-            ;;
-        --init-mtkahypar-supermuc)
-            mode="init-mtkahypar-supermuc"
             shift
-            ;;
-        --progress)
-            mode="progress"
-            shift 
+            if [[ -f "$ROOT/examples/${1:-}" ]]; then
+                init_filename="$1"
+                shift
+            fi
             ;;
         --setup-system)
             mode="setup-system"
@@ -93,14 +86,13 @@ if [[ $mode == "help" ]]; then
     echo "3. Run \`./submit.sh\` to execute the experiment. This will usually happen in the background."
     echo "4. Once the experiment has finished, parse the log files by running \`mkexp --results\`. On a system with R installed, you can generate some standard plots by running \`mkexp --plots\` afterwards."
     echo ""
-    echo "mkexp [--init, --submit, --fetch, --install-fetched, --skip-install, --results, --plot, --clean, --purge, --upload, --upload-self, --download, --help]"
+    echo "mkexp [--init, --fetch, --install-fetched, --skip-install, --results, --plot, --clean, --purge, --upload, --upload-self, --download, --help]"
     echo ""
     echo "Without any options, generate the jobfiles and directory structure to run the experiment."
     echo "If not all algorithms should be included in the job files, specify a subset of defined algorithms as positional arguments"
     echo ""
     echo "Options are:"
     echo "    --init: Initialize a new experiment"
-    echo "    --submit: Start the experiment"
     echo "    --fetch: Download libraries and partitioners, but do not build them yet"
     echo "    --install-fetched: Build and install libraries and partitioners that were already fetched, i.e., run this after running --fetched"
     echo "    --skip-install: Regenerate jobfiles, but do not recompile the partitioners"
