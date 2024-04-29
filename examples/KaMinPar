@@ -1,5 +1,5 @@
 #!/bin/bash
-DefineAlgorithmBuild KaMinPar64 KaMinPar -DKAMINPAR_64BIT_IDS=On
+DefineAlgorithmBuild KaMinPar64 KaMinPar --preset=default -DKAMINPAR_64BIT_IDS=On
 #DefineAlgorithmBuild KaMinParC KaMinPar --preset=compressed
 
 DefineAlgorithm KaMinPar-FM KaMinPar -P fm
@@ -15,5 +15,7 @@ ExperimentUfmBench() {
     Seeds 1 2 3
     Threads 1x1x4 1x1x64
 
-    Graphs /global_data/graphs/benchmark_sets/ufm_paper/combined
+    # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined
+    # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined_small
+    Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined_32eid_nzcut
 }
