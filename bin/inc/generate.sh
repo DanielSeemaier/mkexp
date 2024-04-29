@@ -81,6 +81,10 @@ GenerateInfoFile() {
     echo " \`\`\`" >> INFO.MD
     grep -i -E "^hugepage" /proc/meminfo | sed 's/^/  /' >> INFO.MD
     echo " \`\`\`" >> INFO.MD
+    echo "- Transparent hugepages status:" >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
+    cat /sys/kernel/mm/transparent_hugepage/enabled | sed 's/^/  /' >> INFO.MD
+    echo " \`\`\`" >> INFO.MD
 }
 
 GenerateAlgorithmArguments() {
