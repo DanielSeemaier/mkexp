@@ -38,9 +38,10 @@ DefineAlgorithm KaMinPar-FM KaMinPar64 -P fm
 # Pick a system for which the jobfiles should be generated (the names correspond to 
 # files in the "systems/" subdirectory):
 System Generic
-# System i10                    # i10 compute servers, run experiment via "exclusive"
-# System i10-Nonexclusive       # i10 compute servers, run without "exclusive"
+# System i10-Exclusive          # i10 compute servers, run experiment via "exclusive"
+# System i10-Nonexclusive       # i10 compute servers, run experiment via "nonexclusive"
 # System i10-Parallel           # i10 compute servers, run multiple *sequential* jobs in parallel 
+# System i10                    # i10 compute servers, run without exclusive / nonexclusive etc.
 # System HoreKa-TBB             # HoreKa with MPI only / MPI+TBB
 # System HoreKa-OMP             # HoreKa with MPI only / MPI+OpenMP
 # System SuperMUC               # SuperMUC with MPI only / MPI+TBB

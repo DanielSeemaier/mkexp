@@ -1,8 +1,7 @@
 #!/bin/bash 
 . "$script_pwd/../systems/Generic"
 
-# i10*: runs the experiment *without* `exclusive`
-# (e.g., for running on the login node or when already holding an exclusive token)
+# i10*: runs the experiment through `exclusive`
 
 GenerateJobfileSubmission() {
     for file in ${@}; do 
@@ -11,9 +10,9 @@ GenerateJobfileSubmission() {
 }
 
 GenerateJobfileWrapper() {
-    >&2 echo -e "Running experiment without CSS"
+    >&2 echo -e "Running experiment using ${ARGS_COLOR}exclusive$NO_COLOR"
     >&2 echo ""
 
-    echo "nohup bash -- $submit_impl_filename &"
+    echo "nohup exclusive bash -- $submit_impl_filename &"
     echo "disown"
 }
