@@ -56,7 +56,7 @@ match($0, /Edge cut: *([0-9]+)/, m) {
 }
 
 match($0, /(\||`)-* Partitioning: \.* ([0-9\.\-e]+) s/, m) {
-    data["Time"] = m[1]
+    data["Time"] = m[2]
 }
 
 END {
