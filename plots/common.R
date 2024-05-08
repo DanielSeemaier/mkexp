@@ -9,11 +9,11 @@ for (dep in DEPS) {
 }
 
 empty_min <- function(x) {
-    if (length(x[!is.na(x)]) > 0) {
-        return(min(x, na.rm = TRUE))
-    } else {
-        return(Inf)
-    }
+  if (length(x[!is.na(x)]) > 0) {
+    return(min(x, na.rm = TRUE))
+  } else {
+    return(Inf)
+  }
 }
 
 weakscaling_aggregator <- function(df) {
@@ -56,7 +56,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(Cut = ifelse(Balance > 0.03 + .Machine$double.eps, NA, Cut))
 
   vars <- colnames(df)
-  vars <- vars[! vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed")]
+  vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed")]
   df <- ddply(df, vars, aggregator)
 
   df <- df %>%
@@ -66,7 +66,9 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(MinTime = ifelse(is.na(MinTime), Inf, MinTime))
 
   df <- df %>%
-    dplyr::mutate(Infeasible = !Failed & !Timeout & MinBalance > 0.03 + .Machine$double.eps) %>%
+    dplyr::mutate(Infeasible = !Failed &
+      !Timeout &
+      MinBalance > 0.03 + .Machine$double.eps) %>%
     dplyr::mutate(Feasible = !Failed & !Timeout & !Infeasible) %>%
     dplyr::mutate(Invalid = Failed | Timeout | Infeasible)
 
@@ -74,9 +76,10 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
 }
 
 load_data <- function(name, file, seed = 0) {
-  df <- read.csv(file)
+  full_filename <- paste0(getwd(), "/", file)
+  df <- read.csv(full_filename)
   df <- df %>% dplyr::filter(Seed >= seed)
-  cat("Loaded", nrow(df), "rows from", file, ",", name, "with min seed", seed, "\n")
+  cat(paste0("Read algorithm ", name, " from ", file, ": ", nrow(df), " runs\n"))
 
   # Normalize columns
   if (!("NumNodes" %in% colnames(df))) {
@@ -122,7 +125,9 @@ load_data <- function(name, file, seed = 0) {
   # df$Balance <- df$Balance - 1
   # }
 
-  df$NumPEs <- df$NumNodes * df$NumMPIsPerNode * df$NumThreadsPerMPI
+  df$NumPEs <- df$NumNodes *
+    df$NumMPIsPerNode *
+    df$NumThreadsPerMPI
   df$Algorithm <- name
 
   df <- aggregate_data(df, 3600, weakscaling_aggregator)
@@ -138,10 +143,11 @@ create_theme_facet <- function(aspect_ratio = DEFAULT_ASPECT_RATIO) {
     legend.background = element_blank(),
     legend.title = element_blank(),
     legend.box.spacing = unit(0.1, "cm"),
-    legend.title.align = 0.5,
     legend.text = element_text(size = 12, color = "black"),
-    plot.title = element_text(size = 14, hjust = 0.5, color = "black"),
-    panel.grid.major = element_line(linetype = "11", linewidth = 0.5, color = "grey"),
+    plot.title = element_text(size = 16, hjust = 0, color = "black"),
+    plot.subtitle = element_text(size = 14, hjust = 0, color = "gray30"),
+    plot.caption = element_text(size = 12, hjust = 1, color = "gray60"),
+    panel.grid.major = element_line(linetype = "11", linewidth = 0.5, color = "gray"),
     panel.grid.minor = element_blank(),
     strip.background = element_blank(),
     strip.text = element_text(size = 14),
@@ -162,9 +168,10 @@ create_theme <- function(aspect_ratio = DEFAULT_ASPECT_RATIO) {
     # legend.spacing.x = unit(0.01, "cm"),
     # legend.spacing.y = unit(0.01, "cm"),
     legend.box.spacing = unit(0.1, "cm"),
-    legend.title.align = 0.5,
     legend.text = element_text(size = 8, color = "black"),
-    plot.title = element_text(size = 10, hjust = 0.5, color = "black"),
+    plot.title = element_text(size = 16, hjust = 0, color = "black"),
+    plot.subtitle = element_text(size = 14, hjust = 0, color = "gray30"),
+    plot.caption = element_text(size = 12, hjust = 1, color = "gray50"),
     strip.background = element_blank(),
     strip.text = element_blank(),
     panel.grid.major = element_line(linetype = "11", linewidth = 0.5, color = "grey"),
@@ -175,4 +182,42 @@ create_theme <- function(aspect_ratio = DEFAULT_ASPECT_RATIO) {
     axis.text.x = element_text(angle = 0, hjust = 0.5, size = 8, color = "black"),
     axis.text.y = element_text(size = 8, color = "black")
   )
+}
+
+gm_mean <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
+  gm_mean <- function(x, na.rm = TRUE, zero.propagate = FALSE){
+  if (any(x < 0, na.rm = TRUE)) {
+    return(NaN)
+  }
+
+  if (zero.propagate) {
+    if (any(x == 0, na.rm = TRUE)) {
+      return(0)
+    }
+    return(exp(mean(log(x[x != Inf]), na.rm = na.rm)))
+  } else {
+    return(exp(sum(log(x[x > 0 & x != Inf]), na.rm=na.rm) / length(x)))
+  }
+}
+
+hm_mean <- function(x) {
+  return(length(x) / sum( 1.0 / x[x > 0] ))
+}
+
+  if (any(x < 0, na.rm = TRUE)) {
+    return(NaN)
+  }
+
+  if (zero.propagate) {
+    if (any(x == 0, na.rm = TRUE)) {
+      return(0)
+    }
+    return(exp(mean(log(x[x != Inf]), na.rm = na.rm)))
+  } else {
+    return(exp(sum(log(x[x > 0 & x != Inf]), na.rm = na.rm) / length(x)))
+  }
+}
+
+hm_mean <- function(x) {
+  return(length(x) / sum(1.0 / x[x > 0]))
 }

@@ -133,7 +133,7 @@ create_running_time_boxplot <- function(...,
   }
 
   if (nrow(annotation) > 0) {
-    p <- p + geom_text(aes(x = Algorithm, label = sprintf("%.1f", Time), vjust = -0.5), y = -Inf, annotation, size = 2.5)
+    p <- p + geom_text(aes(x = Algorithm, label = Annotation, vjust = -0.5), y = -Inf, annotation, size = 2.5)
   }
 
   # Set colors

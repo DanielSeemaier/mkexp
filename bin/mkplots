@@ -2,343 +2,288 @@
 options(show.error.locations = TRUE)
 options(error = traceback)
 
+# Install and load required libraries
+libs <- c("cli", "ggplot2", "plyr", "dplyr", "tidyr", "RColorBrewer", "gridExtra", "egg")
+for (lib in libs) {
+  if (!require(lib, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)) {
+    install.packages(lib, repos = 'https://cran.uni-muenster.de/')
+  }
+
+  library(lib, character.only = TRUE, quietly = TRUE)
+}
+
 # Load plotting functions
 initial.options <- commandArgs(trailingOnly = FALSE)
 file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
-source(file.path(script.basename, "../plots/performance_profile_plot.R"), chdir = TRUE)
-source(file.path(script.basename, "../plots/running_time_box_plot.R"), chdir = TRUE)
 
+# Load script plots
+load_script <- function(name)
+  source(file.path(script.basename, "../plots/", name), chdir = TRUE)
+
+load_script("performance_profile_plot.R")
+load_script("running_time_box_plot.R")
+
+# Load statistics of known graphs
 graphs_db <- read.csv(file.path(script.basename, "../data/graphs.csv"), header = TRUE, sep = ",") |> dplyr::distinct()
 
-# CLI arguments == algorithms to look at
-generate_all_cut <- FALSE
-generate_per_instance <- FALSE
-generate_all_time <- FALSE
-generate_per_k_time <- FALSE
-generate_pairwise_cut <- FALSE
-generate_per_instance_fm_batches <- FALSE
-generate_fm_batches <- FALSE
-generate_ss <- FALSE
+# Create directory for the plots
+if (!dir.exists("plots")) {
+  dir.create("plots")
+}
 
-picked_plot <- FALSE
+# Read CLI arguments to decide on which algorithms to include and which plots to use
+algorithms <- c()
+plots <- c()
 
-algorithms <- commandArgs(trailingOnly = TRUE)
-if (length(algorithms) > 0) {
-    mode <- algorithms[1]
-    picked_plot <- TRUE
+for (arg in commandArgs(trailingOnly = TRUE)) {
+  if (!startsWith(arg, "--")) {
+    algorithms <- c(algorithms, arg)
+  } else {
+    plots <- c(plots, arg)
+  }
+}
 
-    if (mode == "--basic") {
-        generate_all_cut <- TRUE
-        generate_all_time <- TRUE
-    } else if (mode == "--all-cut") {
-        generate_all_cut <- TRUE
-    } else if (mode == "--per-instance") {
-        generate_per_instance <- TRUE
-    } else if (mode == "--pairwise-cut") {
-        generate_pairwise_cut <- TRUE
-    } else if (mode == "--all-time") {
-        generate_all_time <- TRUE
-    } else if (mode == "--per-instance-fm-batches") {
-        generate_per_instance_fm_batches <- TRUE
-    } else if (mode == "--fm-batches") {
-        generate_fm_batches <- TRUE
-    } else if (mode == "--per-k-time") {
-        generate_per_k_time <- TRUE
-    } else if (mode == "--ss") {
-        generate_ss <- TRUE
-    } else {
-        picked_plot <- FALSE
-    }
+# If there are no picks for plots, build some default plots ...
+if (length(plots) == 0) {
+  plots <- c("--all-cut", "--all-time", "--per-instance")
+}
 
-    if (picked_plot) {
-        algorithms <- algorithms[-1]
-    }
-} 
-
-if (!picked_plot) {
-    generate_all_cut <- TRUE
-    generate_per_instance <- TRUE
-    generate_all_time <- TRUE
-    generate_pairwise_cut <- TRUE
+if (length(algorithms) == 0) {
+  cat("No algorithms specified.\n")
+  cat("Usage: mkplots [plots...] algorithms...\n")
+  quit()
 }
 
 # Load result file for each algorithm
 data <- list()
-gmean_running_times <- data.frame(Algorithm = factor(), Time = numeric())
 
 for (algorithm in algorithms) {
-  df <- load_data(algorithm, paste0(getwd(), "/results/", algorithm, ".csv"))
-  df <- df %>%
-    dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI))
+  filename <- paste0("results/", algorithm, ".csv")
+  if (!file.exists(filename)) {
+    cat("Error: no such file:", filename, "\n")
+    quit()
+  }
 
-  df <- merge(df, graphs_db, by = "Graph", all.x = TRUE)
+  df <- load_data(algorithm, filename) %>%
+    dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
+    merge(graphs_db, by = "Graph", all.x = TRUE)
 
-  thread_configs <- unique(df$NumThreadsPerMPI)
-  for (thread_config in thread_configs) {
-    subdf <- df %>%
-      dplyr::filter(NumThreadsPerMPI == thread_config) 
+  my_num_threads <- unique(df$NumThreadsPerMPI)
+  my_ks <- unique(df$K)
+  my_graphs <- unique(df$Graph)
 
-    gmean_running_times <- gmean_running_times |>
-      rbind(data.frame(
-        Algorithm = factor(paste0(algorithm, "-", thread_config)),
-        Time = exp(mean(log(subdf$AvgTime)))
-      ))
-    data <- append(data, list(subdf))
+  cat(paste0("\tthreads = { ", paste(my_num_threads, collapse = ", "), " }\n"))
+  cat(paste0("\tks = { ", paste(my_ks, collapse = ", "), " }\n"))
+  cat(paste0("\t#graphs = ", length(my_graphs), "\n"))
+
+  # Split dataset into one algorithm for each thread count
+  for (num_threads in unique(df$NumThreadsPerMPI)) {
+    thread_df <- df %>% dplyr::filter(NumThreadsPerMPI == num_threads)
+    data <- append(data, list(thread_df))
   }
 }
 
 cat("\n")
-cat("Determining common k values:\n")
-ks <- unique(data[[1]]$K)
+cat("Determining common instances among data sets:\n")
+common_ks <- sort(unique(data[[1]]$K))
+common_graphs <- unique(data[[1]]$Graph)
 for (i in 1:length(data)) {
-    cat(paste0("  Algorithm ", data[[i]]$Algorithm[[1]], ": k in {", paste(ks, collapse = ", "), "}\n"))
-    ks <- intersect(ks, unique(data[[i]]$K))
+  name <- data[[i]]$Algorithm[[1]]
+  my_ks <- unique(data[[i]]$K)
+  my_graphs <- unique(data[[i]]$Graph)
+
+  common_ks <- intersect(common_ks, my_ks)
+  common_graphs <- intersect(common_graphs, my_graphs)
+
+  cat(paste0(
+    "\tAlgorithm ", name, ": ",
+    "#graphs = ", length(my_graphs), " (-> ", length(common_graphs), "), ",
+    "#ks = ", length(my_ks), " (-> ", length(common_ks), ")",
+    "\n"
+  ))
 }
-cat(paste0("Intersection: k in {", paste(ks, collapse = ", "), "}\n"))
+
+cat(paste0("Common instances: #graphs = ", length(common_graphs), ", #ks = ", length(common_ks), "\n"))
 cat("\n")
 
 graphs <- unique(data[[1]]$Graph)
 num_unique_graphs <- length(unique(data[[1]]$Graph))
 
-
-if (!generate_per_instance_fm_batches && !generate_fm_batches) {
-    for (i in 1:length(data)) {
-        n_before <- nrow(data[[i]]) 
-        data[[i]] <- data[[i]] %>% 
-            dplyr::filter(K %in% ks) %>%
-            dplyr::filter(Graph %in% graphs) %>%
-            dplyr::arrange(Graph, K)
-        n_after <- nrow(data[[i]]) 
-        cat(paste0("Removed ", n_before - n_after, " rows from ", data[[i]]$Algorithm[[1]], "\n"))
-    }
-
-    exp_nrows <- nrow(data[[1]])
-
-    for (i in 1:length(data)) {
-        cat(paste0(data[[i]]$Algorithm[[1]], ": ", nrow(data[[i]]), " rows\n"))
-    }
-
-    for (row in 1:exp_nrows) {
-        first_graph <- data[[1]][row, "Graph"]
-        first_k <- data[[1]][row, "K"]
-
-        for (i in 1:length(data)) {
-            cur_graph <- data[[i]][row, "Graph"]
-            cur_k <- data[[i]][row, "K"]
-            if (first_graph != cur_graph || first_k != cur_k) {
-                #print(data[[i]]$Graph)
-                #print(data[[i]]$K)
-                cat(paste0("Mismatch in row ", row, " for ", data[[i]]$Algorithm[[1]], "\n"))
-                cat(paste0("Expected graph=", first_graph, ", k=", first_k, "\n"))
-                cat(paste0("Got graph=", cur_graph, ", k=", cur_k, "\n"))
-                quit()
-            }
-        }
-    }
+if ("--all-cut" %in% plots) {
+  pdf("plots/cut.pdf")
+  all_pp <- do.call(create_performance_profile, data) +
+    theme_bw() +
+    create_theme() +
+    labs(
+      title = "Edge Cut Comparison over All Instances",
+      subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
+      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+    )
+  print(all_pp)
+  dev.off()
 }
 
-
-# Performance profile containing all algorithms
-if (generate_all_cut) {
-    pdf("all_cut.pdf")
-    all_pp <- do.call(create_performance_profile, data) +
-        theme_bw() +
-        create_theme() +
-        ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
-    print(all_pp)
-    dev.off()
+aggregate_running_times <- function(dfs) {
+  times <- data.frame(Algorithm = factor(), Gmean = numeric(), Hmean = numeric(), Mean = numeric())
+  for (df in dfs) {
+    times <- rbind(times, data.frame(
+      Algorithm = df$Algorithm[[1]],
+      Gmean = gm_mean(df$AvgTime),
+      Hmean = hm_mean(df$AvgTime),
+      Mean = mean(df$AvgTime)
+    ))
+  }
+  return(times)
 }
 
 # Pairwise performance profiles
-if (generate_pairwise_cut) {
-    pdf("pairwise_cut.pdf")
-    algorithm_indices <- 1:(length(data) - 1)
-    for (i in 1:(length(data) - 1)) {
-        for (j in (i + 1):length(data)) {
-            pp <- create_performance_profile(data[[i]], data[[j]]) +
-                theme_bw() +
-                create_theme() +
-                ggtitle(paste0(num_unique_graphs, " unique graphs with k={", paste(ks, collapse = ", "), "}"))
-            print(pp)
-        }
-    }
-    dev.off()
-}
-
-# Running time boxplots
-if (generate_all_time) {
-    pdf("all_time.pdf")
-    args <- data
-    args[["annotation"]] <- gmean_running_times
-    all_bp <- do.call(create_running_time_boxplot, args) + theme_bw() + create_theme()
-    print(all_bp)
-    dev.off()
-}
-
-if (generate_per_k_time) {
-    pdf("per_k_time.pdf")
-    ks <- unique(data[[1]]$K)
-    for (k in ks) {
-        fargs <- lapply(data, function(df) {
-            df %>% dplyr::filter(K == k)
-        })
-
-        all_bp <- do.call(create_running_time_boxplot, fargs) + theme_bw() + create_theme() + 
-            ggtitle(paste0("k=", k))
-        print(all_bp)
-    }
-    dev.off()
-}
-
-# Running time per instance plots
-all_data <- data.frame()
-first <- data[[1]]
-for (df in data) {
-  df$RelAvgTime <- df$AvgTime / first$AvgTime
-  df$RelAvgCut <- df$AvgCut / first$AvgCut
-  all_data <- rbind(all_data, df)
-}
-all_data$K <- factor(all_data$K)
-graphs <- unique(all_data$Graph)
-
-
-if (generate_per_instance) {
-    side_len <- round(sqrt(length(unique(all_data$Graph))))
-    normalized_data <- all_data |>
-        dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg)) |>
-        dplyr::mutate(MaxDegToM = MaxDeg / M.y)
-    normalized_data$Title <- factor(normalized_data$Title, levels = unique(normalized_data$Title[order(normalized_data$MaxDeg, decreasing = TRUE)]))
-
-    pdf("per_instance.pdf", width = side_len * 4, height = side_len * 3)
-
-    # Cuts
-    p <- ggplot(normalized_data, aes(x = K, y = RelAvgCut, fill = Algorithm)) +
-        ggtitle("Per Instance Cuts (rel. to first, lower is better)") +
-        geom_bar(
-            stat = "identity",
-            position = position_dodge()
-        ) +
-        ylab("Cut rel. to Best") +
-        xlab("Number of Blocks") +
+if ("--pairwise-cut" %in% plots) {
+  pdf("plots/pairwise_cut.pdf")
+  for (i in 1:(length(data) - 1)) {
+    for (j in (i + 1):length(data)) {
+      pp <- create_performance_profile(data[[i]], data[[j]]) +
         theme_bw() +
-        facet_wrap(~Title, ncol = side_len, scales = "free") +
-        geom_hline(yintercept = 1) +
-        create_theme_facet() +
-        theme(legend.position = "right")
-    print(p)
-
-    # Running time
-    p <- ggplot(normalized_data, aes(x = K, y = RelAvgTime, fill = Algorithm)) +
-        ggtitle("Per Instance Running Times (rel. to first, lower is better)") +
-        geom_bar(
-            stat = "identity",
-            position = position_dodge()
-        ) +
-        ylab("Time rel. to Lowest") +
-        xlab("Number of Blocks") +
-        theme_bw() +
-        facet_wrap(~Title, ncol = side_len, scales = "free") +
-        geom_hline(yintercept = 1) +
-        create_theme_facet() +
-        theme(legend.position = "right")
-    print(p)
-    
-    dev.off()
-}
-
-if (generate_per_instance_fm_batches) {
-    side_len <- round(sqrt(length(unique(all_data$Graph))))
-    pdf("per_instance_fm_batches.pdf", width = side_len * 4, height = side_len * 3)
-
-    df$Distance <- factor(df$Distance)
-    for (phase in c("All", "Coarsest", "Finest")) {
-        df <- all_data |>
-            dplyr::filter(Phase == phase) |>
-            dplyr::group_by(Graph, Algorithm, K) |>
-            dplyr::arrange(Distance) |>
-            dplyr::mutate(TotalGain = cumsum(BatchesGain) / sum(BatchesGain)) |>
-            dplyr::mutate(TotalSize = cumsum(BatchesSize) / sum(BatchesSize)) |>
-            dplyr::ungroup() |>
-            dplyr::mutate(Title = paste0(Graph, ", D=", MaxDeg))
-        df$Title <- factor(df$Title, levels = unique(df$Title[order(df$MaxDeg, decreasing = TRUE)]))
-
-        p <- if (length(unique(df$Algorithm)) == 1) {
-            ggplot(df, aes(x = Distance, y = TotalGain, linetype = K))  
-        } else {
-            ggplot(df, aes(x = Distance, y = TotalGain, linetype = K, color = Algorithm)) 
-        }
-
-        p <- p +
-            ggtitle(paste0("Total Gain over Distance (", phase, ")")) +
-            geom_step() +
-            ylab("Total Gain") +
-            xlab("Distance") +
-            theme_bw() +
-            facet_wrap(~Title, ncol = side_len, scales = "free") +
-            create_theme_facet() +
-            theme(legend.position = "bottom")
-        print(p)
+        create_theme() +
+        labs(
+          title = "Pairwise Edge Cut Comparison over All Instances",
+          subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
+          caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+        )
+      print(pp)
     }
-    dev.off()
+  }
+  dev.off()
 }
 
-if (generate_fm_batches) {
-    pdf("fm_batches.pdf", width = 7)
+if ("--all-time" %in% plots) {
+  running_time_plot_theme <- create_theme() + theme(
+    legend.position = "none",
+    axis.title.x = element_blank(),
+  )
 
-    cutoff_distance <- 16
-    num_graphs <- length(unique(all_data$Graph))
+  pdf("plots/running_time.pdf")
+  all_running_times <- aggregate_running_times(data)
+  all_running_times_annotation <- data.frame(
+    Algorithm = all_running_times$Algorithm,
+    Annotation = sprintf("h=%.2f, g=%.2f, a=%.2f", all_running_times$Hmean, all_running_times$Gmean, all_running_times$Mean)
+  )
 
-    for (phase in c("All", "Coarsest", "Finest")) {
-        df <- all_data |>
-            dplyr::filter(Phase == phase) |>
-            dplyr::group_by(Graph, Algorithm, K) |>
-            dplyr::arrange(Distance) |>
-            dplyr::mutate(TotalGain = cumsum(BatchesGain) / sum(BatchesGain)) |>
-            dplyr::mutate(TotalSize = cumsum(BatchesSize) / sum(BatchesSize)) |>
-            dplyr::ungroup() |>
-            dplyr::mutate(Distance = Distance + 1) |>
-            dplyr::group_by(Algorithm, K, Distance) |>
-            dplyr::summarise(
-                TotalGainSum = (sum(TotalGain) + num_graphs - n()) / num_graphs, 
-                TotalSizeSum = (sum(TotalSize) + num_graphs - n()) / num_graphs, 
-                .groups = "drop"
-            ) |>
-            dplyr::filter(Distance < cutoff_distance)
+  plot <- do.call(create_running_time_boxplot, c(data, list(annotation = all_running_times_annotation))) +
+    theme_bw() +
+    running_time_plot_theme +
+    labs(
+      title = "Total Running Times over All Instances",
+      subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
+      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+    )
+  print(plot)
 
-        p <- if (length(unique(df$Algorithm)) == 1) {
-            ggplot(df, aes(x = Distance, y = TotalGainSum, linetype = K))  
-        } else {
-            ggplot(df, aes(x = Distance, y = TotalGainSum, linetype = K, color = Algorithm)) 
-        }
-
-        p <- p +
-            ggtitle(paste0("Total Gain over Distance (", phase, "); Distance < ", cutoff_distance)) +
-            geom_step() +
-            ylab("Total Gain") +
-            xlab("Distance") +
-            theme_bw() +
-            create_theme() +
-            scale_x_continuous(breaks = 0:cutoff_distance) +
-            theme(legend.position = "bottom")
-        print(p)
+  for (k in common_ks) {
+    k_data <- list()
+    for (df in data) {
+      k_df <- df %>% dplyr::filter(K == k)
+      k_data <- append(k_data, list(k_df))
     }
-    dev.off()
+
+    k_running_times <- aggregate_running_times(k_data)
+    k_running_times_annotation <- data.frame(
+      Algorithm = k_running_times$Algorithm,
+      Annotation = sprintf("h=%.2f, g=%.2f, a=%.2f", k_running_times$Hmean, k_running_times$Gmean, k_running_times$Mean)
+    )
+
+    plot <- do.call(create_running_time_boxplot, c(k_data, list(annotation = k_running_times_annotation))) +
+      theme_bw() +
+      running_time_plot_theme +
+      labs(
+        title = paste0("Total Running Times for k = ", k),
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1")
+      )
+    print(plot)
+  }
+
+  dev.off()
 }
 
-if (generate_ss) {
-    pdf("ss.pdf", width = 14, height = 3)
-    p <- ggplot(all_data, aes(x = NumPEs, y = AvgTime)) +
-        ggtitle("Strong scaling") +
-        geom_line() +
-        ylab("Running time") +
-        xlab("Number of PEs") +
-        theme_bw() +
-        scale_x_continuous(trans = "log2", breaks = unique(all_data$NumPEs)) +
-        facet_wrap(~Graph, ncol = 4, scales = "free") +
-        create_theme_facet() +
-        theme(legend.position = "right")
-    print(p)
-    dev.off()
+if ("--per-instance" %in% plots) {
+  side_len <- round(sqrt(length(common_graphs)))
+  relative_to <- data[[1]]
+
+  normalized <- data.frame()
+  for (df in data) {
+    df$RelAvgTime <- df$AvgTime / relative_to$AvgTime
+    df$RelAvgCut <- df$AvgCut / relative_to$AvgCut
+    normalized <- rbind(normalized, df)
+  }
+
+  normalized <- normalized %>%
+    dplyr::mutate(K = factor(K)) %>%
+    dplyr::mutate(Title = paste0(Graph, " (", MaxDeg, ")")) %>%
+    dplyr::mutate(MaxDegToM = MaxDeg / M.y)
+
+  normalized$Title <- factor(
+    normalized$Title,
+    levels = unique(normalized$Title[order(normalized$MaxDeg, decreasing = TRUE)])
+  )
+
+  pdf("plots/per_instance.pdf", width = side_len * 4, height = side_len * 3)
+
+  # Cuts
+  plot <- ggplot(normalized, aes(x = K, y = RelAvgCut, fill = Algorithm)) +
+    geom_bar(
+      stat = "identity",
+      position = position_dodge()
+    ) +
+    ylab("Relative Cut") +
+    xlab("Number of Blocks") +
+    theme_bw() +
+    facet_wrap(~Title, ncol = side_len, scales = "free") +
+    geom_hline(yintercept = 1) +
+    create_theme_facet() +
+    theme(legend.position = "bottom") +
+    labs(
+      title = "Cuts",
+      subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
+      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+    )
+  print(plot)
+
+  # Running time
+  p <- ggplot(normalized, aes(x = K, y = RelAvgTime, fill = Algorithm)) +
+    geom_bar(
+      stat = "identity",
+      position = position_dodge()
+    ) +
+    ylab("Relative Time") +
+    xlab("Number of Blocks") +
+    theme_bw() +
+    facet_wrap(~Title, ncol = side_len, scales = "free") +
+    geom_hline(yintercept = 1) +
+    create_theme_facet() +
+    theme(legend.position = "bottom") +
+    labs(
+      title = "Running Times",
+      subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
+      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+    )
+  print(p)
+
+  dev.off()
+}
+
+if ("--ss" %in% plots) {
+  pdf("ss.pdf", width = 14, height = 3)
+  p <- ggplot(all_data, aes(x = NumPEs, y = AvgTime)) +
+    ggtitle("Strong scaling") +
+    geom_line() +
+    ylab("Running time") +
+    xlab("Number of PEs") +
+    theme_bw() +
+    scale_x_continuous(trans = "log2", breaks = unique(all_data$NumPEs)) +
+    facet_wrap(~Graph, ncol = 4, scales = "free") +
+    create_theme_facet() +
+    theme(legend.position = "right")
+  print(p)
+  dev.off()
 }
