@@ -112,16 +112,37 @@ graphs <- unique(data[[1]]$Graph)
 num_unique_graphs <- length(unique(data[[1]]$Graph))
 
 if ("--all-cut" %in% plots) {
+  cut_plot_theme <- create_theme() + theme(
+    legend.position = "bottom"
+  )
+
   pdf("plots/cut.pdf")
-  all_pp <- do.call(create_performance_profile, data) +
+  plot <- do.call(create_performance_profile, data) +
     theme_bw() +
-    create_theme() +
+    cut_plot_theme +
     labs(
       title = "Edge Cut Comparison over All Instances",
       subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
       caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
     )
-  print(all_pp)
+  print(plot)
+
+  for (k in common_ks) {
+    k_data <- list()
+    for (df in data) {
+      k_df <- df %>% dplyr::filter(K == k)
+      k_data <- append(k_data, list(k_df))
+    }
+
+    plot <- do.call(create_performance_profile, k_data) +
+      theme_bw() +
+      cut_plot_theme +
+      labs(
+        title = paste0("Edge Cut Comparison for k = ", k),
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1")
+      )
+    print(plot)
+  }
   dev.off()
 }
 
