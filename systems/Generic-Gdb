@@ -35,15 +35,15 @@ GenerateJobfileEntry() {
     case "${args[mpi]}" in 
         taskset)
             if [[ "${args[print_wrapper]}" == "1" ]]; then
-                >&2 echo -e "  - taskset -c 0-$ARGS_COLOR$(( ${args[num_threads]} - 1 ))$NO_COLOR gdb -batch -x $MKEXP_HOME/data/backtrace.gdb <call>"
+                >&2 echo -e "  - taskset -c 0-$ARGS_COLOR$(( ${args[num_threads]} - 1 ))$NO_COLOR gdb -batch -x $MKEXP_HOME/data/backtrace.gdb --args <call>"
             fi
-            echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) gdb -batch -x $MKEXP_HOME/data/backtrace.gdb ${args[exe]}"
+            echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) gdb -batch -x $MKEXP_HOME/data/backtrace.gdb --args ${args[exe]}"
             ;;
         none)
             if [[ "${args[print_wrapper]}" == "1" ]]; then
-                >&2 echo "  - gdb -batch -x $MKEXP_HOME/data/backtrace.gdb <call>"
+                >&2 echo "  - gdb -batch -x $MKEXP_HOME/data/backtrace.gdb --args <call>"
             fi
-            echo "gdb -batch -x $MKEXP_HOME/data/backtrace.gdb ${args[exe]}"
+            echo "gdb -batch -x $MKEXP_HOME/data/backtrace.gdb --args ${args[exe]}"
             ;;
         *)
             >&2 echo "Error: unsupported wrapper ${args[mpi]}"
