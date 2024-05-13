@@ -45,7 +45,12 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
   }
 }
 
-all_plots <- c("--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut", "--all-time", "--per-instance")
+all_plots <- c(
+  "--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut",
+  "--all-time",
+  "--per-instance",
+  "--graph-stats"
+)
 default_plots <- c("--all-cut", "--all-time", "--per-instance")
 
 if (length(algorithms) == 0 || "--help" %in% plots) {
@@ -79,7 +84,10 @@ for (algorithm in algorithms) {
 
   df <- load_data(algorithm, filename) %>%
     dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
-    merge(graphs_db, by = "Graph", all.x = TRUE)
+    merge(graphs_db, by = "Graph", all.x = TRUE, suffixes = c(".csv", ""))
+
+  # Very rough classification as regular / irregular graph
+  df <- df %>% dplyr::mutate(GraphType = ifelse(MaxDeg / AvgDeg > 50 | MaxDeg > 2000, "Irregular", "Regular"))
 
   my_num_threads <- unique(df$NumThreadsPerMPI)
   my_ks <- unique(df$K)
@@ -125,7 +133,11 @@ cat("\n")
 
 # Filter for common graphs and K's
 for (i in 1:length(data)) {
-  data[[i]] <- data[[i]] %>% dplyr::filter(Graph %in% common_graphs & K %in% common_ks & Epsilon %in% common_eps)
+  data[[i]] <- data[[i]] %>% dplyr::filter(
+    Graph %in% common_graphs &
+      K %in% common_ks &
+      Epsilon %in% common_eps
+  )
 }
 
 cut_plot_theme <- create_theme() + theme(
@@ -349,4 +361,21 @@ if ("--ss" %in% plots) {
     theme(legend.position = "right")
   print(p)
   dev.off()
+}
+
+if ("--graph-stats" %in% plots) {
+  cat("Graphs included in the benchmark set:\n\n")
+  cat("--------------------------------------------------------------------------------\n")
+  graphs <- data[[1]] %>%
+    dplyr::distinct(Graph, GraphType, N, M, AvgDeg, MaxDeg)
+  print(graphs, width = 120)
+  cat("--------------------------------------------------------------------------------\n")
+  cat("\n")
+
+  regular <- graphs %>% dplyr::filter(GraphType == "Regular")
+  irregular <- graphs %>% dplyr::filter(GraphType == "Irregular")
+
+  cat("#graphs:", nrow(graphs), "\n")
+  cat("#regular graphs:", nrow(regular), "\n")
+  cat("#irregular graphs:", nrow(irregular), "\n")
 }
