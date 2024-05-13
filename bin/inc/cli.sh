@@ -14,10 +14,6 @@ while [[ $# -gt 0 ]]; do
             mode="results"
             shift
             ;;
-        --stats)
-            mode="stats"
-            shift
-            ;;
         --plots)
             mode="plots"
             shift 
