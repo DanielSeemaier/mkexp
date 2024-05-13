@@ -32,7 +32,7 @@ DownloadDirectory() {
 }
 
 SetupBuildEnv() {
-    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
+    Prefixed module restore "$MKEXP_HOME/data/SuperMUC/modules-impi"
 }
 
 SetupSystem() {
@@ -76,7 +76,7 @@ GenerateJobfileHeader() {
 
     case "${args[mpi]}" in
         IMPI)
-            echo "module restore $ROOT/data/SuperMUC/modules-impi"
+            echo "module restore $MKEXP_HOME/data/SuperMUC/modules-impi"
             echo "export I_MPI_PIN_CELL=core"
             echo "export I_MPI_PIN_DOMAIN=${args[num_threads]}:compact"
     
@@ -85,7 +85,7 @@ GenerateJobfileHeader() {
             #fi
             ;;
         OpenMPI)
-            echo "module restore $ROOT/data/SuperMUC/modules-openmpi"
+            echo "module restore $MKEXP_HOME/data/SuperMUC/modules-openmpi"
             ;;
         *)
             >&2 echo "Error: unsupported MPI ${args[mpi]}"

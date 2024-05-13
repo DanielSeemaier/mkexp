@@ -68,7 +68,7 @@ while [[ $# -gt 0 ]]; do
         --init)
             mode="init"
             shift
-            if [[ -f "$ROOT/examples/${1:-}" ]]; then
+            if [[ -f "$MKEXP_HOME/examples/${1:-}" ]]; then
                 init_filename="$1"
                 shift
             fi
@@ -97,7 +97,7 @@ if [[ $mode == "help" ]]; then
     echo "Available commands:"
     echo ""
     echo "- Initialization:"
-    echo "   --init [$(ls $ROOT/examples | tr '\n' '|')]: initialize a new experiment"
+    echo "   --init [$(ls $MKEXP_HOME/examples | tr '\n' '|')]: initialize a new experiment"
     echo ""
     echo "- Setup:"
     echo "    (no command): download, build partitioners and generate jobfiles"

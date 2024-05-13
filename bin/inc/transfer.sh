@@ -5,7 +5,7 @@ if [[ $mode == "upload" ]]; then
 fi
 
 if [[ $mode == "upload-self" ]]; then
-    UploadDirectory "$ROOT"/ mkexp
+    UploadDirectory "$MKEXP_HOME"/ mkexp
 
     echo "Uploaded mkexp framework to the remote host"
     echo "  You can now add the bin directory to your PATH environment variable, e.g., by running on the remote host:"

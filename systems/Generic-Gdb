@@ -1,0 +1,66 @@
+#!/bin/bash 
+
+SetupBuildEnv() {
+    return
+}
+
+SetupSystem() {
+    return
+}
+
+UploadDirectory() {
+    echo "Error: unsupported"
+}
+
+DownloadDirectory() {
+    echo "Error: unsupported"
+}
+
+GenerateJobfileHeader() {
+    return 0
+}
+
+GenerateJobfileEntry() {
+    local -n args=$1
+
+    if (( ${args[num_nodes]} > 1 )); then
+        >&2 echo "Error: generic systems do not support multi-node execution"
+        exit 1
+    fi
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    fi
+
+    case "${args[mpi]}" in 
+        taskset)
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo -e "  - taskset -c 0-$ARGS_COLOR$(( ${args[num_threads]} - 1 ))$NO_COLOR gdb -batch -x $MKEXP_HOME/data/backtrace.gdb <call>"
+            fi
+            echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) gdb -batch -x $MKEXP_HOME/data/backtrace.gdb ${args[exe]}"
+            ;;
+        none)
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo "  - gdb -batch -x $MKEXP_HOME/data/backtrace.gdb <call>"
+            fi
+            echo "gdb -batch -x $MKEXP_HOME/data/backtrace.gdb ${args[exe]}"
+            ;;
+        *)
+            >&2 echo "Error: unsupported wrapper ${args[mpi]}"
+            exit 1
+    esac
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo ""
+    fi
+}
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do
+        echo "bash $jobfile"
+    done
+}
+
+GenerateJobfileWrapper() {
+    echo "bash $submit_impl_filename"
+}

@@ -32,7 +32,7 @@ DownloadDirectory() {
 }
 
 SetupBuildEnv() {
-    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
+    Prefixed module restore "$MKEXP_HOME/data/SuperMUC/modules-impi"
 }
 
 SetupSystem() {
@@ -75,7 +75,7 @@ GenerateJobfileHeader() {
     fi
     echo "#SBATCH --partition=$partition"
 
-    echo "module restore $ROOT/data/SuperMUC/modules-impi"
+    echo "module restore $MKEXP_HOME/data/SuperMUC/modules-impi"
 
     if [[ "${args[mpi]}" != "IMPI" ]]; then
         >&2 echo "Error: application must be run with IMPI"

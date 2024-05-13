@@ -32,7 +32,7 @@ DownloadDirectory() {
 }
 
 SetupBuildEnv() {
-    Prefixed module restore "$ROOT/data/SuperMUC/modules-impi"
+    Prefixed module restore "$MKEXP_HOME/data/SuperMUC/modules-impi"
 }
 
 SetupSystem() {
@@ -79,7 +79,7 @@ GenerateJobfileHeader() {
     fi
     echo "#SBATCH --partition=$partition" >> $WORKER_HEADER_FILENAME
 
-    echo "module restore $ROOT/data/SuperMUC/modules-impi" >> $WORKER_HEADER_FILENAME
+    echo "module restore $MKEXP_HOME/data/SuperMUC/modules-impi" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_NUM_THREADS" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_PROC_BIND" >> $WORKER_HEADER_FILENAME
     echo "unset OMP_PLACES" >> $WORKER_HEADER_FILENAME
@@ -120,10 +120,10 @@ GenerateJobfileEntry() {
 
 GenerateJobfileSubmission() {
     cat $SCHEDULER_HEADER_FILENAME > $SCHEDULER_FILENAME
-    cat "$ROOT/data/SuperMUC/scheduler/scheduler.py" >> "scheduler.py"
+    cat "$MKEXP_HOME/data/SuperMUC/scheduler/scheduler.py" >> "scheduler.py"
 
     cat $WORKER_HEADER_FILENAME > $WORKER_FILENAME 
-    cat "$ROOT/data/SuperMUC/scheduler/worker.sh" >> $WORKER_FILENAME
+    cat "$MKEXP_HOME/data/SuperMUC/scheduler/worker.sh" >> $WORKER_FILENAME
 
     echo "" > $GLOBAL_QUEUE_FILENAME
     for jobfile in ${@}; do 

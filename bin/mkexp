@@ -16,13 +16,13 @@ while [ -L "$source" ]; do
   [[ $source != /* ]] && source=$script_pwd/$source
 done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
-ROOT="$(realpath "$script_pwd/../")"
+MKEXP_HOME="$(realpath "$script_pwd/../")"
 
 # Declares $mode, $skip_installed
-. "$ROOT/bin/inc/cli.sh"
+. "$MKEXP_HOME/bin/inc/cli.sh"
 
 # Implements $mode == "init"
-. "$ROOT/bin/inc/init.sh"
+. "$MKEXP_HOME/bin/inc/init.sh"
 
 # Check that there is an Experiment file -- otherwise abort, except for --help, --init
 [[ -f "Experiment" ]] || {
@@ -33,11 +33,11 @@ ROOT="$(realpath "$script_pwd/../")"
 
 ################################################################################
 
-. "$ROOT/bin/inc/userfuncs.sh"
-. "$ROOT/bin/inc/sysfuncs.sh"
-. "$ROOT/bin/inc/env.sh"
-. "$ROOT/bin/inc/install.sh"
-. "$ROOT/bin/inc/generate.sh"
+. "$MKEXP_HOME/bin/inc/userfuncs.sh"
+. "$MKEXP_HOME/bin/inc/sysfuncs.sh"
+. "$MKEXP_HOME/bin/inc/env.sh"
+. "$MKEXP_HOME/bin/inc/install.sh"
+. "$MKEXP_HOME/bin/inc/generate.sh"
 
 gitignore_filename="$PWD/.gitignore"
 submit_impl_filename="$PWD/jobs/starter.sh"
@@ -93,7 +93,7 @@ if [[ $skip_install == "0" ]]; then
 fi
 
 # Modes that depend on the system
-. "$ROOT/bin/inc/transfer.sh"
+. "$MKEXP_HOME/bin/inc/transfer.sh"
 
 HandleExperiment() {
     # Default unset variables

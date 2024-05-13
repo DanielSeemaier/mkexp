@@ -25,7 +25,7 @@ GenerateInfoFile() {
     echo "- Date: \`$(date)\`" >> INFO.MD
     echo "- Hostname: \`$(hostname)\`" >> INFO.MD
     echo "- User: \`$(whoami)\`" >> INFO.MD
-    echo "- mkexp version: \`$(git -C "$ROOT" rev-parse HEAD)\`" >> INFO.MD
+    echo "- mkexp version: \`$(git -C "$MKEXP_HOME" rev-parse HEAD)\`" >> INFO.MD
     echo "" >> INFO.MD
     echo "## Algorithms" >> INFO.MD
     echo "" >> INFO.MD
