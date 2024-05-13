@@ -40,13 +40,16 @@ plots <- c()
 for (arg in commandArgs(trailingOnly = TRUE)) {
   if (!startsWith(arg, "--")) {
     algorithms <- c(algorithms, arg)
+  } else if (startsWith(arg, "--graph-suffix")) {
+    suffix <- substring(arg, nchar("--graph-suffix=") + 1)
+    graphs_db <- graphs_db %>% dplyr::mutate(Graph = paste0(Graph, suffix))
   } else {
     plots <- c(plots, arg)
   }
 }
 
 all_plots <- c(
-  "--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut",
+  "--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut", "--per-graph-type-cut",
   "--all-time",
   "--per-instance",
   "--graph-stats"
@@ -128,8 +131,16 @@ for (i in 1:length(data)) {
   ))
 }
 
-cat(paste0("Common instances: #graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps), "\n"))
-cat("\n")
+common_graph_types <- sort(unique(data[[1]]$GraphType))
+
+cat(paste0(
+  "Common instances: ",
+  "#graphs = ", length(common_graphs), ", ",
+  "#ks = ", length(common_ks), ", ",
+  "#eps = ", length(common_eps), ", ",
+  "#graph types = ", length(common_graph_types),
+  "\n\n"
+))
 
 # Filter for common graphs and K's
 for (i in 1:length(data)) {
@@ -194,6 +205,27 @@ if ("--per-eps-cut" %in% plots) {
       labs(
         title = paste0("Edge Cut Comparison for eps = ", 100.0 * eps, "%"),
         caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = 1")
+      )
+    print(plot)
+  }
+  dev.off()
+}
+
+if ("--per-graph-type-cut" %in% plots) {
+  pdf("plots/per_graph_type_cut.pdf")
+  for (type in common_graph_types) {
+    type_data <- list()
+    for (df in data) {
+      type_df <- df %>% dplyr::filter(GraphType == type)
+      type_data <- append(type_data, list(type_df))
+    }
+
+    plot <- do.call(create_performance_profile, type_data) +
+      theme_bw() +
+      cut_plot_theme +
+      labs(
+        title = paste0("Edge Cut Comparison for ", type, " Graphs"),
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps))
       )
     print(plot)
   }
@@ -365,11 +397,9 @@ if ("--ss" %in% plots) {
 
 if ("--graph-stats" %in% plots) {
   cat("Graphs included in the benchmark set:\n\n")
-  cat("--------------------------------------------------------------------------------\n")
   graphs <- data[[1]] %>%
     dplyr::distinct(Graph, GraphType, N, M, AvgDeg, MaxDeg)
   print(graphs, width = 120)
-  cat("--------------------------------------------------------------------------------\n")
   cat("\n")
 
   regular <- graphs %>% dplyr::filter(GraphType == "Regular")
