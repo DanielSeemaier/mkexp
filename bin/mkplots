@@ -45,9 +45,20 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
   }
 }
 
+all_plots <- c("--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut", "--all-time", "--per-instance")
+default_plots <- c("--all-cut", "--all-time", "--per-instance")
+
+if (length(algorithms) == 0 || "--help" %in% plots) {
+  cat("Usage: mkplots [plots...] algorithms...\n\n")
+  cat(paste0("Available plots:", "\n\t", paste(all_plots, collapse = "\n\t"), "\n\n"))
+  cat(paste0("Default plots (if none are specified):", "\n\t", paste(default_plots, collapse = "\n\t"), "\n\n"))
+  cat("Example: mkplots --all-cut --per-k-cut Algo1 Algo2\n")
+  quit()
+}
+
 # If there are no picks for plots, build some default plots ...
 if (length(plots) == 0) {
-  plots <- c("--all-cut", "--all-time", "--per-instance")
+  plots <- default_plots
 }
 
 if (length(algorithms) == 0) {
@@ -89,35 +100,39 @@ cat("\n")
 cat("Determining common instances among data sets:\n")
 common_ks <- sort(unique(data[[1]]$K))
 common_graphs <- unique(data[[1]]$Graph)
+common_eps <- unique(data[[1]]$Epsilon)
 for (i in 1:length(data)) {
   name <- data[[i]]$Algorithm[[1]]
   my_ks <- unique(data[[i]]$K)
   my_graphs <- unique(data[[i]]$Graph)
+  my_eps <- unique(data[[i]]$Epsilon)
 
   common_ks <- intersect(common_ks, my_ks)
   common_graphs <- intersect(common_graphs, my_graphs)
+  common_eps <- intersect(common_eps, my_eps)
 
   cat(paste0(
     "\tAlgorithm ", name, ": ",
     "#graphs = ", length(my_graphs), " (-> ", length(common_graphs), "), ",
-    "#ks = ", length(my_ks), " (-> ", length(common_ks), ")",
+    "#ks = ", length(my_ks), " (-> ", length(common_ks), "), ",
+    "#eps = ", length(my_eps), " (-> ", length(common_eps), ")",
     "\n"
   ))
 }
 
-cat(paste0("Common instances: #graphs = ", length(common_graphs), ", #ks = ", length(common_ks), "\n"))
+cat(paste0("Common instances: #graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps), "\n"))
 cat("\n")
 
 # Filter for common graphs and K's
 for (i in 1:length(data)) {
-  data[[i]] <- data[[i]] %>% dplyr::filter(Graph %in% common_graphs & K %in% common_ks)
+  data[[i]] <- data[[i]] %>% dplyr::filter(Graph %in% common_graphs & K %in% common_ks & Epsilon %in% common_eps)
 }
 
-if ("--all-cut" %in% plots) {
-  cut_plot_theme <- create_theme() + theme(
-    legend.position = "bottom"
-  )
+cut_plot_theme <- create_theme() + theme(
+  legend.position = "bottom"
+)
 
+if ("--all-cut" %in% plots) {
   pdf("plots/cut.pdf")
   plot <- do.call(create_performance_profile, data) +
     theme_bw() +
@@ -125,10 +140,14 @@ if ("--all-cut" %in% plots) {
     labs(
       title = "Edge Cut Comparison over All Instances",
       subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
-      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+      caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps))
     )
   print(plot)
+  dev.off()
+}
 
+if ("--per-k-cut" %in% plots) {
+  pdf("plots/per_k_cut.pdf")
   for (k in common_ks) {
     k_data <- list()
     for (df in data) {
@@ -141,7 +160,28 @@ if ("--all-cut" %in% plots) {
       cut_plot_theme +
       labs(
         title = paste0("Edge Cut Comparison for k = ", k),
-        caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1")
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1, #eps = ", length(common_eps))
+      )
+    print(plot)
+  }
+  dev.off()
+}
+
+if ("--per-eps-cut" %in% plots) {
+  pdf("plots/per_eps_cut.pdf")
+  for (eps in common_eps) {
+    eps_data <- list()
+    for (df in data) {
+      eps_df <- df %>% dplyr::filter(Epsilon == eps)
+      eps_data <- append(eps_data, list(eps_df))
+    }
+
+    plot <- do.call(create_performance_profile, eps_data) +
+      theme_bw() +
+      cut_plot_theme +
+      labs(
+        title = paste0("Edge Cut Comparison for eps = ", 100.0 * eps, "%"),
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = 1")
       )
     print(plot)
   }

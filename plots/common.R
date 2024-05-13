@@ -53,7 +53,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(Balance = ifelse(Timeout | Failed, NA, Balance)) %>%
     dplyr::mutate(Time = ifelse(Timeout, timelimit, Time)) %>%
     dplyr::mutate(Time = ifelse(Failed & !Timeout, NA, Time)) %>%
-    dplyr::mutate(Cut = ifelse(Balance > 0.03 + .Machine$double.eps, NA, Cut))
+    dplyr::mutate(Cut = ifelse(Balance > Epsilon + .Machine$double.eps, NA, Cut))
 
   vars <- colnames(df)
   vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed")]
@@ -68,7 +68,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
   df <- df %>%
     dplyr::mutate(Infeasible = !Failed &
       !Timeout &
-      MinBalance > 0.03 + .Machine$double.eps) %>%
+      MinBalance > Epsilon + .Machine$double.eps) %>%
     dplyr::mutate(Feasible = !Failed & !Timeout & !Infeasible) %>%
     dplyr::mutate(Invalid = Failed | Timeout | Infeasible)
 
