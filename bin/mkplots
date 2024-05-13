@@ -36,6 +36,7 @@ if (!dir.exists("plots")) {
 # Read CLI arguments to decide on which algorithms to include and which plots to use
 algorithms <- c()
 plots <- c()
+ignore_balance <- FALSE
 
 for (arg in commandArgs(trailingOnly = TRUE)) {
   if (!startsWith(arg, "--")) {
@@ -43,6 +44,8 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
   } else if (startsWith(arg, "--graph-suffix")) {
     suffix <- substring(arg, nchar("--graph-suffix=") + 1)
     graphs_db <- graphs_db %>% dplyr::mutate(Graph = paste0(Graph, suffix))
+  } else if (arg == "--ignore-balance") {
+    ignore_balance <- TRUE
   } else {
     plots <- c(plots, arg)
   }
@@ -85,7 +88,7 @@ for (algorithm in algorithms) {
     quit()
   }
 
-  df <- load_data(algorithm, filename) %>%
+  df <- load_data(algorithm, filename, ignore_balance = ignore_balance) %>%
     dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
     merge(graphs_db, by = "Graph", all.x = TRUE, suffixes = c(".csv", ""))
 

@@ -75,7 +75,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
   return(df)
 }
 
-load_data <- function(name, file, seed = 0) {
+load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
   full_filename <- paste0(getwd(), "/", file)
   df <- read.csv(full_filename)
   df <- df %>% dplyr::filter(Seed >= seed)
@@ -106,6 +106,9 @@ load_data <- function(name, file, seed = 0) {
   if (!("Epsilon" %in% colnames(df))) {
     print("Warning: no Epsilon column; default to 3%")
     df$Epsilon <- 0.03
+  }
+  if (ignore_balance) {
+    df$Epsilon <- 10000.0
   }
   if (!("Balance" %in% colnames(df)) & "Imbalance" %in% colnames(df)) {
     df$Balance <- df$Imbalance
@@ -185,24 +188,25 @@ create_theme <- function(aspect_ratio = DEFAULT_ASPECT_RATIO) {
 }
 
 gm_mean <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
-  gm_mean <- function(x, na.rm = TRUE, zero.propagate = FALSE){
-  if (any(x < 0, na.rm = TRUE)) {
-    return(NaN)
-  }
 
-  if (zero.propagate) {
-    if (any(x == 0, na.rm = TRUE)) {
-      return(0)
+  gm_mean <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
+    if (any(x < 0, na.rm = TRUE)) {
+      return(NaN)
     }
-    return(exp(mean(log(x[x != Inf]), na.rm = na.rm)))
-  } else {
-    return(exp(sum(log(x[x > 0 & x != Inf]), na.rm=na.rm) / length(x)))
-  }
-}
 
-hm_mean <- function(x) {
-  return(length(x) / sum( 1.0 / x[x > 0] ))
-}
+    if (zero.propagate) {
+      if (any(x == 0, na.rm = TRUE)) {
+        return(0)
+      }
+      return(exp(mean(log(x[x != Inf]), na.rm = na.rm)))
+    } else {
+      return(exp(sum(log(x[x > 0 & x != Inf]), na.rm = na.rm) / length(x)))
+    }
+  }
+
+  hm_mean <- function(x) {
+    return(length(x) / sum(1.0 / x[x > 0]))
+  }
 
   if (any(x < 0, na.rm = TRUE)) {
     return(NaN)
