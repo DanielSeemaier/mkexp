@@ -52,7 +52,7 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
   } else if (startsWith(arg, "--filter-eps")) {
     filter_eps <- substring(arg, nchar("--filter-eps=") + 1)
   } else if (startsWith(arg, "--filter-k")) {
-    filter_k <- substring(arg, nchar("--filter-k") + 1)
+    filter_k <- substring(arg, nchar("--filter-k=") + 1)
   } else if (startsWith(arg, "--suffix")) {
     filename_suffix <- substring(arg, nchar("--suffix=") + 1)
   } else {
