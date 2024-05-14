@@ -125,9 +125,11 @@ for (algorithm in algorithms) {
   my_num_threads <- unique(df$NumThreadsPerMPI)
   my_ks <- unique(df$K)
   my_graphs <- unique(df$Graph)
+  my_eps <- unique(df$Epsilon)
 
   cat(paste0("\tthreads = { ", paste(my_num_threads, collapse = ", "), " }\n"))
   cat(paste0("\tks = { ", paste(my_ks, collapse = ", "), " }\n"))
+  cat(paste0("\teps = { ", paste(my_eps, collapse = ", "), " }\n"))
   cat(paste0("\t#graphs = ", length(my_graphs), "\n"))
 
   # Split dataset into one algorithm for each thread count
@@ -169,8 +171,12 @@ cat(paste0(
   "#ks = ", length(common_ks), ", ",
   "#eps = ", length(common_eps), ", ",
   "#graph types = ", length(common_graph_types),
-  "\n\n"
+  "\n"
 ))
+cat(paste0("\tks = { ", paste0(common_ks, collapse = ", "), " }\n"))
+cat(paste0("\teps = { ", paste0(common_eps, collapse = ", "), "  }\n"))
+cat(paste0("\tgraph types = { ", paste0(common_graph_types, collapse = ", "), " }\n"))
+cat("\n")
 
 # Filter for common graphs and K's
 for (i in 1:length(data)) {
@@ -361,7 +367,7 @@ if ("--per-instance" %in% plots) {
   normalized <- normalized %>%
     dplyr::mutate(K = factor(K)) %>%
     dplyr::mutate(Title = paste0(Graph, " (", MaxDeg, ")")) %>%
-    dplyr::mutate(MaxDegToM = MaxDeg / M.y)
+    dplyr::mutate(MaxDegToM = MaxDeg / M)
 
   normalized$Title <- factor(
     normalized$Title,
