@@ -92,7 +92,7 @@ ExperimentLPvsFM() {
     TimelimitPerInstance 30:00 # (optional)
 
     # Partition all graphs contained in some directory
-    Graphs /path/to/benchmark/set/
+    Graphs /nfs/work/graph_benchmark_sets/parameter_tuning/combined
 
     # Partition a specific graph
     # Graph /path/to/graph/graphfile # note: filename *without* file extension

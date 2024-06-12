@@ -56,6 +56,7 @@ InvokeFromDisk() {
     graph="${invoke_from_disk_args[graph]}"
     [[ -f "$graph.graph" ]] && graph="$graph.graph"
     [[ -f "$graph.metis" ]] && graph="$graph.metis"
+    [[ -f "$graph.parhip" ]] && graph="$graph.parhip"
 
     if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
