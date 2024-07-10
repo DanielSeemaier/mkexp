@@ -17,5 +17,5 @@ ExperimentUfmBench() {
 
     # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined
     # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined_small
-    Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined_32eid_nzcut
+    Graphs /nfs/work/graph_benchmark_sets/ufm_paper/combined_32eid_nzcut
 }
