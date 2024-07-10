@@ -54,9 +54,19 @@ InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
     
     graph="${invoke_from_disk_args[graph]}"
-    [[ -f "$graph.graph" ]] && graph="$graph.graph"
-    [[ -f "$graph.metis" ]] && graph="$graph.metis"
-    [[ -f "$graph.parhip" ]] && graph="$graph.parhip"
+    format="metis"
+    if [[ -f "$graph.graph" ]]; then
+        graph="$graph.graph"
+        format="metis"
+    fi
+    if [[ -f "$graph.metis" ]]; then 
+        graph="$graph.metis"
+        format="metis"
+    fi
+    if [[ -f "$graph.parhip" ]]; then
+        graph="$graph.parhip"
+        format="parhip"
+    fi
 
     if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
@@ -67,6 +77,7 @@ InvokeFromDisk() {
         >&2 echo -e "      -e $ARGS_COLOR${invoke_from_disk_args[epsilon]}$NO_COLOR"
         >&2 echo -e "      --seed=$ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR"
         >&2 echo -e "      -t $ARGS_COLOR${invoke_from_disk_args[num_threads]}$NO_COLOR"
+        >&2 echo -e "      -f $ARGS_COLOR$format$NO_COLOR"
         >&2 echo "      -E"
         >&2 echo "      -T"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
@@ -77,6 +88,7 @@ InvokeFromDisk() {
     if [[ -f "$graph" ]]; then
         echo -n "${invoke_from_disk_args[bin]} "
         echo -n "-G $graph "
+        echo -n "-f $format "
         echo -n "-k ${invoke_from_disk_args[k]} "
         echo -n "-e ${invoke_from_disk_args[epsilon]} "
         echo -n "--seed=${invoke_from_disk_args[seed]} "
