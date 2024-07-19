@@ -126,7 +126,8 @@ create_running_time_boxplot <- function(...,
     stat_boxplot(aes(color = Algorithm), geom = "errorbar", width = 0.6) +
     geom_boxplot(aes(color = Algorithm), outlier.shape = NA, alpha = 0.5) +
     scale_y_continuous(trans = "log10", breaks = y_breaks, labels = y_labels, position = position.y) +
-    theme_bw()
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme_bw() 
 
   if (show_error_ticks) {
     p <- p + geom_hline(yintercept = 10^(max_time_log10 + tick.errors.space_below / 2))
