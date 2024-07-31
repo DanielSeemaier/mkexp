@@ -40,6 +40,7 @@ ignore_balance <- FALSE
 filter_eps <- 0.00
 filter_k <- 0
 filename_suffix <- ""
+filter_failed <- FALSE
 
 for (arg in commandArgs(trailingOnly = TRUE)) {
   if (!startsWith(arg, "--")) {
@@ -49,6 +50,8 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
     graphs_db <- graphs_db %>% dplyr::mutate(Graph = paste0(Graph, suffix))
   } else if (arg == "--ignore-balance") {
     ignore_balance <- TRUE
+  } else if (arg == "--filter-failed") {
+    filter_failed <- TRUE
   } else if (startsWith(arg, "--filter-eps")) {
     filter_eps <- substring(arg, nchar("--filter-eps=") + 1)
   } else if (startsWith(arg, "--filter-k")) {
@@ -117,6 +120,9 @@ for (algorithm in algorithms) {
   }
   if (filter_k > 0) {
     df <- df %>% dplyr::filter(K == filter_k)
+  }
+  if (filter_failed) {
+    df <- df %>% dplyr::filter(Failed == 0)
   }
 
   # Very rough classification as regular / irregular graph
