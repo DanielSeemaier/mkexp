@@ -466,7 +466,7 @@ if ("--gain-cache" %in% plots) {
     normalized <- rbind(normalized, df)
   }
 
-  mkpdf("gain_cache.pdf")
+  mkpdf("gain_cache")
   p <- ggplot(normalized, aes(x = X, y = GCSize, color = Algorithm)) +
     ggtitle("Relative Gain Cache Size") +
     ylab("Relative Gain Cache Size") +
