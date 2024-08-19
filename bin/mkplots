@@ -455,3 +455,27 @@ if ("--graph-stats" %in% plots) {
   cat("#regular graphs:", nrow(regular), "\n")
   cat("#irregular graphs:", nrow(irregular), "\n")
 }
+
+if ("--gain-cache" %in% plots) {
+  normalized <- data.frame()
+
+  for (df in data) {
+    df <- df %>% dplyr::mutate(GCSize = GCSize / data[[1]]$GCSize) %>%
+      dplyr::arrange(GCSize) %>%
+      dplyr::mutate(X = seq(1, nrow(df))) 
+    normalized <- rbind(normalized, df)
+  }
+
+  mkpdf("gain_cache.pdf")
+  p <- ggplot(normalized, aes(x = X, y = GCSize, color = Algorithm)) +
+    ggtitle("Relative Gain Cache Size") +
+    ylab("Relative Gain Cache Size") +
+    xlab("Instance") +
+    geom_line() +
+    geom_point() +
+    theme_bw() +
+    create_theme() +
+    theme(legend.position = "right")
+  print(p)
+  dev.off()
+}
