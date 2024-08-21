@@ -479,3 +479,14 @@ if ("--gain-cache" %in% plots) {
   print(p)
   dev.off()
 }
+
+if ("--gain-cache-stats" %in% plots) {
+  for (i in 2 : length(data)) {
+    cat(paste0("Instances with large gain cache for algorithm ", data[[i]]$Algorithm[[1]], ":\n"))
+    data[[i]] %>% dplyr::mutate(GCSize = GCSize / data[[1]]$GCSize) %>%
+      dplyr::filter(GCSize > 0.99) %>%
+      dplyr::arrange(GCSize) %>%
+      dplyr::select(Graph, GCSize) %>%
+      print()
+  }
+}
