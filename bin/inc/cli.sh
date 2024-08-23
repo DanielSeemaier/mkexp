@@ -1,6 +1,7 @@
 mode="generate"
 skip_install=0
 init_filename="Default"
+results_parser=""
 
 declare -A active_algorithms
 while [[ $# -gt 0 ]]; do 
@@ -13,7 +14,12 @@ while [[ $# -gt 0 ]]; do
         --results)
             mode="results"
             shift
+            if [[ $# -gt 0 ]]; then
+                results_parser=${1:-}
+                shift
+            fi
             ;;
+
         --plots)
             mode="plots"
             shift 
