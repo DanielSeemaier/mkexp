@@ -127,7 +127,11 @@ HandleExperiment() {
         for algorithm in ${_algorithms[@]}; do 
             base=$(GetAlgorithmBase "$algorithm")
             echo -e "Parsing log files for '$ALGO_COLOR$algorithm$NO_COLOR' using parser '$ALGO_COLOR$base$NO_COLOR'"
-            mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+            if [[ "$results_parser" == "" ]]; then
+                mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+            else
+                mkresults "$results_parser" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+            fi
         done
     fi 
 
