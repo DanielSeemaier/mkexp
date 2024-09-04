@@ -14,8 +14,10 @@ while [[ $# -gt 0 ]]; do
         --results)
             mode="results"
             shift
-            results_parser=${1:-}
-            shift
+            if [[ $# -gt 0 ]]; then
+                results_parser=${1:-}
+                shift
+            fi
             ;;
 
         --plots)
