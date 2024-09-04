@@ -64,9 +64,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
 
   df <- df %>%
     dplyr::mutate(AvgCut = ifelse(is.na(AvgCut), Inf, AvgCut)) %>%
-    dplyr::mutate(AvgCut = ifelse(AvgCut == 0, 1, AvgCut)) %>%
     dplyr::mutate(MinCut = ifelse(is.na(MinCut), Inf, MinCut)) %>%
-    dplyr::mutate(MinCut = ifelse(MinCut == 0, 1, MinCut)) %>%
     dplyr::mutate(AvgTime = ifelse(is.na(AvgTime), Inf, AvgTime)) %>%
     dplyr::mutate(MinTime = ifelse(is.na(MinTime), Inf, MinTime))
 

@@ -57,9 +57,13 @@ create_performance_profile <- function(...,
     stopifnot(column.infeasible %in% colnames(dataset))
     stopifnot(!(NA %in% dataset[[column.objective]]))
     stopifnot(!(-Inf %in% dataset[[column.objective]]))
-    stopifnot(!(0 %in% dataset[[column.objective]]))
     stopifnot(nrow(dataset) == nrow(first_dataset))
     stopifnot(dataset[, primary_key] == first_dataset[, primary_key])
+  }
+
+  # Replace all 0s by 1s in each dataset
+  for (dataset in all_datasets) {
+    dataset[[column.objective]] <- ifelse(dataset[[column.objective]] == 0, 1, dataset[[column.objective]])
   }
 
   # Compute performance profile ratios
