@@ -44,8 +44,9 @@ create_performance_profile <- function(...,
   stopifnot(length(all_datasets) > 0)
 
   # Replace all 0s by 1s in each dataset
-  for (dataset in all_datasets) {
-    dataset[[column.objective]] <- ifelse(dataset[[column.objective]] == 0, 1, dataset[[column.objective]])
+  for (i in 1:length(all_datasets)) {
+    all_datasets[[i]][[column.objective]] <- 
+        ifelse(all_datasets[[i]][[column.objective]] == 0, 1, all_datasets[[i]][[column.objective]])
   }
 
   # Sort by primary key
