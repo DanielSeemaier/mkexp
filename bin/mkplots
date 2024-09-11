@@ -380,7 +380,7 @@ if ("--per-instance" %in% plots) {
     levels = unique(normalized$Title[order(normalized$MaxDeg, decreasing = TRUE)])
   )
 
-  mkpdf("per_instance")
+  pdf(paste0("plots/per_instance.pdf"), height = 14, width = 21)
 
   # Cuts
   plot <- ggplot(normalized, aes(x = K, y = RelAvgCut, fill = Algorithm)) +
@@ -394,7 +394,10 @@ if ("--per-instance" %in% plots) {
     facet_wrap(~Title, ncol = side_len, scales = "free") +
     geom_hline(yintercept = 1) +
     create_theme_facet() +
-    theme(legend.position = "bottom") +
+    theme(
+      strip.text = element_text(size = 10),
+      legend.position = "bottom"
+    ) +
     labs(
       title = "Cuts",
       subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
@@ -414,7 +417,10 @@ if ("--per-instance" %in% plots) {
     facet_wrap(~Title, ncol = side_len, scales = "free") +
     geom_hline(yintercept = 1) +
     create_theme_facet() +
-    theme(legend.position = "bottom") +
+    theme(
+      strip.text = element_text(size = 10),
+      legend.position = "bottom",
+    ) +
     labs(
       title = "Running Times",
       subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
