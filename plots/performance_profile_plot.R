@@ -43,6 +43,12 @@ create_performance_profile <- function(...,
   all_datasets <- list(...)
   stopifnot(length(all_datasets) > 0)
 
+  # Replace all 0s by 1s in each dataset
+  for (i in 1:length(all_datasets)) {
+    all_datasets[[i]][[column.objective]] <- 
+        ifelse(all_datasets[[i]][[column.objective]] == 0, 1, all_datasets[[i]][[column.objective]])
+  }
+
   # Sort by primary key
   for (dataset in all_datasets) {
     dataset <- dataset %>% dplyr::arrange_at(primary_key)
@@ -57,7 +63,6 @@ create_performance_profile <- function(...,
     stopifnot(column.infeasible %in% colnames(dataset))
     stopifnot(!(NA %in% dataset[[column.objective]]))
     stopifnot(!(-Inf %in% dataset[[column.objective]]))
-    stopifnot(!(0 %in% dataset[[column.objective]]))
     stopifnot(nrow(dataset) == nrow(first_dataset))
     stopifnot(dataset[, primary_key] == first_dataset[, primary_key])
   }
