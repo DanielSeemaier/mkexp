@@ -228,7 +228,8 @@ TimelimitPerInstance() {
 }
 
 CustomGraph() {
-    _custom_graphs+=("${@}")
+    arg="${@}"
+    _custom_graphs+=("$arg")
 }
 
 # Specify a directory containing graphs. 

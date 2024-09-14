@@ -99,6 +99,7 @@ InvokeCustom() {
     echo -n "${invoke_from_disk_args[algorithm_arguments]}"
     echo ""
 }
+
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
     

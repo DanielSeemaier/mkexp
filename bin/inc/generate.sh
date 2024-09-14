@@ -5,7 +5,7 @@ GenerateJobfileName() {
 
 GenerateCustomInvocIdentifier() {
     local -n args=$1
-    echo "$(basename "${args[custom_stringified]}")___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
+    echo "${args[custom_stringified]}___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
 }
 
 GenerateInvocIdentifier() {
@@ -128,15 +128,18 @@ GenerateInvokationForEveryGraph() {
     prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
     prepared_invoc[print_wrapper]=${prepared_invoc[first_parallelism_call]}
 
-    for graph in ${_custom_graphs[@]}; do
-        prepared_invoc[graph]="$graph"
-        prepared_invoc[custom_stringified]="$(echo "$graph" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/' | tr ' ' '-' | tr ';' '-' | tr '=' '-')"
+    for i in ${!_custom_graphs[@]}; do
+        graph="$(ScaleKaGenGraph prepared_invoc "${_custom_graphs[$i]}")"
+
+        prepared_invoc[custom_stringified]="$(echo "$graph" | tr -d "\\ \\_\\-\\;\\=\\)\\(\\'\"")"
+        prepared_invoc[graph]="${prepared_invoc[custom_stringified]}"
         prepared_invoc[id]="$(GenerateCustomInvocIdentifier prepared_invoc)"
         prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
 
         prepared_invoc[algorithm_arguments]=$(GenerateAlgorithmArguments prepared_invoc)
+        prepared_invoc[graph]="$graph"
 
-        prepared_invoc[exe]="$(InvokeFromDisk prepared_invoc)"
+        prepared_invoc[exe]="$(InvokeCustom prepared_invoc)"
         prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
         if [[ "$_timelimit_per_instance" != "" ]]; then 
             prepared_invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${prepared_invoc[exe]}"

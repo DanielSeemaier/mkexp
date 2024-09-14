@@ -1,0 +1,15 @@
+#!/bin/bash
+System HoreKa-TBB
+Wrapper OpenMPI
+
+DefineAlgorithm StreamingIO dKaMinPar --io-kind=skagen 
+
+ExperimentUfmBench() {
+    Algorithms StreamingIO 
+
+    CustomGraph '--io-skagen-graph=\"rgg2d\;N=$((10+$lN))\;M=$((12+$lN))\"' --io-skagen-chunks=16
+
+    Ks 16
+    Seeds 1 
+    Threads 1x2x1
+}
