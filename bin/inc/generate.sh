@@ -122,6 +122,23 @@ GenerateInvokationForEveryGraph() {
     prepared_invoc[bin]="${prepared_invoc[disk_driver_bin]}"
     prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
     prepared_invoc[print_wrapper]=${prepared_invoc[first_parallelism_call]}
+    for graph in ${_custom_graphs[@]}; do
+        prepared_invoc[graph]="$graph"
+        prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"
+        prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
+
+        prepared_invoc[algorithm_arguments]=$(GenerateAlgorithmArguments prepared_invoc)
+
+        prepared_invoc[exe]="$(InvokeFromDisk prepared_invoc)"
+        prepared_invoc[exe]="$(GenerateJobfileEntry prepared_invoc)"
+        if [[ "$_timelimit_per_instance" != "" ]]; then 
+            prepared_invoc[exe]="timeout -v $(ParseTimelimit "$_timelimit_per_instance")s ${prepared_invoc[exe]}"
+        fi
+        echo "${prepared_invoc[exe]} >> ${prepared_invoc[log]} 2>&1" >> "${prepared_invoc[job]}"
+        prepared_invoc[print_partitioner]=0
+        prepared_invoc[print_wrapper]=0
+    done 
+
     for graph in ${_graphs[@]}; do
         prepared_invoc[graph]="$graph"
         prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"

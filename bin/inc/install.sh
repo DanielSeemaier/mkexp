@@ -66,7 +66,7 @@ InstallPartitioners() {
 
         build_id=$(GenerateBuildIdentifier install_partitioners_args)
         generic_build_id=$(GenerateGenericBuildIdentifier install_partitioners_args)
-        install_disk_driver=$((${#_graphs[@]}))
+        install_disk_driver=$((${#_graphs[@]}+${#_custom_graphs[@]}))
         install_kagen_driver=$((${#_kagen_graphs[@]}))
 
         if (( $install_disk_driver )); then 

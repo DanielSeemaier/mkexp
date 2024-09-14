@@ -13,6 +13,8 @@ declare -a _epsilons=()
 declare -a _nodes_x_mpis_x_threads=()
 declare -a _kagen_graphs=()
 
+declare -a _custom_graphs=()
+
 _timelimit=""
 _timelimit_per_instance=""
 _system="generic"
@@ -225,6 +227,10 @@ TimelimitPerInstance() {
     _timelimit_per_instance="$1"
 }
 
+CustomGraph() {
+    _custom_graphs+=("${@}")
+}
+
 # Specify a directory containing graphs. 
 #
 # Graphs <paths/to/graphs...>
@@ -269,6 +275,10 @@ ClearGraphs() {
 # ClearKaGenGraphs
 ClearKaGenGraphs() {
     _kagen_graphs=()
+}
+
+ClearCustomGraphs() {
+    _custom_graphs=()
 }
 
 # Print a summary for the whole experiment

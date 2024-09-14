@@ -71,6 +71,34 @@ InstallKaGenDriver() {
     fi
 }
 
+InvokeCustom() {
+    local -n invoke_from_disk_args=$1
+    
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo -e "      $ARGS_COLOR$graph$NO_COLOR"
+        >&2 echo -e "      -k $ARGS_COLOR${invoke_from_disk_args[k]}$NO_COLOR"
+        >&2 echo -e "      -e $ARGS_COLOR${invoke_from_disk_args[epsilon]}$NO_COLOR"
+        >&2 echo -e "      --seed=$ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR"
+        >&2 echo -e "      -t $ARGS_COLOR${invoke_from_disk_args[num_threads]}$NO_COLOR"
+        >&2 echo "      -T"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "[...]"
+        >&2 echo ""
+    fi
+
+    echo -n "${invoke_from_disk_args[bin]} "
+    echo -n "$graph "
+    echo -n "-k ${invoke_from_disk_args[k]} "
+    echo -n "-e ${invoke_from_disk_args[epsilon]} "
+    echo -n "--seed=${invoke_from_disk_args[seed]} "
+    echo -n "-t ${invoke_from_disk_args[num_threads]} "
+    echo -n "-T "
+    echo -n "${invoke_from_disk_args[algorithm_arguments]}"
+    echo ""
+}
 InvokeFromDisk() {
     local -n invoke_from_disk_args=$1
     
