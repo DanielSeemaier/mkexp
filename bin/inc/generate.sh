@@ -3,6 +3,11 @@ GenerateJobfileName() {
     echo "${args[experiment]}_${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}.sh"
 }
 
+GenerateCustomInvocIdentifier() {
+    local -n args=$1
+    echo "$(basename "${args[custom_stringified]}")___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
+}
+
 GenerateInvocIdentifier() {
     local -n args=$1
     echo "$(basename "${args[graph]}")___P${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}_seed${args[seed]}_eps${args[epsilon]}_k${args[k]}"
@@ -122,9 +127,11 @@ GenerateInvokationForEveryGraph() {
     prepared_invoc[bin]="${prepared_invoc[disk_driver_bin]}"
     prepared_invoc[print_partitioner]=${prepared_invoc[first_algorithm_call]}
     prepared_invoc[print_wrapper]=${prepared_invoc[first_parallelism_call]}
+
     for graph in ${_custom_graphs[@]}; do
         prepared_invoc[graph]="$graph"
-        prepared_invoc[id]="$(GenerateInvocIdentifier prepared_invoc)"
+        prepared_invoc[custom_stringified]="$(echo "$graph" | sed -E 's/filename=([^\/]*\/)*(.*)\.kargb/filename=\2/' | tr ' ' '-' | tr ';' '-' | tr '=' '-')"
+        prepared_invoc[id]="$(GenerateCustomInvocIdentifier prepared_invoc)"
         prepared_invoc[log]="$log_files_dir/${prepared_invoc[algorithm]}/${prepared_invoc[id]}.log"
 
         prepared_invoc[algorithm_arguments]=$(GenerateAlgorithmArguments prepared_invoc)
