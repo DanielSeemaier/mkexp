@@ -2,7 +2,8 @@
 System HoreKa-TBB
 Wrapper OpenMPI
 
-DefineAlgorithm StreamingIO dKaMinPar --io-kind=skagen 
+DefineAlgorithmVersion StreamingBranch dKaMinPar origin/dist/feat/streaming-graph-compression
+DefineAlgorithm StreamingIO StreamingBranch --io-kind=skagen 
 
 ExperimentUfmBench() {
     Algorithms StreamingIO 
