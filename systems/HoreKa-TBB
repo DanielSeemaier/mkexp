@@ -37,7 +37,7 @@ GenerateJobfileHeader() {
     >&2 echo -e "  --ntasks-per-node=$ARGS_COLOR${args[num_mpis]}$NO_COLOR"
     >&2 echo -e "  --time=$ARGS_COLOR${args[timelimit]}$NO_COLOR"
     >&2 echo "  --export=ALL"
-    >&2 echo "  --mem=230gb"
+    >&2 echo "  --mem=243200mb"
     >&2 echo "  --partition=cpuonly"
 
     echo "#!/bin/bash"
@@ -47,7 +47,7 @@ GenerateJobfileHeader() {
     echo "#SBATCH --ntasks-per-node=${args[num_mpis]}"
     echo "#SBATCH --time=${args[timelimit]}"
     echo "#SBATCH --export=ALL"
-    echo "#SBATCH --mem=230gb"
+    echo "#SBATCH --mem=243200mb"
     echo "#SBATCH --partition=cpuonly"
 
     if [[ "${args[mpi]}" == "OpenMPI" ]]; then 
