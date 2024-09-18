@@ -1,0 +1,108 @@
+#!/bin/bash
+
+MTMETIS_VERSION="0.7.2"
+
+Fetch() {
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk_driver]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    local -n fetch_disk_driver_args=$1
+    src_dir="${fetch_disk_driver_args[disk_driver_src]}"
+
+    if [[ ! -d "$src_dir/mt-metis-0.7.2/" ]]; then
+        echo -e "Downloading self-hosted tar for algorithm '$ALGO_COLOR${fetch_disk_driver_args[algorithm]}$NO_COLOR' to directory '$src_dir'"
+        echo ""
+
+        Prefixed mkdir -p "$src_dir"
+        Prefixed curl -o "$src_dir/mtmetis.tar.gz" "https://dlasalle.github.io/mt-metis/releases/mt-metis-$MTMETIS_VERSION.tar.gz"
+        Prefixed tar -xzf "$src_dir/mtmetis.tar.gz" -C "$src_dir"
+    else
+        echo "Directory '$src_dir/mt-metis-$MTMETIS_VERSION/' already exists, skipping download"
+        echo -e "${WARNING_COLOR}If you intend to re-download Mt-Metis, delete the directory!$NO_COLOR"
+        echo ""
+    fi
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk_driver]} )); then 
+        InstallDiskDriver install_args
+    fi
+}
+
+InstallDiskDriver() {
+    local -n install_disk_driver_args=$1
+
+    if [[ ! -x "${install_disk_driver_args[disk_driver_bin]}" ]]; then
+        src_dir="${install_disk_driver_args[disk_driver_src]}"
+
+        echo -e "Build algorithm '$ALGO_COLOR${install_disk_driver_args[algorithm]}$NO_COLOR' in directory '$src_dir'"
+        echo -e "  - Algorithm-specific options (passed to ./configure): $ARGS_COLOR${install_disk_driver_args[algorithm_build_options]}$NO_COLOR"
+        echo ""
+
+        current_pwd="$PWD"
+        cd "$src_dir/mt-metis-$MTMETIS_VERSION/"
+        Prefixed ./configure ${install_disk_driver_args[algorithm_build_options]}
+        cd build/$(uname)-$(uname -m)/
+        Prefixed make -j 
+
+
+        Prefixed cp "$src_dir/mt-metis-$MTMETIS_VERSION/build/$(uname)-$(uname -m)/bin/mtmetis" "${install_disk_driver_args[disk_driver_bin]}"
+        cd "$current_pwd"
+    else
+        echo "Binary '${install_disk_driver_args[disk_driver_bin]}' already exists, skipping build"
+        echo -e "${WARNING_COLOR}If you intend to rebuild Mt-Metis, delete the binary!$NO_COLOR"
+        echo ""
+    fi
+}
+
+InvokeFromDisk() {
+    local -n invoke_from_disk_args=$1
+    
+    graph="${invoke_from_disk_args[graph]}"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+    imbalance=$(echo "1+${invoke_from_disk_args[epsilon]}" | bc)
+
+    if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
+        >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
+        >&2 echo "  - Wrapper: /usr/bin/time -v"
+        >&2 echo "  - Binary: ${invoke_from_disk_args[bin]}"
+        >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
+        >&2 echo "  - Generated arguments: "
+        >&2 echo -e "      --seed=$ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR"
+        >&2 echo -e "      -T$ARGS_COLOR${invoke_from_disk_args[num_threads]}$NO_COLOR"
+        >&2 echo -e "      -C -t"
+        >&2 echo -e "      -b$ARGS_COLOR$imbalance$NO_COLOR"
+        >&2 echo -e "      $ARGS_COLOR$graph$NO_COLOR"
+        >&2 echo -e "      $ARGS_COLOR${invoke_from_disk_args[k]}$NO_COLOR"
+        >&2 echo "[...]"
+        >&2 echo ""
+    fi
+
+    if [[ -f "$graph" ]]; then
+        echo -n "/usr/bin/time -v "
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "${invoke_from_disk_args[algorithm_arguments]} "
+        echo -n "--seed=${invoke_from_disk_args[seed]} "
+        echo -n "-T${invoke_from_disk_args[num_threads]} "
+        echo -n "-C -t "
+        echo -n "-b$imbalance "
+        echo -n "$graph "
+        echo -n "${invoke_from_disk_args[k]} "
+        echo ""
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+ReportVersion() {
+    echo "*:$MTMETIS_VERSION"
+}
