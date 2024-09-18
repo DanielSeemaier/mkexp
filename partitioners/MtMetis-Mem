@@ -106,3 +106,5 @@ InvokeFromDisk() {
 ReportVersion() {
     echo "*:$MTMETIS_VERSION"
 }
+
+DefineAlgorithmVersion MtMetis-Mem64 MtMetis-Mem --edges64bit

@@ -62,7 +62,7 @@ function header() {
     printf "Epsilon,"
     printf "Balance,"
     printf "Time,"
-    printf "MemoryKiB,"
+    printf "MaxRSS,"
     printf "NumNodes,"
     printf "NumMPIsPerNode,"
     printf "NumThreadsPerMPI,"
