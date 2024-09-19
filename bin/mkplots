@@ -210,6 +210,23 @@ if ("--all-cut" %in% plots) {
       caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps))
     )
   print(plot)
+
+  for (k in common_ks) {
+    k_data <- list()
+    for (df in data) {
+      k_df <- df %>% dplyr::filter(K == k)
+      k_data <- append(k_data, list(k_df))
+    }
+
+    plot <- do.call(create_performance_profile, k_data) +
+      theme_bw() +
+      cut_plot_theme +
+      labs(
+        title = paste0("Edge Cut Comparison for k = ", k),
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1, #eps = ", length(common_eps))
+      )
+    print(plot)
+  }
   dev.off()
 }
 
