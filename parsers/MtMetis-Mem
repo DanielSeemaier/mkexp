@@ -39,7 +39,7 @@ match($0, /Total Time: ([0-9\.e\-]+)s/, m) {
     data["Time"] = m[1]
 }
 
-match($0, /constraint \\#0: *([0-9\.e\-]+)/, m) {
+match($0, /constraint #0: *([0-9\.e\-]+)/, m) {
     data["Balance"] = m[1] - 1
 }
 match($0, /Best Objective: ([0-9]+)/, m) {
