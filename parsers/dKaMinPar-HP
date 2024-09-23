@@ -2,9 +2,14 @@
 BEGIN {
     header()
     reset()
+    Failed = 1
 }
 
 /__BEGIN_FILE__/ {
+    Failed = 1
+
+    reset()
+
     sub(/__BEGIN_FILE__ /, "", $0)
     split($0, parts, "___")
     data["Graph"] = parts[1]
@@ -28,7 +33,9 @@ BEGIN {
 }
 
 /__END_FILE__/ {
-    #yield(1)
+    if (Failed) {
+        yield(1)
+    }
 }
 
 match($0, /Number of global nodes: *([0-9]+)/, m) {
@@ -68,11 +75,14 @@ match($0, /  Feasible:         .*/, m) {
     if (Summary) {
         yield(0)
         Summary = 0
+        Failed = 0
     }
 }
 
 END {
-    #yield(1)
+    if (Failed) {
+        yield(1)
+    }
 }
 
 function header() {
