@@ -39,11 +39,11 @@ match($0, /Number of edges: *([0-9]+)/, m) {
     data["M"] = m[1]
 }
 
-match($0, /Imbalance: *([0-9\.\-e]+)/, m) {
-    data["Balance"] = m[1]
+match($0, /VertexBalance: *([0-9\.\-e]+)/, m) {
+    data["Balance"] = m[1] - 1
 }
 
-match($0, /Edge cut: *([0-9]+)/, m) {
+match($0, /EdgeCut: *([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
