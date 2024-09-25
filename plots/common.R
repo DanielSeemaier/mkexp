@@ -46,6 +46,9 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
   if (!("GCSize" %in% colnames(df))) {
     df$GCSize <- 0
   }
+  if (!("MaxRSS" %in% colnames(df))) {
+    df$MaxRSS <- 0
+  }
 
   if (ignore_first_seed) {
     df <- df %>% dplyr::filter(Seed > 0)
@@ -59,7 +62,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(Cut = ifelse(Balance > Epsilon + .Machine$double.eps, NA, Cut))
 
   vars <- colnames(df)
-  vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed")]
+  vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed", "MaxRSS")]
   df <- ddply(df, vars, aggregator)
 
   df <- df %>%

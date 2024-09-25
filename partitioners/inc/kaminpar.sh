@@ -77,7 +77,7 @@ InvokeFromDisk() {
         >&2 echo -e "      -e $ARGS_COLOR${invoke_from_disk_args[epsilon]}$NO_COLOR"
         >&2 echo -e "      --seed=$ARGS_COLOR${invoke_from_disk_args[seed]}$NO_COLOR"
         >&2 echo -e "      -t $ARGS_COLOR${invoke_from_disk_args[num_threads]}$NO_COLOR"
-        >&2 echo -e "      -f $ARGS_COLOR$format$NO_COLOR"
+        #>&2 echo -e "      -f $ARGS_COLOR$format$NO_COLOR"
         >&2 echo "      -E"
         >&2 echo "      -T"
         >&2 echo -e "  - Specified arguments: $ARGS_COLOR${invoke_from_disk_args[algorithm_arguments]}$NO_COLOR"
@@ -88,7 +88,7 @@ InvokeFromDisk() {
     if [[ -f "$graph" ]]; then
         echo -n "${invoke_from_disk_args[bin]} "
         echo -n "-G $graph "
-        echo -n "-f $format "
+        #echo -n "-f $format "
         echo -n "-k ${invoke_from_disk_args[k]} "
         echo -n "-e ${invoke_from_disk_args[epsilon]} "
         echo -n "--seed=${invoke_from_disk_args[seed]} "
