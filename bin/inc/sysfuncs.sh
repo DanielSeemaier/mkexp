@@ -95,6 +95,7 @@ ResetExperiment() {
     _epsilons=()
     _nodes_x_mpis_x_threads=()
     _kagen_graphs=()
+    _custom_graphs=()
     _timelimit=""
     _time_per_instance=""
     _system="generic"
