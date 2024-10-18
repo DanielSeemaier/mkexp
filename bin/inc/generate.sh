@@ -73,7 +73,11 @@ GenerateInfoFile() {
     echo "## Host \`$(hostname)\`" >> INFO.MD
     echo "" >> INFO.MD
     echo "- Kernel: \`$(uname -a)\`" >> INFO.MD
-    echo "- OS: \`$(lsb_release -d | cut -f2)\`" >> INFO.MD
+    if command -v lsb_release 2>&1 >/dev/null; then
+        echo "- OS: \`$(lsb_release -d | cut -f2)\`" >> INFO.MD
+    else
+        echo "- OS: not available"
+    fi
     echo "- CPU information:" >> INFO.MD
     echo " \`\`\`" >> INFO.MD
     lscpu | sed 's/^/  /' >> INFO.MD
