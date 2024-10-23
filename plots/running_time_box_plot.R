@@ -29,8 +29,8 @@ create_running_time_boxplot <- function(...,
   stopifnot(length(all_datasets) > 0)
 
   # Sort by primary key
-  for (dataset in all_datasets) {
-    dataset <- dataset %>% dplyr::arrange_at(primary_key)
+  for (i in 1:length(all_datasets)) {
+    all_datasets[[i]] <- all_datasets[[i]] %>% dplyr::arrange_at(primary_key)
   }
 
   # Check for consistent data
