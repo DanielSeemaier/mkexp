@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
+
 set -o pipefail
 set -o errtrace
 set -o nounset
 set -o errexit
 
-# This constant can be set at any customization point to pass additional 
-# flags to any CMake invocation
-CUSTOM_CMAKE_FLAGS=""
-
-# Find the absolute path to this script
 source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do
   script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
@@ -18,18 +14,13 @@ done
 script_pwd=$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)
 MKEXP_HOME="$(realpath "$script_pwd/../")"
 
-# Declares $mode, $skip_installed
 . "$MKEXP_HOME/bin/inc/cli.sh"
-
-# Implements $mode == "init"
 . "$MKEXP_HOME/bin/inc/init.sh"
 
-# Check that there is an Experiment file -- otherwise abort, except for --help, --init
-[[ -f "Experiment" ]] || {
-    echo "Error: no Experiment file contained in the current working directory"
-    echo "  Run 'mkexp --init' to initialize a new experiment in the current directory"
+if [[ ! -f "Experiment" ]]; then
+    echo "fatal: no Experiment file found in the current working directory"
     exit 1
-}
+fi
 
 ################################################################################
 
@@ -54,11 +45,9 @@ if [[ $mode == "generate" ]]; then
     cat <<EOT > "$gitignore_filename"
 submit.sh
 parse.sh
-nohup.out
 logs/
 jobs/
 usr/
-.Rhistory
 slurm/
 slurm-*
 logs*/
@@ -145,9 +134,7 @@ HandleExperiment() {
     fi
 }
 
-fallback_global_experiment=1
 for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do 
-    fallback_global_experiment=0
     PrintExperiment $function_name
 
     ResetExperiment
@@ -157,11 +144,6 @@ for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do
     experiment_name="$function_name"
     HandleExperiment
 done
-
-if [[ $fallback_global_experiment == "1" ]]; then 
-    experiment_name="base"
-    HandleExperiment
-fi
 
 if [[ $mode == "generate" ]]; then
     GenerateJobfileWrapper "$submit_impl_filename" >> "$submit_filename"
