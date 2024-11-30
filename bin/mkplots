@@ -420,7 +420,8 @@ if ("--per-instance" %in% plots) {
       title = "Cuts",
       subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
       caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
-    )
+    ) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2))
   print(plot)
 
   # Running time
@@ -443,7 +444,8 @@ if ("--per-instance" %in% plots) {
       title = "Running Times",
       subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
       caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
-    )
+    ) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2))
   print(p)
 
   dev.off()
