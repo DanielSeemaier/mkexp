@@ -45,6 +45,7 @@ InstallDiskDriver() {
     mkdir -p "$src_dir/build" 
     cd "$src_dir/build"
     Prefixed cmake -S "$src_dir" \
+        --preset=default \
         -B "$src_dir/build" \
         -DCMAKE_BUILD_TYPE=Release \
         $CUSTOM_CMAKE_FLAGS \
@@ -93,6 +94,8 @@ InvokeFromDisk() {
     if [[ -f "$graph" ]]; then
         echo -n "${invoke_from_disk_args[bin]} "
         echo -n "-h $graph "
+        echo -n "--instance-type=graph "
+        echo -n "-o cut "
         echo -n "--input-file-format=$format "
         echo -n "-k ${invoke_from_disk_args[k]} "
         echo -n "-e ${invoke_from_disk_args[epsilon]} "
