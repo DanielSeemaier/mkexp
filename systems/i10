@@ -82,5 +82,5 @@ GenerateJobfileSubmission() {
 }
 
 GenerateJobfileWrapper() {
-    echo "bash $submit_impl_filename"
+    echo "sbatch -p $(hostname) $submit_impl_filename"
 }
