@@ -15,7 +15,6 @@ ExperimentUfmBench() {
     Seeds 1 2 3
     Threads 1x1x4 1x1x64
 
-    # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined
-    # Graphs /nfs/work/gp_benchmark_sets/ufm_paper/combined_small
-    Graphs /nfs/work/graph_benchmark_sets/ufm_paper/combined_32eid_nzcut
+    # Graphs /nfs/work/graph_benchmark_sets/ufm_paper/combined metis
+    Graphs /nfs/work/graph_benchmark_sets/ufm_paper/combined_32eid_nzcut metis
 }
