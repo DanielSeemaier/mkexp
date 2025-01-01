@@ -5,7 +5,7 @@ DefineAlgorithmBuild KaMinPar64 KaMinPar --preset=default -DKAMINPAR_64BIT_IDS=O
 DefineAlgorithm KaMinPar-FM KaMinPar -P fm
 #DefineAlgorithm KaMinPar-Mem KaMinParC -P memory
 
-System i10-Exclusive
+System i10
 Wrapper taskset
 
 ExperimentUfmBench() {
