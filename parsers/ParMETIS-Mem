@@ -39,7 +39,7 @@ match($0, /Total:[[:blank:]]*Max:[[:blank:]]*([0-9\.e\-]+)/, m) {
     data["Time"] = m[1]
 }
 
-match($0, /Final *[0-9]+-way Cut: ([0-9]+)[[:blank:]]*Balance: ([0-9\.e\-]+)/, m) {
+match($0, /Final[[:blank:]]*[0-9]+-way Cut:[[:blank:]]*([0-9]+)[[:blank:]]*Balance: ([0-9\.e\-]+)/, m) {
     data["Cut"] = m[1]
     data["Balance"] = m[2] - 1
 }
