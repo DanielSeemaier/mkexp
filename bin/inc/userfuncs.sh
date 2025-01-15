@@ -236,9 +236,16 @@ CustomGraph() {
 #
 # Graphs <paths/to/graphs...>
 Graphs() {
-    for filename in ${1%/}/*.*; do 
-        _graphs+=("${filename%.*}")
-    done
+    ext=${2:-}
+    if [[ "$ext" != "" ]]; then
+        for filename in ${1%/}/*.$ext; do 
+            _graphs+=("${filename%.*}")
+        done
+    else
+        for filename in ${1%/}/*.*; do 
+            _graphs+=("${filename%.*}")
+        done
+    fi
 }
 
 # Specify a single graph file.

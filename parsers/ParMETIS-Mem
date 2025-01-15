@@ -1,0 +1,91 @@
+# -*-awk-*-
+BEGIN {
+    header()
+    reset()
+}
+
+/__BEGIN_FILE__/ {
+    sub(/__BEGIN_FILE__ /, "", $0)
+    split($0, parts, "___")
+
+    data["Graph"] = parts[1]
+    data["NumNodes"] = -1
+    data["NumMPIsPerNode"] = -1
+    data["NumThreadsPerMPI"] = -1
+    data["Seed"] = -1
+    data["Epsilon"] = 0.03
+
+    split(parts[2], parts, "_")
+    for (i in parts) {
+        if (match(parts[i], /k([0-9]+)/, m)) {
+            data["K"] = m[1]
+        } else if (match(parts[i], /P([0-9]+)x([0-9]+)x([0-9]+)/, m)) {
+            data["NumNodes"] = m[1]
+            data["NumMPIsPerNode"] = m[2]
+            data["NumThreadsPerMPI"] = m[3]
+        } else if (match(parts[i], /seed([0-9]+)/, m)) {
+            data["Seed"] = m[1]
+        } else if (match(parts[i], /eps([0-9\.\-e]+)/, m)) {
+            data["Epsilon"] = m[1]
+        }
+    }
+}
+
+/__END_FILE__/ {
+    yield()
+}
+
+match($0, /Total:[[:blank:]]*Max:[[:blank:]]*([0-9\.e\-]+)/, m) {
+    data["Time"] = m[1]
+}
+
+match($0, /Final[[:blank:]]*[0-9]+-way Cut:[[:blank:]]*([0-9]+)[[:blank:]]*Balance: ([0-9\.e\-]+)/, m) {
+    data["Cut"] = m[1]
+    data["Balance"] = m[2] - 1
+}
+
+match($0, /Maximum resident set size: ([0-9]+)/, m) {
+    data["Memory"] = m[1]
+}
+
+END {
+    yield()
+}
+
+function header() {
+    printf "Graph,"
+    printf "K,"
+    printf "Seed,"
+    printf "Cut,"
+    printf "Epsilon,"
+    printf "Balance,"
+    printf "Time,"
+    printf "MaxRSS,"
+    printf "NumNodes,"
+    printf "NumMPIsPerNode,"
+    printf "NumThreadsPerMPI,"
+    printf "Failed\n"
+}
+
+function yield() {
+    if (length(data) == 0) { return }
+
+    printf "%s,", data["Graph"]
+    printf "%d,", data["K"]
+    printf "%d,", data["Seed"]
+    printf "%d,", data["Cut"]
+    printf "%f,", data["Epsilon"]
+    printf "%f,", data["Balance"]
+    printf "%f,", data["Time"]
+    printf "%d,", data["Memory"]
+    printf "%d,", data["NumNodes"]
+    printf "%d,", data["NumMPIsPerNode"]
+    printf "%d,", data["NumThreadsPerMPI"]
+    printf "%d\n", (data["Time"] == "")
+
+    reset()
+}
+
+function reset() {
+    split("", data)
+}

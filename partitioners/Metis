@@ -1,0 +1,98 @@
+#!/bin/bash
+
+METIS_VERSION="5.2.1"
+
+Fetch() {
+    local -n fetch_args=$1
+
+    if (( ${fetch_args[install_disk_driver]} )); then 
+        FetchDiskDriver fetch_args
+    fi
+}
+
+FetchDiskDriver() {
+    local -n fetch_disk_driver_args=$1
+    src_dir="${fetch_disk_driver_args[disk_driver_src]}"
+
+    if [[ ! -d "$src_dir/GKlib" ]]; then
+        echo -e "Downloading GKlib to '$src_dir'"
+
+        Prefixed git clone https://github.com/KarypisLab/GKlib.git "$src_dir/GKlib"
+    fi
+
+    if [[ ! -d "$src_dir/METIS-$METIS_VERSION/" ]]; then
+        echo -e "Downloading self-hosted tar for algorithm '$ALGO_COLOR${fetch_disk_driver_args[algorithm]}$NO_COLOR' to directory '$src_dir'"
+        echo ""
+
+        Prefixed mkdir -p "$src_dir"
+        Prefixed curl -o "$src_dir/metis.tar.gz" "https://codeload.github.com/KarypisLab/METIS/tar.gz/refs/tags/v$METIS_VERSION"
+        Prefixed tar -xzf "$src_dir/metis.tar.gz" -C "$src_dir"
+    else
+        echo "Directory '$src_dir/metis-$METIS_VERSION/' already exists, skipping download"
+        echo -e "${WARNING_COLOR}If you intend to re-download Metis, delete the directory!$NO_COLOR"
+        echo ""
+    fi
+}
+
+Install() {
+    local -n install_args=$1
+    
+    if (( ${install_args[install_disk_driver]} )); then 
+        InstallDiskDriver install_args
+    fi
+}
+
+InstallDiskDriver() {
+    local -n install_disk_driver_args=$1
+
+    if [[ ! -x "${install_disk_driver_args[disk_driver_bin]}" ]]; then
+        src_dir="${install_disk_driver_args[disk_driver_src]}"
+
+        echo -e "Build algorithm '$ALGO_COLOR${install_disk_driver_args[algorithm]}$NO_COLOR' in directory '$src_dir'"
+        echo -e "  - Algorithm-specific options (passed to ./configure): $ARGS_COLOR${install_disk_driver_args[algorithm_build_options]}$NO_COLOR"
+        echo ""
+
+        current_pwd="$PWD"
+
+        cd "$src_dir/GKlib"
+        Prefixed make config prefix="$PREFIX"
+        Prefixed make install -j
+
+        cd "$src_dir/METIS-$METIS_VERSION/"
+        Prefixed make config prefix="$PREFIX" ${install_disk_driver_args[algorithm_build_options]}
+        Prefixed make -j 
+        Prefixed cp "$src_dir/METIS-$METIS_VERSION/build/programs/gpmetis" "${install_disk_driver_args[disk_driver_bin]}"
+        cd "$current_pwd"
+    else
+        echo "Binary '${install_disk_driver_args[disk_driver_bin]}' already exists, skipping build"
+        echo -e "${WARNING_COLOR}If you intend to rebuild Metis, delete the binary!$NO_COLOR"
+        echo ""
+    fi
+}
+
+InvokeFromDisk() {
+    local -n invoke_from_disk_args=$1
+    
+    graph="${invoke_from_disk_args[graph]}"
+    [[ -f "$graph.graph" ]] && graph="$graph.graph"
+    [[ -f "$graph.metis" ]] && graph="$graph.metis"
+    imbalance=$(echo "1000*${invoke_from_disk_args[epsilon]}" | bc)
+
+    if [[ -f "$graph" ]]; then
+        echo -n "${invoke_from_disk_args[bin]} "
+        echo -n "${invoke_from_disk_args[algorithm_arguments]} "
+        echo -n "-seed=${invoke_from_disk_args[seed]} "
+        echo -n "-ufactor=$imbalance "
+        echo -n "-nooutput "
+        echo -n "$graph "
+        echo -n "${invoke_from_disk_args[k]} "
+        echo ""
+    else 
+        >&2 echo "Warning: Graph $graph does not exist"
+        return 1
+    fi
+}
+
+ReportVersion() {
+    echo "*:$METIS_VERSION"
+}

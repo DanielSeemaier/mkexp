@@ -22,6 +22,8 @@ if [[ ! -f "Experiment" ]]; then
     exit 1
 fi
 
+export CUSTOM_CMAKE_FLAGS=""
+
 ################################################################################
 
 . "$MKEXP_HOME/bin/inc/userfuncs.sh"
