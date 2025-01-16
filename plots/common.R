@@ -62,7 +62,7 @@ aggregate_data <- function(df, timelimit, aggregator, ignore_first_seed = FALSE)
     dplyr::mutate(Cut = ifelse(Balance > Epsilon + .Machine$double.eps, NA, Cut))
 
   vars <- colnames(df)
-  vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed", "MaxRSS")]
+  vars <- vars[!vars %in% c("Cut", "Balance", "Time", "Failed", "Timeout", "Seed", "MaxRSS", "TimeTotal", "TimeIO")]
   df <- ddply(df, vars, aggregator)
 
   df <- df %>%
@@ -127,6 +127,12 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
   }
   if (!("N" %in% colnames(df))) {
     df$N <- -1
+  }
+  if (!("TimeIO" %in% colnames(df))) {
+    df$TimeIO <- -1
+  }
+  if (!("TimeTotal" %in% colnames(df))) {
+    df$TimeTotal <- -1
   }
 
   # Fix imbalance column for ParMETIS (which is 1+x instead if 0+x)

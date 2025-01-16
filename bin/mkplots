@@ -113,6 +113,7 @@ for (algorithm in algorithms) {
 
   df <- load_data(algorithm, filename, ignore_balance = ignore_balance) %>%
     dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
+    dplyr::arrange(Graph, K) %>% 
     merge(graphs_db, by = "Graph", all.x = TRUE, suffixes = c(".csv", ""))
 
   if (filter_eps > 0) {
@@ -133,6 +134,7 @@ for (algorithm in algorithms) {
   my_graphs <- unique(df$Graph)
   my_eps <- unique(df$Epsilon)
 
+  cat(paste0("\trows = ", nrow(df), "\n"))
   cat(paste0("\tthreads = { ", paste(my_num_threads, collapse = ", "), " }\n"))
   cat(paste0("\tks = { ", paste(my_ks, collapse = ", "), " }\n"))
   cat(paste0("\teps = { ", paste(my_eps, collapse = ", "), " }\n"))
@@ -150,6 +152,15 @@ cat("Determining common instances among data sets:\n")
 common_ks <- sort(unique(data[[1]]$K))
 common_graphs <- unique(data[[1]]$Graph)
 common_eps <- unique(data[[1]]$Epsilon)
+for (i in 1:length(data)) {
+  my_ks <- unique(data[[i]]$K)
+  my_graphs <- unique(data[[i]]$Graph)
+  my_eps <- unique(data[[i]]$Epsilon)
+  common_ks <- intersect(common_ks, my_ks)
+  common_graphs <- intersect(common_graphs, my_graphs)
+  common_eps <- intersect(common_eps, my_eps)
+}
+
 for (i in 1:length(data)) {
   name <- data[[i]]$Algorithm[[1]]
   my_ks <- unique(data[[i]]$K)
@@ -192,6 +203,14 @@ for (i in 1:length(data)) {
       Epsilon %in% common_eps
   )
 }
+
+cat("Final data set:\n")
+for (i in 1:length(data)) {
+  name <- data[[i]]$Algorithm[[1]]
+  cat(paste0("\tAlgorithm ", name, ": #rows = ", nrow(data[[i]]), "\n"))
+}
+
+cat("\n")
 
 cut_plot_theme <- create_theme() + theme(
   legend.position = "bottom"
@@ -338,7 +357,7 @@ if ("--all-time" %in% plots) {
   all_running_times <- aggregate_running_times(data)
   all_running_times_annotation <- data.frame(
     Algorithm = all_running_times$Algorithm,
-    Annotation = sprintf("h=%.2f, g=%.2f, a=%.2f", all_running_times$Hmean, all_running_times$Gmean, all_running_times$Mean)
+    Annotation = sprintf("h=%.3f, g=%.3f, a=%.3f", all_running_times$Hmean, all_running_times$Gmean, all_running_times$Mean)
   )
 
   plot <- do.call(create_running_time_boxplot, c(data, list(annotation = all_running_times_annotation))) +
@@ -361,7 +380,7 @@ if ("--all-time" %in% plots) {
     k_running_times <- aggregate_running_times(k_data)
     k_running_times_annotation <- data.frame(
       Algorithm = k_running_times$Algorithm,
-      Annotation = sprintf("h=%.2f, g=%.2f, a=%.2f", k_running_times$Hmean, k_running_times$Gmean, k_running_times$Mean)
+      Annotation = sprintf("h=%.3f, g=%.3f, a=%.3f", k_running_times$Hmean, k_running_times$Gmean, k_running_times$Mean)
     )
 
     plot <- do.call(create_running_time_boxplot, c(k_data, list(annotation = k_running_times_annotation))) +
