@@ -201,7 +201,7 @@ for (i in 1:length(data)) {
     Graph %in% common_graphs &
       K %in% common_ks &
       Epsilon %in% common_eps
-  )
+  ) %>% dplyr::arrange(Graph, K)
 }
 
 cat("Final data set:\n")
@@ -406,6 +406,8 @@ if ("--per-instance" %in% plots) {
     df$RelAvgCut <- df$AvgCut / relative_to$AvgCut
     normalized <- rbind(normalized, df)
   }
+
+  
 
   normalized <- normalized %>%
     dplyr::mutate(K = factor(K)) %>%
