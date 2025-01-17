@@ -72,7 +72,8 @@ all_plots <- c(
   "--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut", "--per-graph-type-cut",
   "--all-time",
   "--per-instance",
-  "--graph-stats"
+  "--graph-stats",
+  "--cut-stats"
 )
 default_plots <- c("--all-cut", "--all-time", "--per-instance")
 
@@ -218,6 +219,17 @@ cut_plot_theme <- create_theme() + theme(
 
 
 mkpdf <- function(name) pdf(paste0("plots/", name, filename_suffix, ".pdf"), width = 14)
+
+if ("--cut-stats" %in% plots) {
+  for (df in data) {
+    cat(paste0("Algorithm ", df$Algorithm[[1]], ": ", gm_mean(df$AvgCut), "\n"))
+    cat(paste0("\tk<=128: ", gm_mean(dplyr::filter(df, K <= 128)$AvgCut), "\n"))
+    cat(paste0("\tk>128: ", gm_mean(dplyr::filter(df, K > 128)$AvgCut), "\n"))
+    for (k in common_ks) {
+      cat(paste0("\t\tk=", k, ": ", gm_mean(dplyr::filter(df, K == k)$AvgCut), "\n"))
+    }
+  }
+}
 
 if ("--all-cut" %in% plots) {
   mkpdf("cut")
