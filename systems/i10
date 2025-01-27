@@ -1,0 +1,12 @@
+#!/bin/bash 
+. "$script_pwd/../systems/Generic"
+
+GenerateJobfileSubmission() {
+    for file in ${@}; do 
+        echo "bash $file" >> "$submit_impl_filename"
+    done
+}
+
+GenerateJobfileWrapper() {
+    echo "sbatch -p $(hostname) $submit_impl_filename"
+}

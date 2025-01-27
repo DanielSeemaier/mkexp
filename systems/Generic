@@ -1,0 +1,81 @@
+#!/bin/bash 
+
+SetupBuildEnv() {
+    return
+}
+
+SetupSystem() {
+    return
+}
+
+UploadDirectory() {
+    echo "Error: unsupported"
+}
+
+DownloadDirectory() {
+    echo "Error: unsupported"
+}
+
+GenerateJobfileHeader() {
+    return 0
+}
+
+GenerateJobfileEntry() {
+    local -n args=$1
+
+    if (( ${args[num_nodes]} > 1 )); then
+        >&2 echo "Error: generic systems do not support multi-node execution"
+        exit 1
+    fi
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo -e "Wrapping calls with ${args[mpi]} for algorithm '$ALGO_COLOR${args[algorithm]}$NO_COLOR', $ARGS_COLOR${args[num_nodes]}x${args[num_mpis]}x${args[num_threads]}$NO_COLOR:"
+    fi
+
+    case "${args[mpi]}" in 
+        taskset)
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo -e "  - taskset -c 0-$ARGS_COLOR$(( ${args[num_threads]} - 1 ))$NO_COLOR <call>"
+            fi
+            echo "taskset -c 0-$(( ${args[num_threads]} - 1 )) ${args[exe]}"
+            ;;
+        none)
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo "  - <call>"
+            fi
+            echo "${args[exe]}"
+            ;;
+        OpenMPI)
+            oversubscribe=""
+            overload=""
+            if [[ "$_oversubscribe_mpi" == "1" ]]; then 
+                oversubscribe="-oversubscribe"
+                overload=":overload-allowed"
+            fi
+            if [[ "${args[print_wrapper]}" == "1" ]]; then
+                >&2 echo -e "  - mpirun -n $ARGS_COLOR${args[num_mpis]}$NO_COLOR --bind-to core --map-by socket:PE=$ARGS_COLOR${args[num_threads]}$NO_COLOR <call>"
+            fi
+            echo "mpirun -n ${args[num_mpis]} $oversubscribe --bind-to core$overload --map-by socket:PE=${args[num_threads]} ${args[exe]}"
+            ;;
+        OpenMP)
+            echo "OMP_PROC_BIND=spread OMP_PLACES=threads OMP_NUM_THREADS=${args[num_threads]} ${args[exe]}"
+            ;;
+        *)
+            >&2 echo "Error: unsupported MPI ${args[mpi]}"
+            exit 1
+    esac
+
+    if [[ "${args[print_wrapper]}" == "1" ]]; then
+        >&2 echo ""
+    fi
+}
+
+GenerateJobfileSubmission() {
+    for jobfile in ${@}; do
+        echo "bash $jobfile"
+    done
+}
+
+GenerateJobfileWrapper() {
+    echo "bash $submit_impl_filename"
+}
