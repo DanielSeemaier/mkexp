@@ -49,7 +49,7 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
   } else if (startsWith(arg, "--graph-suffix")) {
     suffix <- substring(arg, nchar("--graph-suffix=") + 1)
     graphs_db <- graphs_db %>% dplyr::mutate(Graph = paste0(Graph, suffix))
-  } else if (arg == "--ignore-balance") {
+  } else if (arg == "--ignore-imbalance") {
     ignore_balance <- TRUE
   } else if (arg == "--filter-failed") {
     filter_failed <- TRUE
@@ -73,9 +73,8 @@ cat(paste0("File suffix: ", filename_suffix, "\n"))
 cat("\n")
 
 all_plots <- c(
-  "--all-cut", "--pairwise-cut", "--per-k-cut", "--per-eps-cut", "--per-graph-type-cut",
-  "--all-time",
-  "--per-instance",
+  "--all-cut", "--all-time", "--pairwise-cut", 
+  "--per-k-cut", "--per-eps-cut", "--per-graph-type-cut", "--per-graph-type-time", "--per-instance",
   "--graph-stats",
   "--cut-stats"
 )
@@ -86,6 +85,9 @@ if (length(algorithms) == 0 || "--help" %in% plots) {
   cat("Available options:\n")
   cat("\t--filter-eps=<...>    Only use results with the given epsilon value.\n")
   cat("\t--filter-k=<...>      Only use results with the given number of blocks.\n")
+  cat("\t--max-k=<...>         Only keep instances with k <= this parameter.\n")
+  cat("\t--filter-failed       Remove instances that failed for some configurations from all data sets.\n")
+  cat("\t--ignore-imbalance    Ignore imbalanced partitions and treat them as if they were balanced.\n")      
   cat("\t--suffix=<...>        Append this suffix to the filenames of plot files.\n")
   cat("\t--graph-suffix=<...>  Append this suffix to the graph names in 'data/graphs.csv' before merging.\n")
   cat("\n")
@@ -410,6 +412,36 @@ if ("--all-time" %in% plots) {
     print(plot)
   }
 
+  dev.off()
+}
+
+if ("--per-graph-type-time" %in% plots) {
+  running_time_plot_theme <- create_theme() + theme(
+    legend.position = "none",
+    axis.title.x = element_blank(),
+  )
+  mkpdf("per_graph_type_running_time")
+  for (type in common_graph_types) {
+    type_data <- list()
+    for (df in data) {
+      type_df <- df %>% dplyr::filter(GraphType == type)
+      type_data <- append(type_data, list(type_df))
+    }
+    type_running_times <- aggregate_running_times(type_data)
+    type_running_times_annotation <- data.frame(
+        Algorithm = type_running_times$Algorithm,
+        Annotation = sprintf("h=%.3f, g=%.3f, a=%.3f", type_running_times$Hmean, type_running_times$Gmean, type_running_times$Mean)
+    )
+    type_graphs <- unique(type_data[[1]]$Graph)
+    plot <- do.call(create_running_time_boxplot, c(type_data, list(annotation = type_running_times_annotation))) +
+        theme_bw() +
+        running_time_plot_theme +
+        labs(
+            title = paste0("Running Times for ", type, " Graphs"),
+            caption = paste0("#graphs = ", length(type_graphs), ", #ks = 1")
+        )
+    print(plot)
+  }
   dev.off()
 }
 
