@@ -128,7 +128,7 @@ HandleExperiment() {
     fi 
 
     if [[ $mode == "plots" ]]; then 
-        mkplots ${_algorithms[@]}
+        mkplots.R ${_algorithms[@]}
     fi
 
     if [[ $mode == "stats" ]]; then 
