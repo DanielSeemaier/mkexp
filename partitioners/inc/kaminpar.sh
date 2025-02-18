@@ -67,6 +67,9 @@ InvokeFromDisk() {
         graph="$graph.parhip"
         format="parhip"
     fi
+    if [[ -f "$graph.compressed" ]]; then
+        graph="$graph.compressed"
+    fi
 
     if [[ "${invoke_from_disk_args[print_partitioner]}" == "1" ]]; then 
         >&2 echo -e "Generating calls for algorithm '$ALGO_COLOR${invoke_from_disk_args[algorithm]}$NO_COLOR', from disk, via the binary:"
