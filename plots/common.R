@@ -82,6 +82,7 @@ aggregate_data <- function(df, timelimit, aggregator) {
             MinImbalance > Epsilon + .Machine$double.eps) %>%
         dplyr::mutate(Feasible = !Failed & !Timeout & !Infeasible) %>%
         dplyr::mutate(Invalid = Failed | Timeout | Infeasible)
+    print(colnames(df))
 
     return(df)
 }
@@ -116,10 +117,10 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
     }
 
     if (!("Timeout" %in% colnames(df))) {
-        df$Timeout <- FALSE
+        df$Timeout <- 0
     }
     if (!("Failed" %in% colnames(df))) {
-        df$Failed <- FALSE
+        df$Failed <- 0
     }
     if (!("Seed" %in% colnames(df))) {
         df$Seed <- 0
@@ -130,6 +131,9 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
     }
     if (ignore_balance) {
         df$Epsilon <- 10000.0
+    }
+    if (!("MaxRSS" %in% colnames(df))) {
+        df$MaxRSS <- -1
     }
 
     # Old CSV files use "Balance" instead of "Imbalance"
