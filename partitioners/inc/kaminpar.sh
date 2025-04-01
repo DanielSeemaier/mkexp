@@ -46,7 +46,8 @@ InstallDiskDriver() {
         -DKAMINPAR_BUILD_DISTRIBUTED=Off \
         $CUSTOM_CMAKE_FLAGS \
         ${install_disk_driver_args[algorithm_build_options]}
-    Prefixed cmake --build "$src_dir/build" --target KaMinPar --parallel
+    cmake --build "$src_dir/build" --target KaMinPar --parallel || echo "No target KaMinPar"
+    cmake --build "$src_dir/build" --target KaMinParApp --parallel || echo "No target KaMinParApp"
     Prefixed cp "$src_dir/build/apps/KaMinPar" "${install_disk_driver_args[disk_driver_bin]}"
 }
 
