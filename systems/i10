@@ -1,12 +1,21 @@
 #!/bin/bash 
 . "$script_pwd/../systems/Generic"
 
+GenerateJobfileHeader() {
+    local -n args=$1
+
+    echo "#!/bin/bash"
+    echo "#SBATCH --partition=$(hostname)"
+    echo "#SBATCH --job-name=${args[experiment]##Experiment}"
+
+    >&2 echo ""
+}
 GenerateJobfileSubmission() {
     for file in ${@}; do 
-        echo "bash $file" >> "$submit_impl_filename"
+        echo "sbatch -p $(hostname) $file" >> "$submit_impl_filename"
     done
 }
 
 GenerateJobfileWrapper() {
-    echo "sbatch -p $(hostname) $submit_impl_filename"
+    echo "bash $submit_impl_filename"
 }
