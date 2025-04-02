@@ -1,9 +1,0 @@
-#!/bin/bash
-
-. "$script_pwd/../partitioners/inc/git.sh"
-. "$script_pwd/../partitioners/inc/kagen-partitioner.sh"
-
-DKAMINPAR_USE_KAGEN_DRIVER=1
-DKAMINPAR_REPOSITORY_URL="git@github.com:DanielSeemaier/KaMinPar.git"
-
-. "$script_pwd/../partitioners/inc/dkaminpar.sh"

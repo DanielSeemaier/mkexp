@@ -157,14 +157,6 @@ Partition() {
     _partition="$1"
 }
 
-# Specify the MPI library that should be used, e.g., OpenMPI, IMPI or 
-# other runners, e.g., none or taskset.
-#
-# MPI <OpenMPI|IMPI|none|taskset>
-MPI() {
-    _mpi="$1"
-}
-
 # Same as MPI
 Wrapper() {
     _mpi="$1"
@@ -288,51 +280,3 @@ ClearKaGenGraphs() {
 ClearCustomGraphs() {
     _custom_graphs=()
 }
-
-# Print a summary for the whole experiment
-PrintSummary() {
-    if [[ $mode != "generate" ]]; then 
-        return 0
-    fi
-
-    echo "Custom algorithm definitions:"
-    for algorithm in ${!_algorithm_definition_names[@]}; do 
-        echo "- $algorithm <- $(GetAlgorithmBase "$algorithm")"
-        echo "  Version: $(GetAlgorithmVersion "$algorithm")"
-        echo "  Build options: $(GetAlgorithmBuildOptions "$algorithm")"
-        echo "  Arguments: $(GetAlgorithmArguments "$algorithm")"
-    done
-    echo ""
-
-    echo "Algorithms:"
-    for algorithm in ${_algorithms[@]}; do 
-        echo "- $algorithm"
-        echo "  + Version: $(GetAlgorithmVersion "$algorithm")"
-        echo "  + Build options: $(GetAlgorithmBuildOptions "$algorithm")"
-        echo "  + Arguments: $(GetAlgorithmArguments "$algorithm")"
-    done
-    echo ""
-
-    echo "Graphs:"
-    for graph in ${_graphs[@]}; do 
-        echo "- $graph"
-    done
-    echo ""
-
-    echo "KaGen graphs:"
-    for i in "${!_kagen_graphs[@]}"; do 
-        arguments="${_kagen_graphs[$i]}"
-        echo "- $arguments"
-    done 
-    echo ""
-
-    echo "Parallel executions:"
-    for nodes_x_mpis_x_threads in ${_nodes_x_mpis_x_threads[@]}; do
-        echo "- $(ParseNodes "$nodes_x_mpis_x_threads") nodes X $(ParseMPIs "$nodes_x_mpis_x_threads") MPI processes X $(ParseThreads "$nodes_x_mpis_x_threads") threads"
-    done
-    echo ""
-
-    echo "Seeds: ${_seeds[*]}"
-    echo "Ks: ${_ks[*]}"
-}
-

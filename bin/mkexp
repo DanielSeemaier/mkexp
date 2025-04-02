@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -o pipefail
 set -o errtrace
 set -o nounset
@@ -37,13 +36,12 @@ submit_impl_filename="$PWD/jobs/starter.sh"
 submit_filename="$PWD/submit.sh"
 job_files_dir="$PWD/jobs"
 log_files_dir="$PWD/logs"
-misc_files_dir="$PWD/misc"
 results_dir="$PWD/results"
 
 # Create the basic directory structure for the experiments
 mkdir -p "$PREFIX" "$PREFIX/bin" "$PREFIX/lib" "$PREFIX/include"
 
-if [[ $mode == "generate" ]]; then 
+if [[ $mkexp_mode == *"$MKEXP_MODE_GENERATE"* ]]; then 
     cat <<EOT > "$gitignore_filename"
 submit.sh
 parse.sh
@@ -54,12 +52,10 @@ slurm/
 slurm-*
 logs*/
 all_jobs.sh
-misc/
 EOT
 
     mkdir -p "$job_files_dir"
     mkdir -p "$log_files_dir"
-    mkdir -p "$misc_files_dir"
 
     echo "#!/usr/bin/env bash" > "$submit_filename"
     echo "#!/usr/bin/env bash" > "$submit_impl_filename"
@@ -73,18 +69,9 @@ fi
 # Load the system -- there may only be one system definition per Experiment file
 LoadSystem "$_system"
 
-if [[ $mode == "setup-system" ]]; then 
-    SetupSystem
+if [[ $mkexp_mode == *"$MKEXP_MODE_INSTALL"* ]]; then 
+    SetupBuildEnv
 fi
-
-if [[ $skip_install == "0" ]]; then
-    if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
-        SetupBuildEnv
-    fi
-fi
-
-# Modes that depend on the system
-. "$MKEXP_HOME/bin/inc/transfer.sh"
 
 HandleExperiment() {
     # Default unset variables
@@ -95,10 +82,8 @@ HandleExperiment() {
     fetch_everything=0
     install_everything=0
     if [[ $skip_install == "0" ]]; then
-        if [[ $mode == "generate" || $mode == "install" || $mode == "fetch" ]]; then
+        if [[ $mkexp_mode == *"$MKEXP_MODE_INSTALL"* ]]; then
             fetch_everything=1
-        fi
-        if [[ $mode == "generate" || $mode == "install" || $mode == "install-fetched" ]]; then 
             install_everything=1
         fi
     fi
@@ -108,12 +93,12 @@ HandleExperiment() {
         InstallPartitioners "$fetch_everything" "$install_everything"
     fi
 
-    if [[ $mode == "generate" ]]; then
+    if [[ $mkexp_mode == *"$MKEXP_MODE_GENERATE"* ]]; then
         GenerateInfoFile
         Generate
     fi
 
-    if [[ $mode == "results" ]]; then
+    if [[ $mkexp_mode == *"$MKEXP_MODE_RESULTS"* ]]; then
         mkdir -p "$results_dir"
         for algorithm in ${_algorithms[@]}; do 
             if [[ "$results_parser" == "" ]]; then
@@ -126,14 +111,6 @@ HandleExperiment() {
             fi
         done
     fi 
-
-    if [[ $mode == "plots" ]]; then 
-        mkplots.R ${_algorithms[@]}
-    fi
-
-    if [[ $mode == "stats" ]]; then 
-        mkstats ${_algorithms[@]}
-    fi
 }
 
 for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do 
@@ -147,24 +124,23 @@ for function_name in $(declare -F | awk '{ print $3 }' | grep '^Experiment'); do
     HandleExperiment
 done
 
-if [[ $mode == "generate" ]]; then
+if [[ $mkexp_mode == *"$MKEXP_MODE_GENERATE"* ]]; then
     GenerateJobfileWrapper "$submit_impl_filename" >> "$submit_filename"
 fi
 
-if [[ $mode == "clean" || $mode == "purge" ]]; then 
+if [[ $mkexp_mode == *"$MKEXP_MODE_CLEAN"* || $mkexp_mode == *"$MKEXP_MODE_PURGE"* ]]; then 
     rm -rf "$submit_impl_filename" "$submit_filename" "$job_files_dir" 
 fi
 
-if [[ $mode == "purge" ]]; then
-    echo "!!! About to delete the following files and directories:"
-    echo "    $log_files_dir"
-    echo "    $results_dir"
-    echo "    $misc_files_dir"
-    echo "    $PREFIX"
-    echo "    $PWD/INFO.MD"
+if [[ $mkexp_mode == *"$MKEXP_MODE_PURGE"* ]]; then
+    echo "Permanently deleting the following files:"
+    echo "- $log_files_dir"
+    echo "- $results_dir"
+    echo "- $PREFIX"
+    echo "- $PWD/INFO.MD"
     read -p "Continue (y/n)?" cont
     if [[ $cont == "y" ]]; then
-        rm -rf "$log_files_dir" "$results_dir" "$misc_files_dir" "$PREFIX" "$PWD/INFO.MD"
+        rm -rf "$log_files_dir" "$results_dir" "$PREFIX" "$PWD/INFO.MD"
     fi
 fi
 
