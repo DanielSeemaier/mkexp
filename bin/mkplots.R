@@ -74,12 +74,13 @@ cat(paste0("File suffix: ", filename_suffix, "\n"))
 cat("\n")
 
 all_plots <- c(
-    "--all-cut", "--all-time", "--pairwise-cut",
+    "--all-cut", "--all-time", "--all-mem", "--pairwise-cut",
     "--per-k-cut", "--per-eps-cut", "--per-graph-type-cut", "--per-instance",
     "--detailed-time",
     "--graph-stats",
     "--cut-stats",
-    "--hierarchy"
+    "--hierarchy",
+    "--cols"
 )
 
 default_plots <- c("--all-cut", "--all-time", "--per-instance")
@@ -391,6 +392,25 @@ make_running_time_plot <- function(data, caption, title, subtitle = "", column =
     print(plot)
 }
 
+make_mem_plot <- function(data, caption, title, subtitle = "", column = "PeakMemory") {
+    mem_plot_theme <- create_theme() + theme(
+        legend.position = "none",
+        axis.title.x = element_blank(),
+    )
+
+    all_mems <- aggregate_running_times(data, column)
+    all_mems_annotation <- data.frame(
+        Algorithm = all_mems$Algorithm,
+        Annotation = sprintf("h=%.3f, g=%.3f, a=%.3f", all_mems$Hmean, all_mems$Gmean, all_mems$Mean)
+    )
+
+    plot <- do.call(create_running_time_boxplot, c(data, list(annotation = all_mems_annotation, column.time = column))) +
+        theme_bw() +
+        mem_plot_theme +
+        labs(title = title, subtitle = subtitle, caption = caption)
+    print(plot)
+}
+
 filter_data_by_k <- function(data, k) {
     filtered_data <- list()
     for (df in data) {
@@ -407,6 +427,19 @@ filter_data_by_graph_type <- function(data, graph_type) {
         filtered_data <- append(filtered_data, list(filtered_df))
     }
     return(filtered_data)
+}
+
+if ("--all-mem" %in% plots) {
+    mkpdf("mem")
+
+    make_mem_plot(
+        data,
+        caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks)),
+        title = "Total Peak Memory over All Instances",
+        subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }")
+    )
+
+    dev.off()
 }
 
 if ("--all-time" %in% plots) {
@@ -426,14 +459,6 @@ if ("--all-time" %in% plots) {
             title = paste0("Total Running Times for k = ", k)
         )
     }
-
-    # for (type in common_graph_types) {
-    # make_running_time_plot(
-    # filter_data_by_graph_type(type),
-    # caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks)),
-    # title = paste0("Running Times for ", type, " Graphs")
-    # )
-    # }
 
     dev.off()
 }
@@ -474,6 +499,9 @@ if ("--per-instance" %in% plots) {
     for (df in data) {
         df$RelAvgTime <- df$AvgTime / relative_to$AvgTime
         df$RelAvgCut <- df$AvgCut / relative_to$AvgCut
+        if ("PeakMemory" %in% df) {
+            df$RelAvgPeakMemory <- df$PeakMemory / relative_to$PeakMemory
+        }
         normalized <- rbind(normalized, df)
     }
 
@@ -536,6 +564,32 @@ if ("--per-instance" %in% plots) {
         ) +
         scale_x_discrete(guide = guide_axis(n.dodge = 2))
     print(p)
+
+    # Peak memory
+    if ("PeakMemory" %in% normalized) {
+        p <- ggplot(normalized, aes(x = K, y = RelAvgPeakMemory, fill = Algorithm)) +
+            geom_bar(
+                stat = "identity",
+                position = position_dodge()
+            ) +
+            ylab("Relative Memory") +
+            xlab("Number of Blocks") +
+            theme_bw() +
+            facet_wrap(~Title, ncol = side_len, scales = "free") +
+            geom_hline(yintercept = 1) +
+            create_theme_facet() +
+            theme(
+                strip.text = element_text(size = 10),
+                legend.position = "bottom",
+            ) +
+            labs(
+                title = "Peak Memory",
+                subtitle = "Per Instance, Relative to the First Algorithm, Lower is Better",
+                caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks))
+                ) +
+            scale_x_discrete(guide = guide_axis(n.dodge = 2))
+        print(p)
+    }
 
     dev.off()
 }
@@ -636,7 +690,6 @@ if ("--hierarchy" %in% plots) {
     print(p_coarse_n_to_fine_n)
 
     p_coarse_m_to_fine_m <- ggplot(flat_data, aes(x = Algorithm, color = Algorithm, y = AvgCoarsestM / AvgFinestM)) +
-        #geom_jitter(size = 1) +
         stat_boxplot(aes(color = Algorithm), geom = "errorbar", width = 0.6) +
         geom_boxplot(fill = NA, aes(color = Algorithm), outliers = FALSE, outlier.shape = NA, alpha = 0.5) +
         scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
@@ -653,4 +706,8 @@ if ("--hierarchy" %in% plots) {
     print(p_density_increase)
 
     dev.off()
+}
+
+if ("--cols" %in% plots) {
+    flat_data <- do.call(rbind, data)
 }
