@@ -200,7 +200,6 @@ GenerateInvokationForEveryGraph() {
 
 Generate() {
     declare -A invoc=( [mpi]=$_mpi [timelimit]=$_timelimit )
-    invoc[misc_dir]="$misc_files_dir"
     invoc[experiment]="$experiment_name"
 
     # Prepare jobfiles for each "Threads" configuration
@@ -219,7 +218,6 @@ Generate() {
     # Generate the job file entries for each instance
     for algorithm in ${_algorithms[@]}; do 
         mkdir -p "$log_files_dir/$algorithm"
-        mkdir -p "$misc_files_dir/$algorithm"
 
         invoc[algorithm]=$algorithm
         invoc[algorithm_base]=$(GetAlgorithmBase "$algorithm")
