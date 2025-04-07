@@ -8,6 +8,8 @@ BEGIN {
     sub(/__BEGIN_FILE__ /, "", $0)
     split($0, parts, "___")
 
+    state = "SUMMARY"
+
     data["Graph"] = parts[1]
     data["NumNodes"] = -1
     data["NumMPIsPerNode"] = -1
@@ -50,12 +52,29 @@ match($0, /  Edge cut: *([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
 
+match($0, /  Number of nodes:[[:space:]]*([0-9]+)/, m) {
+    if (state == "SUMMARY") {
+        data["N"] = m[1]
+    }
+}
+match($0, /  Number of edges:[[:space:]]*([0-9]+)/, m) {
+    if (state == "SUMMARY") {
+        data["M"] = m[1]
+    }
+}
+
+$0 == "############################################################### Partitioning ###" {
+    state = "PARTITIONING"
+}
+
 END {
     yield()
 }
 
 function header() {
     printf "Graph,"
+    printf "N,"
+    printf "M,"
     printf "K,"
     printf "Seed,"
     printf "Cut,"
@@ -72,6 +91,8 @@ function yield() {
     if (length(data) == 0) { return }
 
     printf "%s,", data["Graph"]
+    printf "%d,", data["N"]
+    printf "%d,", data["M"]
     printf "%d,", data["K"]
     printf "%d,", data["Seed"]
     printf "%d,", data["Cut"]
