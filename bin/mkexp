@@ -79,18 +79,9 @@ HandleExperiment() {
     [[ -v "_epsilons" ]] || _epsilons+=("0.03")
     [[ -v "_seeds" ]] || _seeds+=("0")
 
-    fetch_everything=0
-    install_everything=0
-    if [[ $skip_install == "0" ]]; then
-        if [[ $mkexp_mode == *"$MKEXP_MODE_INSTALL"* ]]; then
-            fetch_everything=1
-            install_everything=1
-        fi
-    fi
-
-    if [[ $fetch_everything == "1" || $install_everything == "1" ]]; then
-        InstallLibraries "$fetch_everything" "$install_everything"
-        InstallPartitioners "$fetch_everything" "$install_everything"
+    if [[ $mkexp_mode == *"$MKEXP_MODE_INSTALL"* ]]; then
+        InstallLibraries 1 1
+        InstallPartitioners 1 1
     fi
 
     if [[ $mkexp_mode == *"$MKEXP_MODE_GENERATE"* ]]; then
@@ -101,14 +92,20 @@ HandleExperiment() {
     if [[ $mkexp_mode == *"$MKEXP_MODE_RESULTS"* ]]; then
         mkdir -p "$results_dir"
         for algorithm in ${_algorithms[@]}; do 
-            if [[ "$results_parser" == "" ]]; then
+            if [[ "$mkexp_results_parser" == "" ]]; then
                 base=$(GetAlgorithmBase "$algorithm")
                 echo -e "Parsing log files for '$ALGO_COLOR$algorithm$NO_COLOR' using parser '$ALGO_COLOR$base$NO_COLOR'"
                 mkresults "$base" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
             else
-                echo -e "Parsing log files for '$ALGO_COLOR$algorithm$NO_COLOR' using parser '$ALGO_COLOR$results_parser$NO_COLOR'"
-                mkresults "$results_parser" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
+                echo -e "Parsing log files for '$ALGO_COLOR$algorithm$NO_COLOR' using parser '$ALGO_COLOR$mkexp_results_parser$NO_COLOR'"
+                mkresults "$mkexp_results_parser" "$log_files_dir/$algorithm" > "$results_dir/$algorithm.csv"
             fi
+
+            num_lines=$(cat "$results_dir/$algorithm.csv" | wc -l)
+            num_successful=$(grep -c -E ",0$" "$results_dir/$algorithm.csv" || true)
+            num_failed=$(grep -c -E ",1$" "$results_dir/$algorithm.csv" || true)
+
+            echo -e "  Parsed $num_lines results: $STEP_COLOR$num_successful$NO_COLOR OK, $WARNING_COLOR$num_failed$NO_COLOR not OK"
         done
     fi 
 }
