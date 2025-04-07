@@ -18,6 +18,7 @@ empty_min <- function(x) {
 
 OPTIONAL_COLUMNS <- c(
     "MaxRSS",
+    "PeakMemory",
     "TimeIO",
     "TimeRefinement",
     "TimeRefinementLabelPropagation",

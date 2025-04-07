@@ -392,7 +392,7 @@ make_running_time_plot <- function(data, caption, title, subtitle = "", column =
     print(plot)
 }
 
-make_mem_plot <- function(data, caption, title, subtitle = "", column = "PeakMemory") {
+make_mem_plot <- function(data, caption, title, subtitle = "", column = "AvgPeakMemory") {
     mem_plot_theme <- create_theme() + theme(
         legend.position = "none",
         axis.title.x = element_blank(),
@@ -499,8 +499,8 @@ if ("--per-instance" %in% plots) {
     for (df in data) {
         df$RelAvgTime <- df$AvgTime / relative_to$AvgTime
         df$RelAvgCut <- df$AvgCut / relative_to$AvgCut
-        if ("PeakMemory" %in% df) {
-            df$RelAvgPeakMemory <- df$PeakMemory / relative_to$PeakMemory
+        if ("AvgPeakMemory" %in% df) {
+            df$RelAvgPeakMemory <- df$AvgPeakMemory / relative_to$AvgPeakMemory
         }
         normalized <- rbind(normalized, df)
     }
@@ -566,7 +566,7 @@ if ("--per-instance" %in% plots) {
     print(p)
 
     # Peak memory
-    if ("PeakMemory" %in% normalized) {
+    if ("AvgPeakMemory" %in% normalized) {
         p <- ggplot(normalized, aes(x = K, y = RelAvgPeakMemory, fill = Algorithm)) +
             geom_bar(
                 stat = "identity",
@@ -710,4 +710,5 @@ if ("--hierarchy" %in% plots) {
 
 if ("--cols" %in% plots) {
     flat_data <- do.call(rbind, data)
+    colnames(flat_data)
 }
