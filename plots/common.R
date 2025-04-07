@@ -1,13 +1,3 @@
-# options(show.error.locations = TRUE)
-# options(error = traceback)
-
-DEPS <- c("ggplot2", "plyr", "dplyr", "RColorBrewer", "gridExtra", "egg")
-for (dep in DEPS) {
-    if (!require(dep, character.only = TRUE, warn.conflicts = FALSE)) {
-        install.packages(dep)
-    }
-}
-
 empty_min <- function(x) {
     if (length(x[!is.na(x)]) > 0) {
         return(min(x, na.rm = TRUE))
@@ -83,7 +73,6 @@ aggregate_data <- function(df, timelimit, aggregator) {
             MinImbalance > Epsilon + .Machine$double.eps) %>%
         dplyr::mutate(Feasible = !Failed & !Timeout & !Infeasible) %>%
         dplyr::mutate(Invalid = Failed | Timeout | Infeasible)
-    print(colnames(df))
 
     return(df)
 }
@@ -92,7 +81,6 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
     full_filename <- paste0(getwd(), "/", file)
     df <- read.csv(full_filename)
     df <- df %>% dplyr::filter(Seed >= seed)
-    cat(paste0("Read algorithm ", name, " from ", file, ": ", nrow(df), " runs\n"))
 
     # Normalize columns
     if (!("NumNodes" %in% colnames(df))) {

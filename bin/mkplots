@@ -1,15 +1,14 @@
 #!/usr/bin/env Rscript
 options(show.error.locations = TRUE)
 options(error = traceback)
+options(tidyverse.quiet = TRUE)
 
 # Install and load required libraries
-libs <- c("cli", "ggplot2", "plyr", "dplyr", "tidyr", "RColorBrewer", "gridExtra", "egg")
+libs <- c("cli", "plyr", "tidyverse", "RColorBrewer", "gridExtra", "egg")
 for (lib in libs) {
     if (!require(lib, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)) {
         install.packages(lib, repos = "https://cran.uni-muenster.de/")
     }
-
-    library(lib, character.only = TRUE, quietly = TRUE)
 }
 
 # Load plotting functions
@@ -40,9 +39,11 @@ plots <- c()
 ignore_balance <- FALSE
 filter_eps <- 0.00
 filter_k <- 0
+filter_graph <- ""
 filename_suffix <- ""
 filter_failed <- FALSE
 max_k <- 1000000000
+renames <- c()
 
 for (arg in commandArgs(trailingOnly = TRUE)) {
     if (!startsWith(arg, "--")) {
@@ -58,6 +59,8 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
         filter_eps <- substring(arg, nchar("--filter-eps=") + 1)
     } else if (startsWith(arg, "--filter-k")) {
         filter_k <- substring(arg, nchar("--filter-k=") + 1)
+    } else if (startsWith(arg, "--filter-graph")) {
+        filter_graph <- substring(arg, nchar("--filter-graph=") + 1)
     } else if (startsWith(arg, "--max-k=")) {
         max_k <- substring(arg, nchar("--max-k=") + 1)
     } else if (startsWith(arg, "--suffix")) {
@@ -67,11 +70,15 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
     }
 }
 
-cat(paste0("Filter epsilon? ", ifelse(filter_eps == 0.0, "No", paste0("Yes: eps == ", filter_eps)), "\n"))
-cat(paste0("Filter k? ", ifelse(filter_k == 0, "No", paste0("Yes: k == ", filter_k)), "\n"))
-cat(paste0("Max k? ", ifelse(max_k == Inf, "No", paste0("Yes: k <= ", max_k)), "\n"))
-cat(paste0("File suffix: ", filename_suffix, "\n"))
-cat("\n")
+cli::cli_h1("Summary")
+
+cli::cli_ul()
+cli::cli_li("Filter epsilon: {.val {filter_eps != 0.0}}")
+cli::cli_li("Filter k: {.val {filter_k != 0}}")
+cli::cli_li("Filter graph: {.val {filter_graph}}")
+cli::cli_li("Max k: {.val {max_k}}")
+cli::cli_li("File suffix: {.val {filename_suffix}}")
+cli::cli_end()
 
 all_plots <- c(
     "--all-cut", "--all-time", "--all-mem", "--pairwise-cut",
@@ -80,7 +87,8 @@ all_plots <- c(
     "--graph-stats",
     "--cut-stats",
     "--hierarchy",
-    "--cols"
+    "--cols",
+    "--time-over-size"
 )
 
 default_plots <- c("--all-cut", "--all-time", "--per-instance")
@@ -114,7 +122,11 @@ if (length(algorithms) == 0) {
 }
 
 # Load result file for each algorithm
+cli::cli_h1("Loading Data")
+
 data <- list()
+
+outer_ul <- cli::cli_ul()
 
 for (algorithm in algorithms) {
     filename <- paste0("results/", algorithm, ".csv")
@@ -123,11 +135,17 @@ for (algorithm in algorithms) {
         quit()
     }
 
+    cli::cli_li("Loading data set: {.file {filename}}")
+
     df <- load_data(algorithm, filename, ignore_balance = ignore_balance) %>%
         dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
         dplyr::filter(as.integer(K) <= as.integer(max_k)) %>%
         dplyr::arrange(Graph, K) %>%
         merge(graphs_db, by = "Graph", all.x = TRUE, suffixes = c(".csv", ""))
+
+    if (filter_graph != "") {
+        df <- df %>% dplyr::filter(startsWith(Graph, filter_graph))
+    }
 
     if (filter_eps > 0) {
         df <- df %>% dplyr::filter(Epsilon == filter_eps)
@@ -147,11 +165,14 @@ for (algorithm in algorithms) {
     my_graphs <- unique(df$Graph)
     my_eps <- unique(df$Epsilon)
 
-    cat(paste0("\trows = ", nrow(df), "\n"))
-    cat(paste0("\tthreads = { ", paste(my_num_threads, collapse = ", "), " }\n"))
-    cat(paste0("\tks = { ", paste(my_ks, collapse = ", "), " }\n"))
-    cat(paste0("\teps = { ", paste(my_eps, collapse = ", "), " }\n"))
-    cat(paste0("\t#graphs = ", length(my_graphs), "\n"))
+    inner_ul <- cli::cli_ul()
+    cli::cli_li("algorithm: {.field {dplyr::first(df$Algorithm)}}")
+    cli::cli_li("#rows: {.val {nrow(df)}}")
+    cli::cli_li("#graphs: {.val {length(my_graphs)}}")
+    cli::cli_li("cores: {.field {my_num_threads}}")
+    cli::cli_li("ks: {.field {my_ks}}")
+    cli::cli_li("eps: {.field {my_eps}}")
+    cli::cli_end(inner_ul)
 
     # Split dataset into one algorithm for each thread count
     for (num_threads in unique(df$NumThreadsPerMPI)) {
@@ -160,8 +181,11 @@ for (algorithm in algorithms) {
     }
 }
 
-cat("\n")
-cat("Determining common instances among data sets:\n")
+cli::cli_end(outer_ul)
+
+cli::cli_h1("Determining Common Instances among Data Sets")
+cli::cli_text("This step reduces all data sets to a common subset of instances.")
+
 common_ks <- sort(unique(data[[1]]$K))
 common_graphs <- unique(data[[1]]$Graph)
 common_eps <- unique(data[[1]]$Epsilon)
@@ -174,8 +198,11 @@ for (i in 1:length(data)) {
     common_eps <- intersect(common_eps, my_eps)
 }
 
+cli::cli_alert_info("Instances per data sets")
+cli::cli_ul()
+
 for (i in 1:length(data)) {
-    name <- data[[i]]$Algorithm[[1]]
+    name <- dplyr::first(data[[i]]$Algorithm)
     my_ks <- unique(data[[i]]$K)
     my_graphs <- unique(data[[i]]$Graph)
     my_eps <- unique(data[[i]]$Epsilon)
@@ -184,29 +211,23 @@ for (i in 1:length(data)) {
     common_graphs <- intersect(common_graphs, my_graphs)
     common_eps <- intersect(common_eps, my_eps)
 
-    cat(paste0(
-        "\tAlgorithm ", name, ": ",
-        "#graphs = ", length(my_graphs), " (-> ", length(common_graphs), "), ",
-        "#ks = ", length(my_ks), " (-> ", length(common_ks), "), ",
-        "#eps = ", length(my_eps), " (-> ", length(common_eps), ")",
-        "\n"
-    ))
+    cli::cli_li("Algorithm {.field {name}}: 
+        #graphs: {.val {length(my_graphs)}} -> {.emph {length(common_graphs)}}, 
+        #ks: {.val {length(my_ks)}} -> {.emph {length(common_ks)}},
+        #eps: {.val {length(my_eps)}} -> {.emph {length(common_eps)}}")
 }
+
+cli::cli_end()
 
 common_graph_types <- sort(unique(data[[1]]$GraphType))
 
-cat(paste0(
-    "Common instances: ",
-    "#graphs = ", length(common_graphs), ", ",
-    "#ks = ", length(common_ks), ", ",
-    "#eps = ", length(common_eps), ", ",
-    "#graph types = ", length(common_graph_types),
-    "\n"
-))
-cat(paste0("\tks = { ", paste0(common_ks, collapse = ", "), " }\n"))
-cat(paste0("\teps = { ", paste0(common_eps, collapse = ", "), "  }\n"))
-cat(paste0("\tgraph types = { ", paste0(common_graph_types, collapse = ", "), " }\n"))
-cat("\n")
+cli::cli_alert_info("Common instances:")
+cli::cli_ul()
+cli::cli_li("graphs: {.field {common_graphs}} (#graphs: {.val {length(common_graphs)}})")
+cli::cli_li("ks: {.field {common_ks}}")
+cli::cli_li("eps: {.field {common_eps}}")
+cli::cli_li("graph types: {.field {common_graph_types}}")
+cli::cli_end()
 
 # Filter for common graphs and Ks
 for (i in 1:length(data)) {
@@ -219,13 +240,13 @@ for (i in 1:length(data)) {
         dplyr::arrange(Graph, K)
 }
 
-cat("Final data set:\n")
+cli::cli_alert_info("Filtered data sets:")
+cli::cli_ul()
 for (i in 1:length(data)) {
-    name <- data[[i]]$Algorithm[[1]]
-    cat(paste0("\tAlgorithm ", name, ": #rows = ", nrow(data[[i]]), "\n"))
+    name <- dplyr::first(data[[i]]$Algorithm)
+    cli::cli_li("Algorithm {.field {name}}: {.val {nrow(data[[i]])}} rows")
 }
-
-cat("\n")
+cli::cli_end()
 
 cut_plot_theme <- create_theme() + theme(
     legend.position = "bottom"
@@ -233,6 +254,8 @@ cut_plot_theme <- create_theme() + theme(
 
 
 mkpdf <- function(name) pdf(paste0("plots/", name, filename_suffix, ".pdf"), width = 14)
+
+cli::cli_h1("Plotting")
 
 if ("--cut-stats" %in% plots) {
     for (df in data) {
@@ -711,4 +734,22 @@ if ("--hierarchy" %in% plots) {
 if ("--cols" %in% plots) {
     flat_data <- do.call(rbind, data)
     colnames(flat_data)
+}
+
+if ("--time-over-size" %in% plots) {
+    flat_data <- do.call(rbind, data)
+    flat_data$Size <- flat_data[["N.csv"]] + flat_data[["M.csv"]] / 2
+    #flat_data$Size <- flat_data[["M.csv"]]
+    flat_data$TimePerEdge <- flat_data$AvgTime / (flat_data[["M.csv"]] / 2)
+    
+    mkpdf("time_over_size")
+
+    p <- ggplot(flat_data, aes(x = Size, y = TimePerEdge, color = Algorithm)) +
+        #geom_line() +
+        geom_point() +
+        geom_smooth(method = 'lm', se = FALSE)
+
+    print(p)
+
+    dev.off()
 }
