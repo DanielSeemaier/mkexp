@@ -44,6 +44,8 @@ filename_suffix <- ""
 filter_failed <- FALSE
 max_k <- 1000000000
 renames <- c()
+colname_cut <- "Cut"
+colname_time <- "Time"
 
 for (arg in commandArgs(trailingOnly = TRUE)) {
     if (!startsWith(arg, "--")) {
@@ -65,6 +67,10 @@ for (arg in commandArgs(trailingOnly = TRUE)) {
         max_k <- substring(arg, nchar("--max-k=") + 1)
     } else if (startsWith(arg, "--suffix")) {
         filename_suffix <- substring(arg, nchar("--suffix=") + 1)
+    } else if (startsWith(arg, "--col-cut")) {
+        colname_cut <- substring(arg, nchar("--col-cut=") + 1)
+    } else if (startsWith(arg, "--col-time")) {
+        colname_time <- substring(arg, nchar("--col-time=") + 1)
     } else {
         plots <- c(plots, arg)
     }
@@ -78,6 +84,8 @@ cli::cli_li("Filter k: {.val {filter_k != 0}}")
 cli::cli_li("Filter graph: {.val {filter_graph}}")
 cli::cli_li("Max k: {.val {max_k}}")
 cli::cli_li("File suffix: {.val {filename_suffix}}")
+cli::cli_li("Column for edge cut: {.val {colname_cut}}")
+cli::cli_li("Column for running time: {.val {colname_time}}")
 cli::cli_end()
 
 all_plots <- c(
@@ -103,6 +111,9 @@ if (length(algorithms) == 0 || "--help" %in% plots) {
     cat("\t--ignore-imbalance    Ignore imbalanced partitions and treat them as if they were balanced.\n")
     cat("\t--suffix=<...>        Append this suffix to the filenames of plot files.\n")
     cat("\t--graph-suffix=<...>  Append this suffix to the graph names in data/graphs.csv before merging.\n")
+    cat("\n")
+    cat("\t--col-cut=<Cut>       Use this column as the edge cut column.\n")
+    cat("\t--col-time=<Time>     Use this column as the running time column.\n")
     cat("\n")
     cat(paste0("Available plots:", "\n\t", paste(all_plots, collapse = "\n\t"), "\n\n"))
     cat(paste0("Default plots (if none are specified):", "\n\t", paste(default_plots, collapse = "\n\t"), "\n\n"))
@@ -137,7 +148,13 @@ for (algorithm in algorithms) {
 
     cli::cli_li("Loading data set: {.file {filename}}")
 
-    df <- load_data(algorithm, filename, ignore_balance = ignore_balance) %>%
+    df <- load_data(
+        algorithm, 
+        filename, 
+        ignore_balance = ignore_balance, 
+        cut = colname_cut, 
+        time = colname_time
+    ) %>%
         dplyr::mutate(Algorithm = paste0(Algorithm, "-", NumThreadsPerMPI)) %>%
         dplyr::filter(as.integer(K) <= as.integer(max_k)) %>%
         dplyr::arrange(Graph, K) %>%
@@ -276,7 +293,7 @@ if ("--all-cut" %in% plots) {
         labs(
             title = "Edge Cut Comparison over All Instances",
             subtitle = paste0("k = { ", paste(common_ks, collapse = ", "), " }"),
-            caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps))
+            caption = paste0("#graphs = ", length(common_graphs), ", #ks = ", length(common_ks), ", #eps = ", length(common_eps), ", metric = ", colname_cut)
         )
     print(plot)
 
@@ -292,7 +309,7 @@ if ("--all-cut" %in% plots) {
             cut_plot_theme +
             labs(
                 title = paste0("Edge Cut Comparison for k = ", k),
-                caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1, #eps = ", length(common_eps))
+                caption = paste0("#graphs = ", length(common_graphs), ", #ks = 1, #eps = ", length(common_eps), ", metric = ", colname_cut)
             )
         print(plot)
     }

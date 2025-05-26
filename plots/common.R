@@ -77,7 +77,7 @@ aggregate_data <- function(df, timelimit, aggregator) {
     return(df)
 }
 
-load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
+load_data <- function(name, file, ignore_balance = FALSE, seed = 0, cut = "Cut", time = "Time") {
     full_filename <- paste0(getwd(), "/", file)
     df <- read.csv(full_filename)
     df <- df %>% dplyr::filter(Seed >= seed)
@@ -126,6 +126,13 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
     }
     if (!("Time" %in% colnames(df))) {
         df$Time <- -1
+    }
+
+    if (cut != "Cut") {
+        df$Cut <- df[[cut]]
+    }
+    if (time != "Time") {
+        df$Time <- df[[time]]
     }
 
     # Old CSV files use "Balance" instead of "Imbalance"
