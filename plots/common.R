@@ -124,6 +124,9 @@ load_data <- function(name, file, ignore_balance = FALSE, seed = 0) {
     if (!("MaxRSS" %in% colnames(df))) {
         df$MaxRSS <- -1
     }
+    if (!("Time" %in% colnames(df))) {
+        df$Time <- -1
+    }
 
     # Old CSV files use "Balance" instead of "Imbalance"
     if ("Balance" %in% colnames(df) & !("Imbalance" %in% colnames(df))) {

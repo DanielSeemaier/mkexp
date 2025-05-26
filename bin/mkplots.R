@@ -739,15 +739,14 @@ if ("--cols" %in% plots) {
 if ("--time-over-size" %in% plots) {
     flat_data <- do.call(rbind, data)
     flat_data$Size <- flat_data[["N.csv"]] + flat_data[["M.csv"]] / 2
-    #flat_data$Size <- flat_data[["M.csv"]]
-    flat_data$TimePerEdge <- flat_data$AvgTime / (flat_data[["M.csv"]] / 2)
-    
+    flat_data$TimePerEdge <- flat_data$AvgTime / (flat_data[["N.csv"]] + flat_data[["M.csv"]] / 2)
+
     mkpdf("time_over_size")
 
-    p <- ggplot(flat_data, aes(x = Size, y = TimePerEdge, color = Algorithm)) +
-        #geom_line() +
-        geom_point() +
-        geom_smooth(method = 'lm', se = FALSE)
+    p <- ggplot(flat_data, aes(x = Size, y = AvgTime, color = Algorithm)) +
+        geom_line() +
+        geom_point() 
+        #geom_smooth(method = 'lm', se = FALSE, formula = log(y) ~ x)
 
     print(p)
 

@@ -40,6 +40,7 @@ create_running_time_boxplot <- function(
                 stopifnot(column.time %in% colnames(dataset))
                 stopifnot(column.algorithm %in% colnames(dataset))
                 stopifnot(column.timeout %in% colnames(dataset))
+                stopifnot(column.failed %in% colnames(dataset))
                 stopifnot(column.infeasible %in% colnames(dataset))
                 stopifnot(!(NaN %in% dataset[[column.time]]))
                 stopifnot(!(NA %in% dataset[[column.time]]))
@@ -50,14 +51,17 @@ create_running_time_boxplot <- function(
         }
 
         # Merge data to one data frame
-        pp_data <- rbind(...) %>% dplyr::select(
+        pp_data <- data.frame()
+        for (df in list(...)) {
+            pp_data <- rbind(pp_data, df %>% dplyr::select(
                 Algorithm = rlang::sym(column.algorithm),
                 JitterTime = rlang::sym(column.time),
                 Time = rlang::sym(column.time),
                 Timeout = rlang::sym(column.timeout),
                 Infeasible = rlang::sym(column.infeasible),
                 Failed = rlang::sym(column.failed)
-        )
+            ))
+        }
 
         if (length(levels) > 0) {
                 pp_data$Algorithm <- factor(pp_data$Algorithm, levels = levels, ordered = TRUE)
