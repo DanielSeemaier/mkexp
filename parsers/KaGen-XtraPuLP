@@ -73,7 +73,7 @@ function header() {
     printf "Seed,"
     printf "Cut,"
     printf "Epsilon,"
-    printf "Balance,"
+    printf "Imbalance,"
     printf "Time,"
     printf "NumNodes,"
     printf "NumMPIsPerNode,"

@@ -68,7 +68,7 @@ function header() {
     printf "ReportedCut,"
     printf "Cut,"
     printf "Epsilon,"
-    printf "Balance,"
+    printf "Imbalance,"
     printf "Time,"
     printf "NumNodes,"
     printf "NumMPIsPerNode,"

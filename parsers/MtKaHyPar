@@ -60,9 +60,12 @@ match($0, /  Partitioning Time *= ([0-9\.e\-]+) s/, m) {
 }
 
 match($0, /  Imbalance *= ([0-9\.e\-]+)/, m) {
-    data["Balance"] = m[1]
+    data["Imbalance"] = m[1]
 }
 
+match($0, /  km1.*= ([0-9]+)/, m) {
+    data["KM1"] = m[1]
+}
 match($0, /  cut.*= ([0-9]+)/, m) {
     data["Cut"] = m[1]
 }
@@ -76,8 +79,9 @@ function header() {
     printf "K,"
     printf "Seed,"
     printf "Cut,"
+    printf "KM1,"
     printf "Epsilon,"
-    printf "Balance,"
+    printf "Imbalance,"
     printf "Time,"
     printf "NumNodes,"
     printf "NumMPIsPerNode,"
@@ -92,8 +96,9 @@ function yield() {
     printf "%d,", data["K"]
     printf "%d,", data["Seed"]
     printf "%d,", data["Cut"]
+    printf "%d,", data["KM1"]
     printf "%f,", data["Epsilon"]
-    printf "%f,", data["Balance"]
+    printf "%f,", data["Imbalance"]
     printf "%f,", data["Time"]
     printf "%d,", data["NumNodes"]
     printf "%d,", data["NumMPIsPerNode"]
